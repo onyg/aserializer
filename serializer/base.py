@@ -86,7 +86,7 @@ class BaseSerializer(object):
                 try:
                     field.validate(self.get_value_from_source(self.obj, field_name))
                 except SerializerFieldValueError as e:
-                    self._errors[label] = e.messages
+                    self._errors[label] = e.errors
             elif field.required:
                 self._errors[label] = field.error_messages['required']
 
@@ -141,16 +141,27 @@ class TestSerializer(Serializer):
     street = StringField(required=False)
     nickname = StringField(required=False)
     uuid = UUIDField(required=True)
+    maxmin = IntegerField(max_value=10, min_value=6, required=True)
+    created = DatetimeField(required=True)
+    bbb = DatetimeField(required=True)
+    aaa = DateField(required=True)
+    ccc = TimeField(required=True)
 
 
 class TestObject(object):
 
     def __init__(self):
-        self.id = 1
+        self.id = 12
         self.name = 'HALLO WELT'
         self.street = 'STREET'
         self.nickname = 'WORLD'
         self.uuid = '679fadc8-a156-4f7a-8930-0cc216875ac7'
+        self.maxmin = 10
+        self.created = datetime.now()
+        #self.created = '2013-10-07T22:58:40'
+        self.bbb = '2013-10-07T22:58:40'
+        self.aaa = '2013-10-07'
+        self.ccc = '22:58:40'
         #self.name = 1
 
 if '__main__'==__name__:
@@ -160,11 +171,18 @@ if '__main__'==__name__:
         print test.errors
     else:
         print 'first is valid'
-    print test.id
-    print test.uuid
-    print test.to_json()
-    print test.to_dict()
-    print test.dump()
+        #print test.to_dict()
+        #print test.dump()
+        print test.bbb
+        print test.aaa
+        print test.ccc
+        print test.to_json()
+    #print test.id
+    #print test.uuid
+    #print test.to_json()
+    #print test.to_dict()
+    #print test.dump()
+
     #dict_data = {'id':'as', 'name':'Hallo'}
     ##dict_obj = dict(**dict_data)
     ##print dir(dict_obj)

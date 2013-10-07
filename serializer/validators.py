@@ -2,80 +2,18 @@
 import uuid
 import re
 
-VALIDATORS_EMPTY_VALUES = (None, '', [], (), {})
-
-
-#class SerializerValidatorError(Exception):
-#    error_code = None
-#
-#    def __init__(self, message, error_code=None):
-#        if isinstance(message, dict):
-#            self.error_dict = message
-#        elif isinstance(message, list):
-#            self.error_list = message
-#        else:
-#            self.message = message
-#
-#        if error_code is not None:
-#            self.error_code = error_code
-#
-#    @property
-#    def message_dict(self):
-#        message_dict = {}
-#        for field, messages in self.error_dict.items():
-#            message_dict[field] = []
-#            for message in messages:
-#                if isinstance(message, SerializerValidatorError):
-#                    message_dict[field].extend(message.messages)
-#                else:
-#                    message_dict[field].append(str(message))
-#        return message_dict
-#
-#    @property
-#    def messages(self):
-#        if hasattr(self, 'error_dict'):
-#            message_list = self.error_dict.values()
-#        else:
-#            message_list = self.error_list
-#
-#        messages = []
-#        for message in message_list:
-#            if isinstance(message, SerializerValidatorError):
-#                params = message.params
-#                message = message.message
-#                if params:
-#                    message %= params
-#            message = str(message)
-#            messages.append(message)
-#        return messages
-#
-#    def __str__(self):
-#        if hasattr(self, 'error_dict'):
-#            return repr(self.message_dict)
-#        return repr(self.messages)
-#
-#    def __repr__(self):
-#        return 'SerializerValidatorError{}'.format(self)
-#
-#    def update_error_dict(self, error_dict):
-#        if hasattr(self, 'error_dict'):
-#            if error_dict:
-#                for k, v in self.error_dict.items():
-#                    error_dict.setdefault(k, []).extend(v)
-#            else:
-#                error_dict = self.error_dict
-#        else:
-#            error_dict['__all__'] = self.error_list
-#        return error_dict
+VALIDATORS_EMPTY_VALUES = (None, 'null', '', [], (), {})
 
 
 class SerializerValidatorError(Exception):
     error_code = None
     message = ''
 
-    def __init__(self, message=None, error_code=None):
+    def __init__(self, message=None, error_code=None, params=None):
         self.message = message or self.message
         self.error_code = error_code or self.error_code
+        if params:
+            self.message %= params
 
     def __str__(self):
         return repr(self.message)
@@ -91,6 +29,32 @@ class SerializerInvalidError(SerializerValidatorError):
 
 class SerializerRequiredError(SerializerValidatorError):
     error_code = 'required'
+
+
+class CompareValidator(object):
+    compare = lambda self, a, b: a is not b
+    message = 'Value should be %(compare_value)s (it is %(value)s).'
+    error_code = 'compare'
+
+    def __init__(self, compare_value):
+        self.compare_value = compare_value
+
+    def __call__(self, value):
+        params = {'compare_value': self.compare_value, 'value': value}
+        if self.compare(value, self.compare_value):
+            raise SerializerValidatorError(message=self.message, error_code=self.error_code, params=params)
+
+
+class MaxValueValidator(CompareValidator):
+    compare = lambda self, a, b: a > b
+    message = 'Value is less than or equal to %(compare_value)s.'
+    error_code = 'max_value'
+
+
+class MinValueValidator(CompareValidator):
+    compare = lambda self, a, b: a < b
+    message = 'Value is greater than or equal to %(compare_value)s.'
+    error_code = 'min_value'
 
 
 def validate_integer(value):
