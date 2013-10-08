@@ -46,6 +46,13 @@ class BaseSerializer(object):
         self._errors = None
         self._dict_data = None
         self._dump_data = None
+        self._set_source_to_fields(self.obj)
+
+    def _set_source_to_fields(self, object):
+        source_attr = self.get_fieldnames_from_source(object)
+        for field_name, field in self.fields.items():
+            if field_name in source_attr:
+                field.set_value(self.get_value_from_source(self.obj, field_name))
 
     def get_value_from_source(self, source, field_name):
         if isinstance(source, dict):
@@ -84,7 +91,7 @@ class BaseSerializer(object):
             label = field.label or field_name
             if field_name in source_attr:
                 try:
-                    field.validate(self.get_value_from_source(self.obj, field_name))
+                    field.validate()
                 except SerializerFieldValueError as e:
                     self._errors[label] = e.errors
             elif field.required:

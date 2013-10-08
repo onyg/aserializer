@@ -1,0 +1,177 @@
+# -*- coding: utf-8 -*-
+
+import unittest
+
+import uuid
+from datetime import datetime, date, time
+from fields import (IntegerField,
+                    FloatField,
+                    UUIDField,
+                    StringField,
+                    DatetimeField,
+                    DateField,
+                    TimeField,
+                    SerializerFieldValueError,)
+
+
+class FieldsTestCase(unittest.TestCase):
+
+    def test_int_field(self):
+        int_field = IntegerField(required=True)
+        int_field.set_value(23)
+        int_field.validate()
+        self.assertEqual(int_field.to_python(), 23)
+        self.assertEqual(int_field.to_native(), 23)
+
+        int_field = IntegerField(required=True)
+        int_field.set_value('24')
+        int_field.validate()
+        self.assertEqual(int_field.to_python(), 24)
+        self.assertEqual(int_field.to_native(), 24)
+
+        int_field = IntegerField(required=True)
+        int_field.set_value('int')
+        self.assertRaises(SerializerFieldValueError, int_field.validate)
+
+        int_field = IntegerField(required=True, max_value=24, min_value=22)
+        int_field.set_value(23)
+        int_field.validate()
+        self.assertEqual(int_field.to_python(), 23)
+        self.assertEqual(int_field.to_native(), 23)
+
+        int_field = IntegerField(required=True, max_value=24, min_value=22)
+        int_field.set_value(100)
+        self.assertRaises(SerializerFieldValueError, int_field.validate)
+
+    def test_float_field(self):
+        float_field = FloatField(required=True)
+        float_field.set_value(23.23)
+        float_field.validate()
+        self.assertEqual(float_field.to_python(), 23.23)
+        self.assertEqual(float_field.to_native(), 23.23)
+
+        float_field = FloatField(required=True)
+        float_field.set_value('24.24')
+        float_field.validate()
+        self.assertEqual(float_field.to_python(), 24.24)
+        self.assertEqual(float_field.to_native(), 24.24)
+
+        float_field = FloatField(required=True)
+        float_field.set_value('float')
+        self.assertRaises(SerializerFieldValueError, float_field.validate)
+
+        float_field = FloatField(required=True, max_value=24.5, min_value=22.1)
+        float_field.set_value(23.4)
+        float_field.validate()
+        self.assertEqual(float_field.to_python(), 23.4)
+        self.assertEqual(float_field.to_native(), 23.4)
+
+        float_field = FloatField(required=True, max_value=24.5, min_value=22.1)
+        float_field.set_value(24.6)
+        self.assertRaises(SerializerFieldValueError, float_field.validate)
+
+        float_field = FloatField(required=True, max_value=24.5, min_value=22.1)
+        float_field.set_value(21.6)
+        self.assertRaises(SerializerFieldValueError, float_field.validate)
+
+    def test_string_field(self):
+        string_field = StringField(required=True)
+        string_field.set_value('string')
+        string_field.validate()
+        self.assertEqual(string_field.to_python(), 'string')
+        self.assertEqual(string_field.to_native(), 'string')
+
+        string_field = StringField(required=True)
+        string_field.set_value(12)
+        self.assertRaises(SerializerFieldValueError, string_field.validate)
+
+
+    def test_uuid_field(self):
+        uuid_field = UUIDField(required=True)
+        uuid_field.set_value(uuid.uuid4())
+        uuid_field.validate()
+        self.assertIsInstance(uuid_field.to_python(), uuid.UUID)
+
+        uuid_field = UUIDField(required=True)
+        uuid_field.set_value('8005ea5e-60b7-4b2a-ab41-a773b8b72e84')
+        uuid_field.validate()
+        self.assertIsInstance(uuid_field.to_python(), uuid.UUID)
+        self.assertEqual(uuid_field.to_python(),  uuid.UUID('8005ea5e-60b7-4b2a-ab41-a773b8b72e84'))
+        self.assertEqual(uuid_field.to_native(), '8005ea5e-60b7-4b2a-ab41-a773b8b72e84')
+
+        uuid_field = UUIDField(required=True)
+        uuid_field.set_value('nono')
+        self.assertRaises(SerializerFieldValueError, uuid_field.validate)
+
+        uuid_field = UUIDField(required=True)
+        self.assertRaises(SerializerFieldValueError, uuid_field.validate)
+
+        uuid_field = UUIDField(required=False)
+        uuid_field.validate()
+        self.assertIsNone(uuid_field.to_python())
+        self.assertEqual(uuid_field.to_native(), '')
+
+    def test_datetime_field(self):
+        dt = datetime.strptime('2013-10-07T22:58:40', '%Y-%m-%dT%H:%M:%S')
+        field = DatetimeField(required=True)
+        field.set_value(dt)
+        field.validate()
+        self.assertEqual(field.to_python(), dt)
+        self.assertEqual(field.to_native(), '2013-10-07T22:58:40')
+
+        field = DatetimeField(required=True)
+        field.set_value('2013-10-07T20:15:23')
+        field.validate()
+        self.assertEqual(field.to_python(), datetime.strptime('2013-10-07T20:15:23', '%Y-%m-%dT%H:%M:%S'))
+        self.assertEqual(field.to_native(), '2013-10-07T20:15:23')
+
+        field = DatetimeField(required=True, formats=['%d.%m.%Y %H:%M:%S'])
+        field.set_value('07.10.2013 20:15:23')
+        field.validate()
+        self.assertEqual(field.to_python(), datetime.strptime('2013-10-07T20:15:23', '%Y-%m-%dT%H:%M:%S'))
+        self.assertEqual(field.to_native(), '2013-10-07T20:15:23')
+
+        field = DatetimeField(required=True)
+        field.set_value('datetime')
+        self.assertRaises(SerializerFieldValueError, field.validate)
+
+    def test_date_field(self):
+        date = datetime.strptime('2013-10-07T22:58:40', '%Y-%m-%dT%H:%M:%S').date()
+        field = DateField(required=True)
+        field.set_value(date)
+        field.validate()
+        self.assertEqual(field.to_python(), date)
+        self.assertEqual(field.to_native(), '2013-10-07')
+
+        field = DateField(required=True)
+        field.set_value('2013-10-07')
+        field.validate()
+        self.assertEqual(field.to_python(), datetime.strptime('2013-10-07T20:15:23', '%Y-%m-%dT%H:%M:%S').date())
+        self.assertEqual(field.to_native(), '2013-10-07')
+
+        field = DateField(required=True)
+        field.set_value('date')
+        self.assertRaises(SerializerFieldValueError, field.validate)
+
+
+    def test_time_field(self):
+        t = datetime.strptime('2013-10-07T22:58:40', '%Y-%m-%dT%H:%M:%S').time()
+        field = TimeField(required=True)
+        field.set_value(t)
+        field.validate()
+        self.assertEqual(field.to_python(), t)
+        self.assertEqual(field.to_native(), '22:58:40')
+
+        field = TimeField(required=True)
+        field.set_value('22:00:40')
+        field.validate()
+        self.assertEqual(field.to_python(), datetime.strptime('2013-10-07T22:00:40', '%Y-%m-%dT%H:%M:%S').time())
+        self.assertEqual(field.to_native(), '22:00:40')
+
+        field = TimeField(required=True)
+        field.set_value('time')
+        self.assertRaises(SerializerFieldValueError, field.validate)
+
+
+if __name__ == '__main__':
+    unittest.main()
