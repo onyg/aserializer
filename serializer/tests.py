@@ -116,6 +116,7 @@ class FieldsTestCase(unittest.TestCase):
         field = DatetimeField(required=True)
         field.set_value(dt)
         field.validate()
+        self.assertIsInstance(field.to_python(), datetime)
         self.assertEqual(field.to_python(), dt)
         self.assertEqual(field.to_native(), '2013-10-07T22:58:40')
 
@@ -136,11 +137,12 @@ class FieldsTestCase(unittest.TestCase):
         self.assertRaises(SerializerFieldValueError, field.validate)
 
     def test_date_field(self):
-        date = datetime.strptime('2013-10-07T22:58:40', '%Y-%m-%dT%H:%M:%S').date()
+        _date = datetime.strptime('2013-10-07T22:58:40', '%Y-%m-%dT%H:%M:%S').date()
         field = DateField(required=True)
-        field.set_value(date)
+        field.set_value(_date)
         field.validate()
-        self.assertEqual(field.to_python(), date)
+        self.assertIsInstance(field.to_python(), date)
+        self.assertEqual(field.to_python(), _date)
         self.assertEqual(field.to_native(), '2013-10-07')
 
         field = DateField(required=True)
@@ -159,6 +161,7 @@ class FieldsTestCase(unittest.TestCase):
         field = TimeField(required=True)
         field.set_value(t)
         field.validate()
+        self.assertIsInstance(field.to_python(), time)
         self.assertEqual(field.to_python(), t)
         self.assertEqual(field.to_native(), '22:58:40')
 
