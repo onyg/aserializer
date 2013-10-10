@@ -109,9 +109,9 @@ class BaseSerializer(object):
         else:
             return True
 
-    def __getattr__(self, key):
+    def __getattr__(self, name):
         try:
-            field = self.fields.get(key)
+            field = self.fields.get(name)
         except:
             raise AttributeError()
         else:
@@ -172,6 +172,7 @@ class TestObject(object):
         #self.name = 1
 
 if '__main__'==__name__:
+
     test = TestSerializer(object=TestObject()) #, fields=['name', 'street'])
     if not test.is_valid():
         print 'first in invalid'
@@ -184,6 +185,14 @@ if '__main__'==__name__:
         print test.aaa
         print test.ccc
         print test.to_json()
+        test.name = 'HALLO'
+        print test.to_json()
+        print test.name
+    print '-' * 80
+    test2 = TestSerializer(object=TestObject())
+    print test2.name
+
+
     #print test.id
     #print test.uuid
     #print test.to_json()
