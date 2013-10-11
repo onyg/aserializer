@@ -25,7 +25,7 @@ def get_serializer_fields(bases, attrs, with_base_fields=True):
 class SerializerFieldsMetaClass(type):
 
     def __new__(cls, name, bases, attrs):
-        attrs['_fields'] = get_serializer_fields(bases, attrs)
+        attrs['base_fields'] = get_serializer_fields(bases, attrs)
         new_class = super(SerializerFieldsMetaClass, cls).__new__(cls, name, bases, attrs)
         return new_class
 
@@ -39,7 +39,7 @@ class BaseSerializer(object):
 
     def __init__(self, object, fields=None, **extras):
         self.obj = object
-        self.fields = copy.deepcopy(self._fields)
+        self.fields = copy.deepcopy(self.base_fields)
         if fields:
             self.fields = self.filter_only_fields(self.fields, only_fields=fields)
         self._extras = extras
