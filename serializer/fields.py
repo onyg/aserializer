@@ -49,10 +49,11 @@ class BaseSerializerField(object):
     validators = []
     default = None
 
-    def __init__(self, required=True, mandatory=False, label=None, validators=[], error_messages=None, default=None):
+    def __init__(self, required=True, identity=False, label=None, map_field=None, validators=[], error_messages=None, default=None):
         self.required = required
-        self.mandatory = mandatory
+        self.identity = identity
         self.label = label
+        self.map_field = map_field
         self.data = None
         self._validators = self.validators + validators
         self._error_messages = {}
@@ -63,9 +64,9 @@ class BaseSerializerField(object):
 
 
     def validate(self):
-        if self.value in validators.VALIDATORS_EMPTY_VALUES and (self.required or self.mandatory):
+        if self.value in validators.VALIDATORS_EMPTY_VALUES and (self.required or self.identity):
             raise SerializerFieldValueError(self._error_messages['required'])
-        if self.value is None and not (self.required or self.mandatory):
+        if self.value is None and not (self.required or self.identity):
             return
 
         errors = []
@@ -96,6 +97,8 @@ class BaseSerializerField(object):
         except:
             raise SerializerFieldValueError(self._error_messages['invalid'])
         else:
+            if self.identity and result in validators.VALIDATORS_EMPTY_VALUES:
+                raise SerializerFieldValueError(self._error_messages['required'])
             return result
 
     def to_python(self):
@@ -104,7 +107,17 @@ class BaseSerializerField(object):
         except:
             raise SerializerFieldValueError(self._error_messages['invalid'])
         else:
+            if self.identity and result in validators.VALIDATORS_EMPTY_VALUES:
+                raise SerializerFieldValueError(self._error_messages['required'])
             return result
+
+    def __get__(self, instance, owner):
+        return self.to_python()
+
+    def __set__(self, instance, value):
+        self.set_value(value=value)
+        self.validate()
+        instance._update_field(self)
 
 
 
