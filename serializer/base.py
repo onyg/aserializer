@@ -2,7 +2,6 @@
 
 import logging
 from collections import OrderedDict
-import inspect
 import json
 from fields import *
 
@@ -96,9 +95,6 @@ class Serializer(object):
         exlude = [field_name.split('.')[0] for field_name in exlude]
         result = [(field_name, field) for field_name, field in fields.items() if field.identity or not field_name in exlude]
         return OrderedDict(result)
-
-    def _custom_field_methods(self):
-        return inspect.getmembers(self, predicate=lambda item: inspect.ismethod(item) and str(item.__name__).endswith('_'))
 
     def has_method(self, name):
         _method = getattr(self, name, None)
