@@ -2,7 +2,7 @@
 import uuid
 import re
 
-VALIDATORS_EMPTY_VALUES = (None, 'null', '', [], (), {})
+VALIDATORS_EMPTY_VALUES = (None, 'null', '', u'', [], (), {})
 
 
 class SerializerValidatorError(Exception):

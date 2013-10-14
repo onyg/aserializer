@@ -176,5 +176,10 @@ class FieldsTestCase(unittest.TestCase):
         self.assertRaises(SerializerFieldValueError, field.validate)
 
 
+#class SerializerTestCase(unittest.TestCase):
+#
+#    def test_
+
+
 if __name__ == '__main__':
     unittest.main()

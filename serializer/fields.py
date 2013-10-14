@@ -11,6 +11,8 @@ import validators
 logger = logging.getLogger(__name__)
 
 
+class IgnoreField(Exception):
+    pass
 
 class SerializerFieldValueError(Exception):
 
@@ -40,6 +42,9 @@ class SerializerFieldValueError(Exception):
         return self.errors
 
 
+HIDE_FIELD = 0
+
+
 class BaseSerializerField(object):
 
     error_messages = {
@@ -49,7 +54,7 @@ class BaseSerializerField(object):
     validators = []
     default = None
 
-    def __init__(self, required=True, identity=False, label=None, map_field=None, validators=[], error_messages=None, default=None):
+    def __init__(self, required=True, identity=False, label=None, map_field=None, on_null=None, validators=[], error_messages=None, default=None):
         self.required = required
         self.identity = identity
         self.label = label
@@ -61,6 +66,11 @@ class BaseSerializerField(object):
             self._error_messages.update(getattr(cls, 'error_messages', {}))
         self._error_messages.update(error_messages or {})
         self.value = None
+        self.names = []
+        self.on_null_value = on_null
+
+    def add_name(self, name):
+        self.names = list(set(self.names + [name]))
 
 
     def validate(self):
@@ -97,8 +107,10 @@ class BaseSerializerField(object):
         except:
             raise SerializerFieldValueError(self._error_messages['invalid'])
         else:
-            if self.identity and result in validators.VALIDATORS_EMPTY_VALUES:
+            if (self.identity and self.required) and result in validators.VALIDATORS_EMPTY_VALUES:
                 raise SerializerFieldValueError(self._error_messages['required'])
+            elif result in validators.VALIDATORS_EMPTY_VALUES and self.on_null_value == HIDE_FIELD:
+                raise IgnoreField()
             return result
 
     def to_python(self):
@@ -107,19 +119,51 @@ class BaseSerializerField(object):
         except:
             raise SerializerFieldValueError(self._error_messages['invalid'])
         else:
-            if self.identity and result in validators.VALIDATORS_EMPTY_VALUES:
+            if (self.identity and self.required) and result in validators.VALIDATORS_EMPTY_VALUES:
                 raise SerializerFieldValueError(self._error_messages['required'])
+            elif result in validators.VALIDATORS_EMPTY_VALUES and self.on_null_value == HIDE_FIELD:
+                raise IgnoreField()
             return result
 
     def __get__(self, instance, owner):
         return self.to_python()
 
     def __set__(self, instance, value):
+        for name in self.names:
+            try:
+                value = instance.clean_field_value(name, value)
+            except IgnoreField:
+                pass
         self.set_value(value=value)
         self.validate()
-        instance._update_field(self)
+        instance.update_field(self)
 
 
+class TypeField(BaseSerializerField):
+
+    def __init__(self, name, *args, **kwargs):
+        super(TypeField, self).__init__(*args, **kwargs)
+        self.name = name
+        self.identity = True
+        self.error_messages = {}
+
+    def validate(self):
+        pass
+
+    def set_value(self, value):
+        pass
+
+    def to_native(self):
+        return unicode(self.name)
+
+    def to_python(self):
+        return unicode(self.name)
+
+    def __get__(self, instance, owner):
+        pass
+
+    def __set__(self, instance, value):
+        pass
 
 class IntegerField(BaseSerializerField):
     validators = [validators.validate_integer,]
