@@ -11,7 +11,8 @@ from fields import (IntegerField,
                     DatetimeField,
                     DateField,
                     TimeField,
-                    SerializerFieldValueError,)
+                    SerializerFieldValueError,
+                    UrlSerializerField,)
 
 
 class FieldsTestCase(unittest.TestCase):
@@ -174,6 +175,25 @@ class FieldsTestCase(unittest.TestCase):
         field = TimeField(required=True)
         field.set_value('time')
         self.assertRaises(SerializerFieldValueError, field.validate)
+
+
+    def test_url_field(self):
+        field = UrlSerializerField(required=True)
+        field.set_value('https://www.onyg.de')
+        field.validate()
+        self.assertEqual(field.to_python(), 'https://www.onyg.de')
+        self.assertEqual(field.to_native(), 'https://www.onyg.de')
+
+        field = UrlSerializerField(required=True, base='http://www.onyg.de')
+        field.set_value('api')
+        field.validate()
+        self.assertEqual(field.to_python(), 'http://www.onyg.de/api')
+        self.assertEqual(field.to_native(), 'http://www.onyg.de/api')
+
+        field = UrlSerializerField(required=True)
+        field.set_value('api')
+        self.assertRaises(SerializerFieldValueError, field.validate)
+
 
 
 #class SerializerTestCase(unittest.TestCase):

@@ -82,3 +82,17 @@ def validate_uuid(value):
     if not isinstance(value, uuid.UUID):
        if not RE_UUID.search(unicode(value)):
             raise SerializerValidatorError('Enter a valid uuid.', error_code='invalid')
+
+
+RE_URL = re.compile(
+        r'^(?:http|ftp)s?://'
+        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'
+        r'localhost|'
+        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|'
+        r'\[?[A-F0-9]*:[A-F0-9:]+\]?)'
+        r'(?::\d+)?'
+        r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+
+def validate_url(value):
+   if not RE_URL.search(unicode(value)):
+        raise SerializerValidatorError('Enter a valid url.', error_code='invalid')

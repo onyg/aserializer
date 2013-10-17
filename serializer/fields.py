@@ -65,7 +65,11 @@ class BaseSerializerField(object):
         for cls in reversed(self.__class__.__mro__):
             self._error_messages.update(getattr(cls, 'error_messages', {}))
         self._error_messages.update(error_messages or {})
-        self.value = None
+        self.value = default
+        if default:
+            self.has_default = True
+        else:
+            self.has_default = False
         self.names = []
         self.on_null_value = on_null
 
@@ -167,7 +171,6 @@ class TypeField(BaseSerializerField):
 
 class IntegerField(BaseSerializerField):
     validators = [validators.validate_integer,]
-
 
     def __init__(self, max_value=None, min_value=None, *args, **kwargs):
         super(IntegerField, self).__init__(*args, **kwargs)
@@ -364,6 +367,34 @@ class TimeField(BaseDatetimeField):
         if _value:
             self.value = _value.time()
         return self.value
+
+
+class UrlSerializerField(BaseSerializerField):
+
+    validators = [validators.validate_url,]
+
+    def __init__(self, base=None, *args, **kwargs):
+        super(UrlSerializerField, self).__init__(*args, **kwargs)
+        self.uri_base = base
+        if self.uri_base and not str(self.uri_base).endswith('/'):
+            self.uri_base = '{}/'.format(self.uri_base)
+        if self.value:
+            self.set_value(value=self.value)
+
+    def to_unicode(self, value):
+        return unicode(value)
+
+    def set_value(self, value):
+        if self.uri_base:
+            self.value = '{}{}'.format(self.uri_base, value)
+        else:
+            self.value = value
+
+    def _to_native(self):
+        return self.to_unicode(self.value)
+
+    def _to_python(self):
+        return self.to_unicode(self.value)
 
 
 class NestedSerializerField(BaseSerializerField):

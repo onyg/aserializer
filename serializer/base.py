@@ -120,6 +120,8 @@ class Serializer(object):
                 except SerializerFieldValueError as e:
                     self._errors[label] = e.errors
             elif field.required:
+                if field.has_default:
+                    continue
                 self._errors[label] = field.error_messages['required']
 
     def update_field(self, field):
@@ -209,6 +211,7 @@ class TestSerializer(Serializer):
     aaa = DateField(required=True)
     ccc = TimeField(required=True)
     haus = StringField(required=True, map_field='house')
+    url = UrlSerializerField(required=True, base='http://www.base.com', default='api')
 
     def street_clean_value(self, value):
         return 'Changed {}'.format(value)
