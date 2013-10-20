@@ -173,6 +173,8 @@ class Serializer(object):
         if self._dump_data is None:
             self._dump_data = dict()
             for field_name, field in self.fields.items():
+                if field.action_field:
+                    continue
                 try:
                     self._dump_data[field_name] = self._field_to_native(field_name, field)
                 except IgnoreField:
@@ -212,6 +214,7 @@ class TestSerializer(Serializer):
     ccc = TimeField(required=True)
     haus = StringField(required=True, map_field='house')
     url = UrlSerializerField(required=True, base='http://www.base.com', default='api')
+    action = StringField(required=False, action_field=True)
 
     def street_clean_value(self, value):
         return 'Changed {}'.format(value)
@@ -241,6 +244,7 @@ class TestObject(object):
         self.house = 'ENGLISCH'
         #self.name = 1
         self.no = 1
+        self.action = 'ACTION'
 
 
 
@@ -280,6 +284,8 @@ if '__main__'==__name__:
     print '-' * 80
     test.haus = 'DEUTSCH'
     print test.to_json()
+    print test.to_dict()
+    print test.action
 
     #test2 = TestSerializer(object=None) #, fields=['name', 'street'])
     #

@@ -54,7 +54,7 @@ class BaseSerializerField(object):
     validators = []
     default = None
 
-    def __init__(self, required=True, identity=False, label=None, map_field=None, on_null=None, validators=[], error_messages=None, default=None):
+    def __init__(self, required=True, identity=False, label=None, map_field=None, on_null=None, action_field=False, validators=[], error_messages=None, default=None):
         self.required = required
         self.identity = identity
         self.label = label
@@ -72,6 +72,7 @@ class BaseSerializerField(object):
             self.has_default = False
         self.names = []
         self.on_null_value = on_null
+        self.action_field = action_field
 
     def add_name(self, name):
         self.names = list(set(self.names + [name]))
@@ -180,7 +181,7 @@ class IntegerField(BaseSerializerField):
             self._validators.append(validators.MinValueValidator(min_value))
 
     def to_int(self, value):
-        if self.value in validators.VALIDATORS_EMPTY_VALUES:
+        if value in validators.VALIDATORS_EMPTY_VALUES:
             return None
         return int(value)
 
@@ -195,7 +196,7 @@ class FloatField(IntegerField):
     validators = [validators.validate_float,]
 
     def to_float(self, value):
-        if self.value in validators.VALIDATORS_EMPTY_VALUES:
+        if value in validators.VALIDATORS_EMPTY_VALUES:
             return None
         return float(value)
 
@@ -210,7 +211,7 @@ class StringField(BaseSerializerField):
     validators = [validators.validate_string,]
 
     def to_unicode(self, value):
-        if self.value in validators.VALIDATORS_EMPTY_VALUES:
+        if value in validators.VALIDATORS_EMPTY_VALUES:
             return u''
         return unicode(value)
 
@@ -382,6 +383,8 @@ class UrlSerializerField(BaseSerializerField):
             self.set_value(value=self.value)
 
     def to_unicode(self, value):
+        if value in validators.VALIDATORS_EMPTY_VALUES:
+            return u''
         return unicode(value)
 
     def set_value(self, value):
