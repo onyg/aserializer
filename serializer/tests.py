@@ -14,7 +14,9 @@ from fields import (IntegerField,
                     SerializerFieldValueError,
                     UrlSerializerField,
                     HIDE_FIELD,
-                    IgnoreField,)
+                    IgnoreField,
+                    TypeField,)
+from base import Serializer
 
 
 class FieldsTestCase(unittest.TestCase):
@@ -51,8 +53,8 @@ class FieldsTestCase(unittest.TestCase):
         self.assertEqual(int_field.to_native(), 23)
 
         int_field = IntegerField(required=False, on_null=HIDE_FIELD)
-        self.assertRaises(IgnoreField, int_field.to_python)
         self.assertRaises(IgnoreField, int_field.to_native)
+        self.assertIsNone(int_field.to_python())
 
     def test_float_field(self):
         float_field = FloatField(required=True)
@@ -91,8 +93,8 @@ class FieldsTestCase(unittest.TestCase):
         self.assertEqual(float_field.to_native(), 23.23)
 
         float_field = FloatField(required=False, on_null=HIDE_FIELD)
-        self.assertRaises(IgnoreField, float_field.to_python)
         self.assertRaises(IgnoreField, float_field.to_native)
+        self.assertIsNone(float_field.to_python())
 
     def test_string_field(self):
         string_field = StringField(required=True)
@@ -111,8 +113,8 @@ class FieldsTestCase(unittest.TestCase):
         self.assertEqual(string_field.to_native(), 'a string')
 
         string_field = StringField(required=False, on_null=HIDE_FIELD)
-        self.assertRaises(IgnoreField, string_field.to_python)
         self.assertRaises(IgnoreField, string_field.to_native)
+        self.assertIsNone(string_field.to_python())
 
 
     def test_uuid_field(self):
@@ -151,8 +153,8 @@ class FieldsTestCase(unittest.TestCase):
         self.assertEqual(uuid_field.to_native(), '8005ea5e-60b7-4b2a-ab41-a773b8b72e84')
 
         uuid_field = UUIDField(required=False, on_null=HIDE_FIELD)
-        self.assertRaises(IgnoreField, uuid_field.to_python)
         self.assertRaises(IgnoreField, uuid_field.to_native)
+        self.assertIsNone(uuid_field.to_python())
 
     def test_datetime_field(self):
         dt = datetime.strptime('2013-10-07T22:58:40', '%Y-%m-%dT%H:%M:%S')
@@ -191,8 +193,8 @@ class FieldsTestCase(unittest.TestCase):
         self.assertEqual(field.to_native(), '2013-10-07T22:58:40')
 
         field = DatetimeField(required=False, on_null=HIDE_FIELD)
-        self.assertRaises(IgnoreField, field.to_python)
         self.assertRaises(IgnoreField, field.to_native)
+        self.assertIsNone(field.to_python())
 
     def test_date_field(self):
         _date = datetime.strptime('2013-10-07T22:58:40', '%Y-%m-%dT%H:%M:%S').date()
@@ -219,8 +221,8 @@ class FieldsTestCase(unittest.TestCase):
         self.assertEqual(field.to_native(), '2013-10-07')
 
         field = DateField(required=False, on_null=HIDE_FIELD)
-        self.assertRaises(IgnoreField, field.to_python)
         self.assertRaises(IgnoreField, field.to_native)
+        self.assertIsNone(field.to_python())
 
 
     def test_time_field(self):
@@ -254,8 +256,8 @@ class FieldsTestCase(unittest.TestCase):
         self.assertEqual(field.to_native(), '22:58:40')
 
         field = TimeField(required=False, on_null=HIDE_FIELD)
-        self.assertRaises(IgnoreField, field.to_python)
         self.assertRaises(IgnoreField, field.to_native)
+        self.assertIsNone(field.to_python())
 
 
     def test_url_field(self):
@@ -284,15 +286,79 @@ class FieldsTestCase(unittest.TestCase):
         self.assertRaises(SerializerFieldValueError, field.validate)
 
         field = UrlSerializerField(required=False, on_null=HIDE_FIELD)
-        self.assertRaises(IgnoreField, field.to_python)
         self.assertRaises(IgnoreField, field.to_native)
+        self.assertIsNone(field.to_python())
 
 
+class TestSerializer(Serializer):
+    _type = TypeField('test_object')
+    id = IntegerField(required=True, identity=True)
+    name = StringField(required=True)
+    street = StringField(required=False, on_null=HIDE_FIELD)
+    uuid_var = UUIDField(required=True)
+    maxmin = IntegerField(max_value=10, min_value=6, required=True)
+    datetime_var = DatetimeField(required=True)
+    date_var = DateField(required=True)
+    time_var = TimeField(required=True)
+    haus = StringField(required=True, map_field='house')
+    url = UrlSerializerField(required=True, base='http://www.base.com', default='api')
+    action = StringField(required=False, action_field=True)
 
 
-#class SerializerTestCase(unittest.TestCase):
-#
-#    def test_
+class SerializerTestCase(unittest.TestCase):
+
+    def test_object_valid_serialize(self):
+        class TestObject(object):
+            def __init__(self):
+                self.id = 1
+                self.name = 'NAME'
+                self.street = None
+                self.uuid_var = '679fadc8-a156-4f7a-8930-0cc216875ac7'
+                self.maxmin = 7
+                self.datetime_var = datetime.strptime('2013-10-07T20:15:23', '%Y-%m-%dT%H:%M:%S')
+                self.date_var = datetime.strptime('2013-10-07T20:15:23', '%Y-%m-%dT%H:%M:%S').date()
+                self.time_var = datetime.strptime('2013-10-07T20:15:23', '%Y-%m-%dT%H:%M:%S').time()
+                self.house = 'MAP_TO_HAUS'
+
+        serializer = TestSerializer(source=TestObject())
+        self.assertTrue(serializer.is_valid())
+        self.assertDictEqual(serializer.errors, {})
+
+        self.assertIsInstance(serializer.id, int)
+        self.assertEqual(serializer.id, 1)
+
+        self.assertIsInstance(serializer.name, basestring)
+        self.assertEqual(serializer.name, 'NAME')
+
+        self.assertIsNone(serializer.street)
+
+        self.assertIsInstance(serializer.uuid_var, uuid.UUID)
+        self.assertEqual(serializer.uuid_var, uuid.UUID('679fadc8-a156-4f7a-8930-0cc216875ac7'))
+
+        self.assertIsInstance(serializer.datetime_var, datetime)
+        self.assertEqual(serializer.datetime_var, datetime.strptime('2013-10-07T20:15:23', '%Y-%m-%dT%H:%M:%S'))
+
+        self.assertIsInstance(serializer.date_var, date)
+        self.assertEqual(serializer.date_var, datetime.strptime('2013-10-07T20:15:23', '%Y-%m-%dT%H:%M:%S').date())
+
+        self.assertIsInstance(serializer.time_var, time)
+        self.assertEqual(serializer.time_var, datetime.strptime('2013-10-07T20:15:23', '%Y-%m-%dT%H:%M:%S').time())
+
+        dump_dict = {
+                '_type': u'test_object',
+                'id': 1,
+                'name': u'NAME',
+                'uuid_var': u'679fadc8-a156-4f7a-8930-0cc216875ac7',
+                'maxmin': 7,
+                'datetime_var': u'2013-10-07T20:15:23',
+                'date_var': u'2013-10-07',
+                'time_var': u'20:15:23',
+                'haus': u'MAP_TO_HAUS',
+                'url': u'http://www.base.com/api',
+        }
+        self.assertDictEqual(serializer.dump(), dump_dict)
+
+
 
 
 if __name__ == '__main__':

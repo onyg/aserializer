@@ -127,7 +127,7 @@ class BaseSerializerField(object):
             if (self.identity and self.required) and result in validators.VALIDATORS_EMPTY_VALUES:
                 raise SerializerFieldValueError(self._error_messages['required'])
             elif result in validators.VALIDATORS_EMPTY_VALUES and self.on_null_value == HIDE_FIELD:
-                raise IgnoreField()
+                return None
             return result
 
     def __get__(self, instance, owner):
@@ -156,7 +156,7 @@ class TypeField(BaseSerializerField):
         pass
 
     def set_value(self, value):
-        pass
+        self.name = value
 
     def to_native(self):
         return unicode(self.name)
@@ -227,8 +227,8 @@ class UUIDField(BaseSerializerField):
 
     def _to_native(self):
         if self.value in validators.VALIDATORS_EMPTY_VALUES:
-            return ''
-        return str(self.value)
+            return u''
+        return unicode(self.value)
 
     def _to_python(self):
         if self.value in validators.VALIDATORS_EMPTY_VALUES:
@@ -288,8 +288,8 @@ class DatetimeField(BaseDatetimeField):
         if self.value in validators.VALIDATORS_EMPTY_VALUES:
             return None
         if isinstance(self.value, datetime):
-            return self.value.isoformat()
-        return str(self.value)
+            return unicode(self.value.isoformat())
+        return unicode(self.value)
 
     def _to_python(self):
         if self.value in validators.VALIDATORS_EMPTY_VALUES:
@@ -321,8 +321,8 @@ class DateField(BaseDatetimeField):
         if self.value in validators.VALIDATORS_EMPTY_VALUES:
             return None
         if isinstance(self.value, date):
-            return self.value.isoformat()
-        return str(self.value)
+            return unicode(self.value.isoformat())
+        return unicode(self.value)
 
     def _to_python(self):
         if self.value in validators.VALIDATORS_EMPTY_VALUES:
@@ -356,8 +356,8 @@ class TimeField(BaseDatetimeField):
         if self.value in validators.VALIDATORS_EMPTY_VALUES:
             return None
         if isinstance(self.value, time):
-            return self.value.isoformat()
-        return str(self.value)
+            return unicode(self.value.isoformat())
+        return unicode(self.value)
 
     def _to_python(self):
         if self.value in validators.VALIDATORS_EMPTY_VALUES:
