@@ -131,17 +131,21 @@ class BaseSerializerField(object):
             return result
 
     def __get__(self, instance, owner):
+        if instance is None:
+            return self
         return self.to_python()
 
     def __set__(self, instance, value):
-        for name in self.names:
-            try:
-                value = instance.clean_field_value(name, value)
-            except IgnoreField:
-                pass
+        if instance is not None:
+            for name in self.names:
+                try:
+                    value = instance.clean_field_value(name, value)
+                except IgnoreField:
+                    pass
         self.set_value(value=value)
         self.validate()
-        instance.update_field(self)
+        if instance:
+            instance.update_field(self)
 
 
 class TypeField(BaseSerializerField):
@@ -400,14 +404,32 @@ class UrlSerializerField(BaseSerializerField):
         return self.to_unicode(self.value)
 
 
-class NestedSerializerField(BaseSerializerField):
+class SerializerObjectField(BaseSerializerField):
 
-    def __init__(self, serializer):
-        super(NestedSerializerField, self).__init__()
-        self._serializer = serializer
+    def __init__(self, *args, **kwargs):
+        super(SerializerObjectField, self).__init__(*args, **kwargs)
+        self.only_fields = []
+        self.exlude = []
 
-    def validate(self, value):
+    def pre_value(self, fields=None, exclude=None):
+        self.only_fields = fields
+        self.exlude = fields
+
+
+class NestedSerializerField(SerializerObjectField):
+
+    def __init__(self, serializer_cls, *args, **kwargs):
+        super(NestedSerializerField, self).__init__(*args, **kwargs)
+        self._serializer_cls = serializer_cls
+
+    def validate(self):
         pass
+
+    def set_value(self, value):
+        if self._serializer is None:
+            self._serializer = self._serializer_cls(source=value,
+                                                    fields=self.only_fields,
+                                                    exclude=self.exlude)
 
     def to_native(self):
         return self._serializer.to_native()
