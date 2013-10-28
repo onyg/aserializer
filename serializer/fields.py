@@ -11,12 +11,49 @@ import validators
 logger = logging.getLogger(__name__)
 
 
+
+_serializer_registry = {}
+
+
+def register_serializer(name, cls):
+    if name in _serializer_registry:
+        return
+    _serializer_registry[name] = cls
+
+
+def get_serializer(name):
+    if name in _serializer_registry:
+        return _serializer_registry[name]
+    raise Exception('Not in register.')
+
+#def get_document(name):
+#    doc = _document_registry.get(name, None)
+#    if not doc:
+#        # Possible old style name
+#        single_end = name.split('.')[-1]
+#        compound_end = '.%s' % single_end
+#        possible_match = [k for k in _document_registry.keys()
+#                          if k.endswith(compound_end) or k == single_end]
+#        if len(possible_match) == 1:
+#            doc = _document_registry.get(possible_match.pop(), None)
+#    if not doc:
+#        raise NotRegistered("""
+#            `%s` has not been registered in the document registry.
+#            Importing the document class automatically registers it, has it
+#            been imported?
+#        """.strip() % name)
+#    return doc
+
+
+
 class IgnoreField(Exception):
     pass
 
 class SerializerFieldValueError(Exception):
 
     def __init__(self, message):
+        #print 'ERROR', message
+        print type(message)
         if isinstance(message, basestring):
             self.error_message = message
         elif isinstance(message, dict):
@@ -418,21 +455,39 @@ class SerializerObjectField(BaseSerializerField):
 
 class NestedSerializerField(SerializerObjectField):
 
-    def __init__(self, serializer_cls, *args, **kwargs):
+    def __init__(self, serializer, *args, **kwargs):
         super(NestedSerializerField, self).__init__(*args, **kwargs)
-        self._serializer_cls = serializer_cls
+        self._serializer_cls = serializer
+        self._serializer = None
 
     def validate(self):
-        pass
+        if self._serializer:
+            if not self._serializer.is_valid():
+                raise SerializerFieldValueError(self._serializer.errors)
+        elif self.required:
+            raise SerializerFieldValueError(self._error_messages['required'])
 
     def set_value(self, value):
         if self._serializer is None:
+            if isinstance(self._serializer_cls, basestring):
+                self._serializer_cls = get_serializer(self._serializer_cls)
             self._serializer = self._serializer_cls(source=value,
                                                     fields=self.only_fields,
                                                     exclude=self.exlude)
+        else:
+            self._serializer.initial(source=value)
 
-    def to_native(self):
-        return self._serializer.to_native()
+    def _to_native(self):
+        if self._serializer:
+            return self._serializer.dump()
+        return None
 
-    def to_python(self):
-        return self._serializer.to_python()
+    def _to_python(self):
+        if self._serializer:
+            return self._serializer.to_dict()
+        return None
+
+    def __get__(self, instance, owner):
+        if instance is None:
+            return self
+        return self._serializer

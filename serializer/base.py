@@ -4,6 +4,7 @@ import logging
 from collections import OrderedDict
 import json
 from fields import *
+from fields import register_serializer
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +34,7 @@ class SerializerBase(type):
                 field.add_name(field.map_field)
                 setattr(new_class, field.map_field, field)
         setattr(new_class, 'fields', base_fields)
+        register_serializer(new_class.__name__, new_class)
         return new_class
 
 
@@ -47,6 +49,10 @@ class Serializer(object):
             self.fields = self.filter_excluded_fields(self.fields, exclude)
         self._extras = extras
         self.initial(source=source)
+
+    def __iter__(self):
+        self.to_dict()
+        return self._dict_data.__iter__()
 
     def initial(self, source):
         self.obj = source
@@ -200,6 +206,21 @@ class Serializer(object):
             return field.to_native()
 
 
+class NestSerializer(Serializer):
+
+    class NestNestSerializer(Serializer):
+        _type = TypeField('nest_nest')
+        ida = IntegerField(required=True, identity=True)
+        namea = StringField(required=True)
+        streeta = StringField(required=False, on_null=HIDE_FIELD)
+        nicknamea = StringField(required=False)
+        uuida = UUIDField(required=True)
+
+    _type = TypeField('emb')
+    id = IntegerField(required=True, identity=True)
+    name = StringField(required=True)
+    nestnest = NestedSerializerField(NestNestSerializer, on_null=HIDE_FIELD)
+
 class TestSerializer(Serializer):
     _type = TypeField('test_object')
     id = IntegerField(required=True, identity=True)
@@ -215,6 +236,7 @@ class TestSerializer(Serializer):
     haus = StringField(required=True, map_field='house')
     url = UrlSerializerField(required=True, base='http://www.base.com', default='api')
     action = StringField(required=False, action_field=True)
+    nest = NestedSerializerField('NestSerializer')
 
     def street_clean_value(self, value):
         return 'Changed {}'.format(value)
@@ -224,6 +246,21 @@ class TestSerializer(Serializer):
 class RTest(TestSerializer):
     no = IntegerField(required=False)
 
+class NestNestObject(object):
+
+    def __init__(self):
+        self.ida = 12
+        self.namea = 'HALLO WELT'
+        self.streeta = None #'STREET'
+        self.nicknamea = 'WORLD'
+        self.uuida = '679fadc8-a156-4f7a-8930-0cc216875ac7'
+
+class NestObject(object):
+
+    def __init__(self):
+        self.id = '123#'
+        self.name = 'test nest'
+        self.nestnest = NestNestObject()
 
 class TestObject(object):
 
@@ -246,6 +283,7 @@ class TestObject(object):
         self.no = 1
         self.action = 'ACTION'
 
+        self.nest = NestObject()
 
 
 class TestObject2(object):
@@ -282,10 +320,18 @@ if '__main__'==__name__:
         #print test.to_json()
         #print test.name
     print '-' * 80
-    test.haus = 'DEUTSCH'
-    print test.to_json()
-    print test.to_dict()
-    print test.action
+    #test.haus = 'DEUTSCH'
+    #print test.to_json()
+    #print test.to_dict()
+    #print test.action
+    #print test.nest.name
+    #test.nest.name = 'hallo'
+    #print test.nest.name
+    #
+    #for key in test:
+    #    print key
+    ##print dict(test.nest)
+    #print test.to_json()
 
     #test2 = TestSerializer(object=None) #, fields=['name', 'street'])
     #
