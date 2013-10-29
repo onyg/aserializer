@@ -15,7 +15,8 @@ from fields import (IntegerField,
                     UrlSerializerField,
                     HIDE_FIELD,
                     IgnoreField,
-                    TypeField,)
+                    TypeField,
+                    EmailField,)
 from base import Serializer
 
 
@@ -286,6 +287,26 @@ class FieldsTestCase(unittest.TestCase):
         self.assertRaises(SerializerFieldValueError, field.validate)
 
         field = UrlSerializerField(required=False, on_null=HIDE_FIELD)
+        self.assertRaises(IgnoreField, field.to_native)
+        self.assertIsNone(field.to_python())
+
+    def test_email_field(self):
+        field = EmailField(required=True)
+        field.set_value('test@test.de')
+        field.validate()
+        self.assertEqual(field.to_python(), 'test@test.de')
+        self.assertEqual(field.to_native(), 'test@test.de')
+
+
+        field = EmailField(required=True, default='test@test.de')
+        field.validate()
+        self.assertEqual(field.to_python(), 'test@test.de')
+        self.assertEqual(field.to_native(), 'test@test.de')
+
+        field = EmailField(required=True, default='test')
+        self.assertRaises(SerializerFieldValueError, field.validate)
+
+        field = EmailField(required=False, on_null=HIDE_FIELD)
         self.assertRaises(IgnoreField, field.to_native)
         self.assertIsNone(field.to_python())
 

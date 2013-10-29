@@ -159,6 +159,9 @@ class Serializer(object):
             self._validate()
         return self._errors
 
+    def errors_to_json(self, indent=4):
+        return json.dumps(self.errors, indent=indent)
+
     def is_valid(self):
         if self.errors:
             return False
@@ -187,9 +190,9 @@ class Serializer(object):
                     pass
         return self._dump_data
 
-    def to_json(self):
+    def to_json(self, indent=4):
         dump = self.dump()
-        return json.dumps(dump, indent=4)
+        return json.dumps(dump, indent=indent)
 
     def _field_to_python(self, field_name, field):
         method_name = '{}_to_python'.format(field_name)
@@ -226,7 +229,7 @@ class TestSerializer(Serializer):
     id = IntegerField(required=True, identity=True)
     name = StringField(required=True)
     street = StringField(required=False, on_null=HIDE_FIELD)
-    nickname = StringField(required=False)
+    nickname = StringField(required=True)
     uuid = UUIDField(required=True)
     maxmin = IntegerField(max_value=10, min_value=6, required=True)
     created = DatetimeField(required=True)
@@ -236,7 +239,8 @@ class TestSerializer(Serializer):
     haus = StringField(required=True, map_field='house')
     url = UrlSerializerField(required=True, base='http://www.base.com', default='api')
     action = StringField(required=False, action_field=True)
-    nest = NestedSerializerField('NestSerializer')
+    nest = NestedSerializerField('NestSerializer', required=True)
+    email = EmailField(required=True)
 
     def street_clean_value(self, value):
         return 'Changed {}'.format(value)
@@ -253,7 +257,7 @@ class NestNestObject(object):
         self.namea = 'HALLO WELT'
         self.streeta = None #'STREET'
         self.nicknamea = 'WORLD'
-        self.uuida = '679fadc8-a156-4f7a-8930-0cc216875ac7'
+        self.uuida = '79fadc8-a156-4f7a-8930-0cc216875ac7'
 
 class NestObject(object):
 
@@ -266,13 +270,13 @@ class TestObject(object):
 
     def __init__(self):
         self._type = 'HAHA'
-        self.id = 12
+        self.id = '12a'
         self.name = 'HALLO WELT'
         self.street = None #'STREET'
         self.nickname = 'WORLD'
         self.uuid = '679fadc8-a156-4f7a-8930-0cc216875ac7'
         #self.uuid = 'asasas'
-        self.maxmin = 10
+        self.maxmin = '10a'
         self.created = datetime.now()
         #self.created = '2013-10-07T22:58:40'
         self.bbb = '2013-10-07T22:58:40'
@@ -284,6 +288,7 @@ class TestObject(object):
         self.action = 'ACTION'
 
         self.nest = NestObject()
+        self.email = '__as@jasak.de'
 
 
 class TestObject2(object):
@@ -310,6 +315,7 @@ if '__main__'==__name__:
     if not test.is_valid():
         print 'first in invalid'
         print test.errors
+        print test.errors_to_json()
     else:
         print 'first is valid'
         print test.to_json()

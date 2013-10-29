@@ -15,6 +15,10 @@ logger = logging.getLogger(__name__)
 _serializer_registry = {}
 
 
+class SerializerNotRegistered(Exception):
+    message = 'Not in register.'
+
+
 def register_serializer(name, cls):
     if name in _serializer_registry:
         return
@@ -24,26 +28,7 @@ def register_serializer(name, cls):
 def get_serializer(name):
     if name in _serializer_registry:
         return _serializer_registry[name]
-    raise Exception('Not in register.')
-
-#def get_document(name):
-#    doc = _document_registry.get(name, None)
-#    if not doc:
-#        # Possible old style name
-#        single_end = name.split('.')[-1]
-#        compound_end = '.%s' % single_end
-#        possible_match = [k for k in _document_registry.keys()
-#                          if k.endswith(compound_end) or k == single_end]
-#        if len(possible_match) == 1:
-#            doc = _document_registry.get(possible_match.pop(), None)
-#    if not doc:
-#        raise NotRegistered("""
-#            `%s` has not been registered in the document registry.
-#            Importing the document class automatically registers it, has it
-#            been imported?
-#        """.strip() % name)
-#    return doc
-
+    raise SerializerNotRegistered()
 
 
 class IgnoreField(Exception):
@@ -53,10 +38,11 @@ class SerializerFieldValueError(Exception):
 
     def __init__(self, message):
         #print 'ERROR', message
-        print type(message)
+        #print type(message)
         if isinstance(message, basestring):
             self.error_message = message
         elif isinstance(message, dict):
+            print message
             self.error_dict = message
         elif isinstance(message, list):
             self.error_list = message
@@ -72,6 +58,8 @@ class SerializerFieldValueError(Exception):
             for message in self.error_list:
                 messages.append(str(message))
             return messages
+        if hasattr(self, 'error_dict'):
+            return self.error_dict
         return self.message
 
 
@@ -86,7 +74,6 @@ class BaseSerializerField(object):
 
     error_messages = {
         'required': 'This field is required.',
-        'invalid': 'Invalid value.',
     }
     validators = []
     default = None
@@ -116,9 +103,10 @@ class BaseSerializerField(object):
 
 
     def validate(self):
-        if self.value in validators.VALIDATORS_EMPTY_VALUES and (self.required or self.identity):
+        is_empty_value = self.value in validators.VALIDATORS_EMPTY_VALUES
+        if is_empty_value and (self.required or self.identity):
             raise SerializerFieldValueError(self._error_messages['required'])
-        if self.value is None and not (self.required or self.identity):
+        elif is_empty_value and not (self.required or self.identity):
             return
 
         errors = []
@@ -129,10 +117,11 @@ class BaseSerializerField(object):
                 if hasattr(e, 'error_code') and e.error_code in self._error_messages:
                     message = self._error_messages[e.error_code]
                     errors.append(message)
+                    #break
                 else:
                     errors.append(e.message)
         if errors:
-            raise SerializerFieldValueError(errors)
+            raise SerializerFieldValueError(' '.join(errors))
 
     def set_value(self, value):
         self.value = value
@@ -263,8 +252,20 @@ class StringField(BaseSerializerField):
         return self.to_unicode(self.value)
 
 
+class EmailField(StringField):
+    validators = [validators.validate_email,]
+    #error_messages = {
+    #    'required': 'This field is required.',
+    #    'invalid': 'Invalid email.',
+    #}
+
+
 class UUIDField(BaseSerializerField):
     validators = [validators.validate_uuid,]
+    #error_messages = {
+    #    'required': 'This field is required.',
+    #    'invalid': 'Invalid uuid value.',
+    #}
 
     def _to_native(self):
         if self.value in validators.VALIDATORS_EMPTY_VALUES:
