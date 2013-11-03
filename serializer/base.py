@@ -188,20 +188,22 @@ class Serializer(object):
                 self._errors[label] = field.error_messages['required']
 
     def update_field(self, field):
-        for field_name, f in self.fields.items():
-            if f == field:
-                if self._errors and field_name in self._errors:
-                    del self._errors[field_name]
-                if self._dump_data is not None:
-                    try:
-                        self._dump_data[field_name] = self._field_to_native(field_name, field)
-                    except IgnoreField:
-                        pass
-                if self._dict_data is not None:
-                    try:
-                        self._dict_data[field_name] = self._field_to_python(field_name, field)
-                    except IgnoreField:
-                        pass
+        #for field_name, f in self.fields.items():
+        for field_name in field.names:
+            #if f == field:
+            if self._errors and field_name in self._errors:
+                del self._errors[field_name]
+            if self._dump_data is not None:
+                try:
+                    self._dump_data[field_name] = self._field_to_native(field_name, field)
+                except IgnoreField:
+                    pass
+            if self._dict_data is not None:
+                _name = field.map_field or field_name
+                try:
+                    self._dict_data[_name] = self._field_to_python(field_name, field)
+                except IgnoreField:
+                    pass
 
 
     def clean_field_value(self, field_name, value):
@@ -229,8 +231,9 @@ class Serializer(object):
         if self._dict_data is None:
             self._dict_data = dict()
             for field_name, field in self.fields.items():
+                _name = field.map_field or field_name
                 try:
-                    self._dict_data[field_name] = self._field_to_python(field_name, field)
+                    self._dict_data[_name] = self._field_to_python(field_name, field)
                 except IgnoreField:
                     pass
         return self._dict_data
