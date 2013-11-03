@@ -27,6 +27,7 @@ class SerializerBase(type):
     def __new__(cls, name, bases, attrs):
         base_fields = get_serializer_fields(bases, attrs)
         new_class = super(SerializerBase, cls).__new__(cls, name, bases, attrs)
+        
         for field_name, field in base_fields.items():
             field.add_name(field_name)
             setattr(new_class, field_name, field)
@@ -43,11 +44,14 @@ class Serializer(object):
     __metaclass__ = SerializerBase
 
     def __init__(self, source=None, fields=None, exclude=None, **extras):
+        #print 'SER', self.__class__.__name__, fields, exclude
         if fields:
             self.fields = self.filter_only_fields(self.fields, only_fields=fields)
         if exclude:
             self.fields = self.filter_excluded_fields(self.fields, exclude)
         self._extras = extras
+        self.__show_field_list = fields or []
+        self.__exclude_field_list = exclude or []
         self.initial(source=source)
 
     def __iter__(self):
@@ -55,7 +59,15 @@ class Serializer(object):
         return self._dict_data.__iter__()
 
     def initial(self, source):
-        self.obj = source
+        if isinstance(source, basestring):
+            if not isinstance(source, unicode):
+                source = unicode(source, 'utf-8')
+            try:
+                self.obj = json.loads(source)
+            except ValueError:
+                raise ValueError('Source is not sterilizable.')
+        else:
+            self.obj = source
         self._errors = None
         self._dict_data = None
         self._dump_data = None
@@ -67,6 +79,9 @@ class Serializer(object):
         for field_name, field in self.fields.items():
             _name = field.map_field or field_name
             if _name in source_attr:
+                if isinstance(field, SerializerObjectField):
+                    only_fields, exclude =  self.get_nested_fields(field_name)
+                    field.pre_value(fields=only_fields, exclude=exclude, **self._extras)
                 try:
                     field.set_value(self.get_value_from_source(self.obj, _name))
                 except IgnoreField:
@@ -92,14 +107,27 @@ class Serializer(object):
         else:
             return dir(source)
 
+    def get_nested_fields(self, field_name):
+        field_prefix = '{}.'.format(field_name)
+        only = ['.'.join(field.split('.')[1:]) for field in self.__show_field_list if str(field).startswith(field_prefix)] or None
+        exclude = ['.'.join(field.split('.')[1:]) for field in self.__exclude_field_list if str(field).startswith(field_prefix)] or None
+        return only, exclude
+
     def filter_only_fields(self, fields, only_fields, identity_fields=None):
-        only_fields = [field_name.split('.')[0] for field_name in only_fields]
+        field_names = fields.keys()
+        only_fields = [str(field_name).split('.')[0] for field_name in only_fields]
+        only_fields =  [field_name for field_name in only_fields if field_name in field_names]
+        if len(only_fields) <= 0:
+            return fields
         result = [(field_name, field) for field_name, field in fields.items() if field.identity or field_name in only_fields]
         return OrderedDict(result)
 
-    def filter_excluded_fields(self, fields, exlude):
-        exlude = [field_name.split('.')[0] for field_name in exlude]
-        result = [(field_name, field) for field_name, field in fields.items() if field.identity or not field_name in exlude]
+    def filter_excluded_fields(self, fields, exclude):
+        field_names = fields.keys()
+        exclude =  [field_name for field_name in exclude if field_name in field_names]
+        if len(exclude) <= 0:
+            return fields
+        result = [(field_name, field) for field_name, field in fields.items() if field.identity or not field_name in exclude]
         return OrderedDict(result)
 
     def has_method(self, name):
@@ -222,6 +250,7 @@ class NestSerializer(Serializer):
     _type = TypeField('emb')
     id = IntegerField(required=True, identity=True)
     name = StringField(required=True)
+    number = IntegerField(required=True)
     nestnest = NestedSerializerField(NestNestSerializer, on_null=HIDE_FIELD)
 
 class TestSerializer(Serializer):
@@ -250,6 +279,14 @@ class TestSerializer(Serializer):
 class RTest(TestSerializer):
     no = IntegerField(required=False)
 
+
+class LittleTestSerialzer(Serializer):
+    _type = TypeField('test_object')
+    id = IntegerField(required=True, identity=True)
+    name = StringField(required=True)
+    street = StringField(required=False, on_null=HIDE_FIELD)
+    nickname = StringField(required=True)
+
 class NestNestObject(object):
 
     def __init__(self):
@@ -257,26 +294,27 @@ class NestNestObject(object):
         self.namea = 'HALLO WELT'
         self.streeta = None #'STREET'
         self.nicknamea = 'WORLD'
-        self.uuida = '79fadc8-a156-4f7a-8930-0cc216875ac7'
+        self.uuida = '679fadc8-a156-4f7a-8930-0cc216875ac7'
 
 class NestObject(object):
 
     def __init__(self):
-        self.id = '123#'
+        self.id = 122
         self.name = 'test nest'
         self.nestnest = NestNestObject()
+        self.number = 12
 
 class TestObject(object):
 
     def __init__(self):
         self._type = 'HAHA'
-        self.id = '12a'
+        self.id = 12
         self.name = 'HALLO WELT'
         self.street = None #'STREET'
         self.nickname = 'WORLD'
         self.uuid = '679fadc8-a156-4f7a-8930-0cc216875ac7'
         #self.uuid = 'asasas'
-        self.maxmin = '10a'
+        self.maxmin = 10
         self.created = datetime.now()
         #self.created = '2013-10-07T22:58:40'
         self.bbb = '2013-10-07T22:58:40'
@@ -298,7 +336,7 @@ class TestObject2(object):
         self.name = 'ggg'
         self.street = 'ggg'
         self.nickname = 'ggg'
-        self.uuid = '679fadc8-a156-4f7a-8930-0cc216875ac7-'
+        self.uuid = '679fadc8-a156-4f7a-8930-0cc216875ac7'
         self.maxmin = 6
         self.created = datetime.now()
         #self.created = '2013-10-07T22:58:40'
@@ -310,11 +348,29 @@ class TestObject2(object):
 
 if '__main__'==__name__:
 
-    test = TestSerializer(source=TestObject()) #, fields=['name', 'street'])
-    print test.name
+    #bla_dict = dict(id=101, name='dictname', street='dictstreet', nickname='thenickname')
+    #
+    #dicttest = LittleTestSerialzer(bla_dict)
+    #if not dicttest.is_valid():
+    #    print 'DICT INVALID'
+    #    print dicttest.errors_to_json()
+    #else:
+    #    print 'DICT VALID'
+    #    print dicttest.to_json()
+    #
+    #bla_string = '{"id": 121, "name":"the name", "street":"stringstreet", "nickname":"thenickname"}'
+    #string_test = LittleTestSerialzer(bla_string)
+    #if not string_test.is_valid():
+    #    print 'STRING INVALID'
+    #    print string_test.errors_to_json()
+    #else:
+    #    print 'STRING VALID'
+    #    print string_test.to_json()
+
+    test = TestSerializer(source=TestObject(), fields=[], exclude=[])#, 'nest.nestnest.uuida'])
     if not test.is_valid():
         print 'first in invalid'
-        print test.errors
+        #print test.errors
         print test.errors_to_json()
     else:
         print 'first is valid'
@@ -325,7 +381,10 @@ if '__main__'==__name__:
         test.street = 'HALLO'
         #print test.to_json()
         #print test.name
-    print '-' * 80
+
+    test2 = TestSerializer()
+    print test2.to_json()
+    #print '-' * 80
     #test.haus = 'DEUTSCH'
     #print test.to_json()
     #print test.to_dict()

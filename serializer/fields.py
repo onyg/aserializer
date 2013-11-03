@@ -447,11 +447,13 @@ class SerializerObjectField(BaseSerializerField):
     def __init__(self, *args, **kwargs):
         super(SerializerObjectField, self).__init__(*args, **kwargs)
         self.only_fields = []
-        self.exlude = []
+        self.exclude = []
+        self.extras = {}
 
-    def pre_value(self, fields=None, exclude=None):
+    def pre_value(self, fields=None, exclude=None, **extras):
         self.only_fields = fields
-        self.exlude = fields
+        self.exclude = exclude
+        self.extras = extras
 
 
 class NestedSerializerField(SerializerObjectField):
@@ -474,7 +476,8 @@ class NestedSerializerField(SerializerObjectField):
                 self._serializer_cls = get_serializer(self._serializer_cls)
             self._serializer = self._serializer_cls(source=value,
                                                     fields=self.only_fields,
-                                                    exclude=self.exlude)
+                                                    exclude=self.exclude,
+                                                    **self.extras)
         else:
             self._serializer.initial(source=value)
 
@@ -492,3 +495,5 @@ class NestedSerializerField(SerializerObjectField):
         if instance is None:
             return self
         return self._serializer
+
+#class ListField(SerializerObjectField)
