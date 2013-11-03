@@ -2,7 +2,9 @@
 
 import logging
 import uuid
+import decimal
 from datetime import datetime, date, time
+from decimal import Decimal
 
 #from validators import (SerializerValidatorError,
 #                        VALIDATORS_EMPTY_VALUES,
@@ -76,7 +78,7 @@ class BaseSerializerField(object):
         'required': 'This field is required.',
     }
     validators = []
-    default = None
+    #default = None
 
     def __init__(self, required=True, identity=False, label=None, map_field=None, on_null=None, action_field=False, validators=[], error_messages=None, default=None):
         self.required = required
@@ -156,22 +158,22 @@ class BaseSerializerField(object):
                 return None
             return result
 
-    def __get__(self, instance, owner):
-        if instance is None:
-            return self
-        return self.to_python()
-
-    def __set__(self, instance, value):
-        if instance is not None:
-            for name in self.names:
-                try:
-                    value = instance.clean_field_value(name, value)
-                except IgnoreField:
-                    pass
-        self.set_value(value=value)
-        self.validate()
-        if instance:
-            instance.update_field(self)
+    #def __get__(self, instance, owner):
+    #    if instance is None:
+    #        return self
+    #    return self.to_python()
+    #
+    #def __set__(self, instance, value):
+    #    if instance is not None:
+    #        for name in self.names:
+    #            try:
+    #                value = instance.clean_field_value(name, value)
+    #            except IgnoreField:
+    #                pass
+    #    self.set_value(value=value)
+    #    self.validate()
+    #    if instance:
+    #        instance.update_field(self)
 
 
 class TypeField(BaseSerializerField):
@@ -199,6 +201,7 @@ class TypeField(BaseSerializerField):
 
     def __set__(self, instance, value):
         pass
+
 
 class IntegerField(BaseSerializerField):
     validators = [validators.validate_integer,]
@@ -235,6 +238,33 @@ class FloatField(IntegerField):
 
     def _to_python(self):
         return self.to_float(self.value)
+
+
+class DecimalField(IntegerField):
+    def __init__(self, max_digits=12, decimal_places=3, max_value=None, min_value=None, *args, **kwargs):
+        super(DecimalField, self).__init__(*args, **kwargs)
+        self.decimal_places = decimal_places
+        self.max_digits = max_digits
+
+    def set_value(self, value):
+        context = decimal.getcontext().copy()
+        context.prec = self.max_digits
+        if isinstance(value, decimal.Decimal):
+            self.value = value.quantize(decimal.Decimal(".1") ** self.decimal_places, context=context)
+        elif isinstance(value, (int, float, basestring)):
+            self.value = decimal.Decimal(value).quantize(decimal.Decimal(".1") ** self.decimal_places, context=context)
+        else:
+            self.value = None
+
+    def _to_native(self):
+        if self.value in validators.VALIDATORS_EMPTY_VALUES:
+            return None
+        return u'{}'.format(self.value)
+
+    def _to_python(self):
+        if self.value in validators.VALIDATORS_EMPTY_VALUES:
+            return None
+        return self.value
 
 
 class StringField(BaseSerializerField):
@@ -455,13 +485,23 @@ class SerializerObjectField(BaseSerializerField):
         self.exclude = exclude
         self.extras = extras
 
+    def get_instance(self):
+        return None
 
 class NestedSerializerField(SerializerObjectField):
 
     def __init__(self, serializer, *args, **kwargs):
         super(NestedSerializerField, self).__init__(*args, **kwargs)
-        self._serializer_cls = serializer
+        self._serializer_cls = self.normalize_serializer_cls(serializer)
         self._serializer = None
+
+    def normalize_serializer_cls(self, serializer_cls):
+        if isinstance(serializer_cls, basestring):
+            serializer_cls = get_serializer(serializer_cls)
+        return serializer_cls
+
+    def get_instance(self):
+        return self._serializer
 
     def validate(self):
         if self._serializer:
@@ -472,8 +512,6 @@ class NestedSerializerField(SerializerObjectField):
 
     def set_value(self, value):
         if self._serializer is None:
-            if isinstance(self._serializer_cls, basestring):
-                self._serializer_cls = get_serializer(self._serializer_cls)
             self._serializer = self._serializer_cls(source=value,
                                                     fields=self.only_fields,
                                                     exclude=self.exclude,

@@ -3,6 +3,7 @@
 import unittest
 
 import uuid
+import decimal
 from datetime import datetime, date, time
 from fields import (IntegerField,
                     FloatField,
@@ -16,7 +17,8 @@ from fields import (IntegerField,
                     HIDE_FIELD,
                     IgnoreField,
                     TypeField,
-                    EmailField,)
+                    EmailField,
+                    DecimalField,)
 from base import Serializer
 
 
@@ -96,6 +98,46 @@ class FieldsTestCase(unittest.TestCase):
         float_field = FloatField(required=False, on_null=HIDE_FIELD)
         self.assertRaises(IgnoreField, float_field.to_native)
         self.assertIsNone(float_field.to_python())
+
+    #def test_decimal_field(self):
+    #    field = DecimalField(required=True)
+    #    field.set_value(23.23)
+    #    field.validate()
+    #    self.assertEqual(field.to_python(), 23.23)
+    #    self.assertEqual(field.to_native(), 23.23)
+    #
+    #    float_field = DecimalField(required=True)
+    #    float_field.set_value('24.24')
+    #    float_field.validate()
+    #    self.assertEqual(field.to_python(), 24.24)
+    #    self.assertEqual(field.to_native(), 24.24)
+    #
+    #    field = DecimalField(required=True)
+    #    field.set_value('float')
+    #    self.assertRaises(SerializerFieldValueError, field.validate)
+    #
+    #    field = DecimalField(required=True, max_value=24.5, min_value=22.1)
+    #    field.set_value(23.4)
+    #    field.validate()
+    #    self.assertEqual(field.to_python(), 23.4)
+    #    self.assertEqual(field.to_native(), 23.4)
+    #
+    #    field = DecimalField(required=True, max_value=24.5, min_value=22.1)
+    #    field.set_value(24.6)
+    #    self.assertRaises(SerializerFieldValueError, float_field.validate)
+    #
+    #    field = DecimalField(required=True, max_value=24.5, min_value=22.1)
+    #    field.set_value(21.6)
+    #    self.assertRaises(SerializerFieldValueError, float_field.validate)
+    #
+    #    field = DecimalField(required=True, default=23.23)
+    #    field.validate()
+    #    self.assertEqual(field.to_python(), 23.23)
+    #    self.assertEqual(field.to_native(), 23.23)
+    #
+    #    field = DecimalField(required=False, on_null=HIDE_FIELD)
+    #    self.assertRaises(IgnoreField, field.to_native)
+    #    self.assertIsNone(field.to_python())
 
     def test_string_field(self):
         string_field = StringField(required=True)
@@ -345,6 +387,7 @@ class SerializerTestCase(unittest.TestCase):
         self.assertTrue(serializer.is_valid())
         self.assertDictEqual(serializer.errors, {})
 
+        #print type(serializer.id)
         self.assertIsInstance(serializer.id, int)
         self.assertEqual(serializer.id, 1)
 

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import copy
 from collections import OrderedDict
 import json
 from fields import *
@@ -27,14 +28,7 @@ class SerializerBase(type):
     def __new__(cls, name, bases, attrs):
         base_fields = get_serializer_fields(bases, attrs)
         new_class = super(SerializerBase, cls).__new__(cls, name, bases, attrs)
-        
-        for field_name, field in base_fields.items():
-            field.add_name(field_name)
-            setattr(new_class, field_name, field)
-            if field.map_field is not None:
-                field.add_name(field.map_field)
-                setattr(new_class, field.map_field, field)
-        setattr(new_class, 'fields', base_fields)
+        setattr(new_class, '_base_fields', base_fields)
         register_serializer(new_class.__name__, new_class)
         return new_class
 
@@ -44,7 +38,10 @@ class Serializer(object):
     __metaclass__ = SerializerBase
 
     def __init__(self, source=None, fields=None, exclude=None, **extras):
-        #print 'SER', self.__class__.__name__, fields, exclude
+        self.fields = copy.deepcopy(self._base_fields)
+        for field_name, field in self.fields.items():
+            self.add_field(field_name, field)
+
         if fields:
             self.fields = self.filter_only_fields(self.fields, only_fields=fields)
         if exclude:
@@ -53,6 +50,38 @@ class Serializer(object):
         self.__show_field_list = fields or []
         self.__exclude_field_list = exclude or []
         self.initial(source=source)
+
+    def add_field(self, field_name, field):
+        field.add_name(field_name)
+        self.add_field_property(field_name, field)
+        if field.map_field is not None:
+            field.add_name(field.map_field)
+            self.add_field_property(field.map_field, field)
+
+    def add_field_property(self, name, value):
+        fget = lambda self: self._get_field_property(name)
+        fset = lambda self, value: self._set_field_property(name, value)
+        setattr(self.__class__, name, property(fget, fset))
+        setattr(self, '_' + name, value)
+
+    def _set_field_property(self, name, value):
+        field = getattr(self, '_' + name)
+        try:
+            value = self.clean_field_value(name, value)
+        except IgnoreField:
+            pass
+        field.set_value(value=value)
+        field.validate()
+        self.update_field(field)
+
+    def _get_field_property(self, name):
+        field = getattr(self, '_' + name)
+        if isinstance(field, SerializerObjectField):
+            return field.get_instance()
+        elif isinstance(field, BaseSerializerField):
+            return field.to_python()
+        else:
+            return field
 
     def __iter__(self):
         self.to_dict()
@@ -374,16 +403,45 @@ if '__main__'==__name__:
         print test.errors_to_json()
     else:
         print 'first is valid'
-        print test.to_json()
+        #print test.to_json()
         #print test.bbb
         #print test.aaa
         #print test.ccc
+        #print test.name
         test.street = 'HALLO'
         #print test.to_json()
         #print test.name
-
+        print test.nest.name
+    print test.name
+    #print test.ron
+    print '-' * 60
+    print test.name
     test2 = TestSerializer()
-    print test2.to_json()
+    print test2.name or 'test 2.name NONE'
+    print '-' * 60
+    print test.name or 'test.name None'
+    #print test.ron
+    #print test2.ron
+    print test.street
+
+    test.name = '12345'
+    test2.name = '54321'
+    print test.name
+    print test2.name
+    print test.to_json()
+    if not test2.is_valid():
+        print test2.errors_to_json()
+    else:
+        print test2.to_json()
+
+    #print test.to_json()
+
+    #if test2.is_valid():
+    #    print 'second is valid'
+    #    print test2.to_json()
+    #else:
+    #    print 'second is invalid'
+    #    print test2.errors_to_json()
     #print '-' * 80
     #test.haus = 'DEUTSCH'
     #print test.to_json()
