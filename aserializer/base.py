@@ -87,6 +87,13 @@ class Serializer(object):
         self.to_dict()
         return self._dict_data.__iter__()
 
+    def __getitem__(self, key):
+        return self.to_dict()[key]
+
+    def __setitem__(self, key, value):
+        if key in self.fields:
+            self._set_field_property(key, value)
+
     def initial(self, source):
         if isinstance(source, basestring):
             if not isinstance(source, unicode):
@@ -285,6 +292,15 @@ class NestSerializer(Serializer):
     number = IntegerField(required=True)
     nestnest = NestedSerializerField(NestNestSerializer, on_null=HIDE_FIELD)
 
+class NestListSerializer(Serializer):
+
+    _type = TypeField('emb')
+    id = IntegerField(required=True, identity=True)
+    name = StringField(required=True)
+    number = IntegerField(required=True)
+    #haha = StringField(required=True)
+    dec = DecimalField(required=True, decimal_places=2)
+
 class TestSerializer(Serializer):
     _type = TypeField('test_object')
     id = IntegerField(required=True, identity=True)
@@ -302,6 +318,7 @@ class TestSerializer(Serializer):
     action = StringField(required=False, action_field=True)
     nest = NestedSerializerField('NestSerializer', required=True)
     email = EmailField(required=True)
+    list_value = ListSerializerField('NestListSerializer', required=True)
 
     def street_clean_value(self, value):
         return 'Changed {}'.format(value)
@@ -336,6 +353,14 @@ class NestObject(object):
         self.nestnest = NestNestObject()
         self.number = 12
 
+class NestListObject(object):
+
+    def __init__(self):
+        self.id = 122
+        self.name = 'test nest'
+        self.number = 12
+        self.dec = '23.012'
+
 class TestObject(object):
 
     def __init__(self):
@@ -359,6 +384,9 @@ class TestObject(object):
 
         self.nest = NestObject()
         self.email = '__as@jasak.de'
+        self.list_value = []
+        for a in range(3):
+            self.list_value.append(NestListObject())
 
 
 class TestObject2(object):
@@ -406,36 +434,42 @@ if '__main__'==__name__:
         print test.errors_to_json()
     else:
         print 'first is valid'
-        #print test.to_json()
+        print test.to_json()
         #print test.bbb
         #print test.aaa
         #print test.ccc
         #print test.name
-        test.street = 'HALLO'
+        #test.street = 'HALLO'
         #print test.to_json()
         #print test.name
-        print test.nest.name
-    print test.name
-    #print test.ron
-    print '-' * 60
-    print test.name
-    test2 = TestSerializer()
-    print test2.name or 'test 2.name NONE'
-    print '-' * 60
-    print test.name or 'test.name None'
-    #print test.ron
-    #print test2.ron
-    print test.street
-
-    test.name = '12345'
-    test2.name = '54321'
-    print test.name
-    print test2.name
-    print test.to_json()
-    if not test2.is_valid():
-        print test2.errors_to_json()
-    else:
-        print test2.to_json()
+        #print test.nest.name
+        #for value in test.list_value:
+        #    for item in value:
+        #        print value[item]
+        print test.list_value[0]['name']
+        test.list_value[0]['name'] = 'RONALD'
+        print test.to_json()
+    #print test.name
+    ##print test.ron
+    #print '-' * 60
+    #print test.name
+    #test2 = TestSerializer()
+    #print test2.name or 'test 2.name NONE'
+    #print '-' * 60
+    #print test.name or 'test.name None'
+    ##print test.ron
+    ##print test2.ron
+    #print test.street
+    #
+    #test.name = '12345'
+    #test2.name = '54321'
+    #print test.name
+    #print test2.name
+    #print test.to_json()
+    #if not test2.is_valid():
+    #    print test2.errors_to_json()
+    #else:
+    #    print test2.to_json()
 
     #print test.to_json()
 

@@ -5,6 +5,7 @@ import uuid
 import decimal
 from datetime import datetime, date, time
 from decimal import Decimal
+from collections import Iterable
 
 #from validators import (SerializerValidatorError,
 #                        VALIDATORS_EMPTY_VALUES,
@@ -39,8 +40,6 @@ class IgnoreField(Exception):
 class SerializerFieldValueError(Exception):
 
     def __init__(self, message):
-        #print 'ERROR', message
-        #print type(message)
         if isinstance(message, basestring):
             self.error_message = message
         elif isinstance(message, dict):
@@ -56,10 +55,7 @@ class SerializerFieldValueError(Exception):
         if hasattr(self, 'error_message'):
             return self.error_message
         if hasattr(self, 'error_list'):
-            messages = []
-            for message in self.error_list:
-                messages.append(str(message))
-            return messages
+            return self.error_list
         if hasattr(self, 'error_dict'):
             return self.error_dict
         return self.message
@@ -509,6 +505,11 @@ class SerializerObjectField(BaseSerializerField):
         self.exclude = []
         self.extras = {}
 
+    def normalize_serializer_cls(self, serializer_cls):
+        if isinstance(serializer_cls, basestring):
+            serializer_cls = get_serializer(serializer_cls)
+        return serializer_cls
+
     def pre_value(self, fields=None, exclude=None, **extras):
         self.only_fields = fields
         self.exclude = exclude
@@ -523,11 +524,6 @@ class NestedSerializerField(SerializerObjectField):
         super(NestedSerializerField, self).__init__(*args, **kwargs)
         self._serializer_cls = self.normalize_serializer_cls(serializer)
         self._serializer = None
-
-    def normalize_serializer_cls(self, serializer_cls):
-        if isinstance(serializer_cls, basestring):
-            serializer_cls = get_serializer(serializer_cls)
-        return serializer_cls
 
     def get_instance(self):
         return self._serializer
@@ -558,9 +554,70 @@ class NestedSerializerField(SerializerObjectField):
             return self._serializer.to_dict()
         return None
 
-    def __get__(self, instance, owner):
-        if instance is None:
-            return self
-        return self._serializer
+    #def __get__(self, instance, owner):
+    #    if instance is None:
+    #        return self
+    #    return self._serializer
 
-#class ListField(SerializerObjectField)
+class ListSerializerField(SerializerObjectField):
+
+    error_messages = {
+        'required': 'This list is empty.',
+    }
+
+    def __init__(self, serializer, *args, **kwargs):
+        super(ListSerializerField, self).__init__(*args, **kwargs)
+        self._serializer_cls = self.normalize_serializer_cls(serializer)
+        self.items = []
+        self.only_fields = []
+        self.exclude = []
+        self.extras = {}
+        self._python_items = []
+        self._native_items = []
+
+    def validate(self):
+        if self.items:
+            _errors = []
+            for item in self.items:
+                if not item.is_valid():
+                    _errors.append(item.errors)
+            if _errors:
+                raise SerializerFieldValueError(_errors)
+        elif self.required:
+            raise SerializerFieldValueError(self._error_messages['required'])
+
+    def pre_value(self, fields=None, exclude=None, **extras):
+        self.only_fields = fields
+        self.exclude = exclude
+        self.extras = extras
+
+    def get_instance(self):
+        return self.items
+
+    def add_item(self, source):
+        _serializer = self._serializer_cls(source=source,
+                                           fields=self.only_fields,
+                                           exclude=self.exclude,
+                                           **self.extras)
+        self.items.append(_serializer)
+
+    def set_value(self, value):
+        self.items[:] = []
+        self._native_items[:] = []
+        self._python_items[:] = []
+        if isinstance(value, Iterable):
+            for item in value:
+                self.add_item(source=item)
+
+    def _to_native(self):
+        if not self._native_items:
+            for item in self.items:
+                self._native_items.append(item.dump())
+        return self._native_items
+
+    def _to_python(self):
+        if not self._python_items:
+            for item in self.items:
+                self._python_items.append(item.to_dict())
+        return self._python_items
+
