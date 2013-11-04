@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import uuid
 import re
+import decimal
 
 VALIDATORS_EMPTY_VALUES = (None, 'null', '', u'', [], (), {})
 
@@ -69,6 +70,14 @@ def validate_float(value):
         float(value)
     except (ValueError, TypeError):
         raise SerializerValidatorError('Enter a valid float.', error_code='invalid')
+
+def validate_decimal(value):
+    if isinstance(value, decimal.Decimal):
+        return
+    try:
+        decimal.Decimal(value)
+    except (ValueError, TypeError, decimal.InvalidOperation,):
+        raise SerializerValidatorError('Enter a valid decimal.', error_code='invalid')
 
 
 def validate_string(value):

@@ -298,7 +298,7 @@ class TestSerializer(Serializer):
     aaa = DateField(required=True)
     ccc = TimeField(required=True)
     haus = StringField(required=True, map_field='house')
-    url = UrlSerializerField(required=True, base='http://www.base.com', default='api')
+    url = UrlField(required=True, base='http://www.base.com', default='api')
     action = StringField(required=False, action_field=True)
     nest = NestedSerializerField('NestSerializer', required=True)
     email = EmailField(required=True)

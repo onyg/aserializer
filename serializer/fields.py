@@ -78,7 +78,6 @@ class BaseSerializerField(object):
         'required': 'This field is required.',
     }
     validators = []
-    #default = None
 
     def __init__(self, required=True, identity=False, label=None, map_field=None, on_null=None, action_field=False, validators=[], error_messages=None, default=None):
         self.required = required
@@ -241,30 +240,60 @@ class FloatField(IntegerField):
 
 
 class DecimalField(IntegerField):
-    def __init__(self, max_digits=12, decimal_places=3, max_value=None, min_value=None, *args, **kwargs):
-        super(DecimalField, self).__init__(*args, **kwargs)
+    validators = [validators.validate_decimal,]
+
+    def __init__(self, decimal_places=3, precision=None, max_value=None, min_value=None, *args, **kwargs):
+        super(DecimalField, self).__init__(max_value=max_value, min_value=min_value, *args, **kwargs)
         self.decimal_places = decimal_places
-        self.max_digits = max_digits
+        self.precision = precision
+        if self.value and not isinstance(self.value, decimal.Decimal):
+            self.set_value(self.value)
 
     def set_value(self, value):
         context = decimal.getcontext().copy()
-        context.prec = self.max_digits
+        if self.precision is not None:
+            context.prec = self.precision
         if isinstance(value, decimal.Decimal):
             self.value = value.quantize(decimal.Decimal(".1") ** self.decimal_places, context=context)
-        elif isinstance(value, (int, float, basestring)):
+        elif isinstance(value, (int, long, float,)):
             self.value = decimal.Decimal(value).quantize(decimal.Decimal(".1") ** self.decimal_places, context=context)
+        elif isinstance(value, basestring):
+            try:
+                self.value = decimal.Decimal(value).quantize(decimal.Decimal(".1") ** self.decimal_places, context=context)
+            except:
+                self.value = value
         else:
             self.value = None
 
     def _to_native(self):
         if self.value in validators.VALIDATORS_EMPTY_VALUES:
             return None
-        return u'{}'.format(self.value)
+        return float(u'{}'.format(self.value))
 
     def _to_python(self):
         if self.value in validators.VALIDATORS_EMPTY_VALUES:
             return None
         return self.value
+
+    def __pre_eq__(self, other):
+        if isinstance(other, decimal.Decimal):
+            return other
+        if isinstance(other, (int, long)):
+            return Decimal(other)
+        if  isinstance(other, float):
+            return Decimal(str(other))
+        raise ValueError()
+
+    def __eq__(self, other):
+        if not isinstance(self.value, decimal.Decimal):
+            return False
+        try:
+            _other = self.__pre_eq__(other=other)
+        except ValueError:
+            return False
+        else:
+            return self.value == _other
+
 
 
 class StringField(BaseSerializerField):
@@ -442,12 +471,12 @@ class TimeField(BaseDatetimeField):
         return self.value
 
 
-class UrlSerializerField(BaseSerializerField):
+class UrlField(BaseSerializerField):
 
     validators = [validators.validate_url,]
 
     def __init__(self, base=None, *args, **kwargs):
-        super(UrlSerializerField, self).__init__(*args, **kwargs)
+        super(UrlField, self).__init__(*args, **kwargs)
         self.uri_base = base
         if self.uri_base and not str(self.uri_base).endswith('/'):
             self.uri_base = '{}/'.format(self.uri_base)
