@@ -59,12 +59,12 @@ class Serializer(object):
             self.add_field_property(field.map_field, field)
 
     def add_field_property(self, name, value):
-        fget = lambda self: self._get_field_property(name)
-        fset = lambda self, value: self._set_field_property(name, value)
+        fget = lambda self: self._get_field(name)
+        fset = lambda self, value: self._set_field(name, value)
         setattr(self.__class__, name, property(fget, fset))
         setattr(self, '_' + name, value)
 
-    def _set_field_property(self, name, value):
+    def _set_field(self, name, value):
         field = getattr(self, '_' + name)
         try:
             value = self.clean_field_value(name, value)
@@ -74,7 +74,7 @@ class Serializer(object):
         field.validate()
         self.update_field(field)
 
-    def _get_field_property(self, name):
+    def _get_field(self, name):
         field = getattr(self, '_' + name)
         if isinstance(field, SerializerObjectField):
             return field.get_instance()
@@ -92,7 +92,7 @@ class Serializer(object):
 
     def __setitem__(self, key, value):
         if key in self.fields:
-            self._set_field_property(key, value)
+            self._set_field(key, value)
 
     def initial(self, source):
         if isinstance(source, basestring):
