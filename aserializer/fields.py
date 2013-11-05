@@ -80,7 +80,6 @@ class BaseSerializerField(object):
         self.identity = identity
         self.label = label
         self.map_field = map_field
-        self.data = None
         self._validators = self.validators + validators
         self._error_messages = {}
         for cls in reversed(self.__class__.__mro__):
@@ -153,37 +152,51 @@ class BaseSerializerField(object):
                 return None
             return result
 
-    #def __get__(self, instance, owner):
-    #    if instance is None:
-    #        return self
-    #    return self.to_python()
-    #
-    #def __set__(self, instance, value):
-    #    if instance is not None:
-    #        for name in self.names:
-    #            try:
-    #                value = instance.clean_field_value(name, value)
-    #            except IgnoreField:
-    #                pass
-    #    self.set_value(value=value)
-    #    self.validate()
-    #    if instance:
-    #        instance.update_field(self)
+    def _get_field_from_instance(self, instance):
+        for name in self.names:
+            if name in instance._data:
+                return instance._data[name]
+        return None
+
+    def __get__(self, instance, owner):
+        if instance is None:
+            return self
+        field = self._get_field_from_instance(instance=instance)
+        if field:
+            return field.to_python()
+        return self
+
+    def __set__(self, instance, value):
+        if instance is None:
+            return
+        field = self._get_field_from_instance(instance=instance)
+        if field is None:
+            return
+        for name in self.names:
+            try:
+                value = instance.clean_field_value(name, value)
+            except IgnoreField:
+                pass
+        field.set_value(value=value)
+        field.validate()
+        instance.update_field(field)
 
 
 class TypeField(BaseSerializerField):
 
-    def __init__(self, name, *args, **kwargs):
+    def __init__(self, name, fixed=False, *args, **kwargs):
         super(TypeField, self).__init__(*args, **kwargs)
         self.name = name
         self.identity = True
         self.error_messages = {}
+        self.fixed = fixed
 
     def validate(self):
         pass
 
     def set_value(self, value):
-        self.name = value
+        if not self.fixed:
+            self.name = value
 
     def to_native(self):
         return unicode(self.name)
@@ -517,6 +530,14 @@ class SerializerObjectField(BaseSerializerField):
 
     def get_instance(self):
         return None
+
+    def __get__(self, instance, owner):
+        if instance is None:
+            return self
+        field = self._get_field_from_instance(instance=instance)
+        if field:
+            return field.get_instance()
+        return self
 
 class NestedSerializerField(SerializerObjectField):
 

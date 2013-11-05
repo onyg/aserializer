@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 def _items(d, **kw):
     return iter(getattr(d, 'iteritems')(**kw))
 
+
 def get_serializer_fields(bases, attrs, with_base_fields=True):
     def items(d, **kw):
         return iter(getattr(d, 'iteritems')(**kw))
@@ -28,9 +29,19 @@ class SerializerBase(type):
     def __new__(cls, name, bases, attrs):
         base_fields = get_serializer_fields(bases, attrs)
         new_class = super(SerializerBase, cls).__new__(cls, name, bases, attrs)
+        for field_name, field in base_fields.items():
+            cls.add_field(new_class=new_class, name=field_name, field=field)
         setattr(new_class, '_base_fields', base_fields)
         register_serializer(new_class.__name__, new_class)
         return new_class
+
+    @classmethod
+    def add_field(cls, new_class, name, field):
+        field.add_name(name)
+        setattr(new_class, name, field)
+        if field.map_field is not None:
+            field.add_name(field.map_field)
+            setattr(new_class, field.map_field, field)
 
 
 class Serializer(object):
@@ -39,9 +50,7 @@ class Serializer(object):
 
     def __init__(self, source=None, fields=None, exclude=None, **extras):
         self.fields = copy.deepcopy(self._base_fields)
-        for field_name, field in self.fields.items():
-            self.add_field(field_name, field)
-
+        self._data = self.fields
         if fields:
             self.fields = self.filter_only_fields(self.fields, only_fields=fields)
         if exclude:
@@ -51,48 +60,18 @@ class Serializer(object):
         self.__exclude_field_list = exclude or []
         self.initial(source=source)
 
-    def add_field(self, field_name, field):
-        field.add_name(field_name)
-        self.add_field_property(field_name, field)
-        if field.map_field is not None:
-            field.add_name(field.map_field)
-            self.add_field_property(field.map_field, field)
-
-    def add_field_property(self, name, value):
-        fget = lambda self: self._get_field(name)
-        fset = lambda self, value: self._set_field(name, value)
-        setattr(self.__class__, name, property(fget, fset))
-        setattr(self, '_' + name, value)
-
-    def _set_field(self, name, value):
-        field = getattr(self, '_' + name)
-        try:
-            value = self.clean_field_value(name, value)
-        except IgnoreField:
-            pass
-        field.set_value(value=value)
-        field.validate()
-        self.update_field(field)
-
-    def _get_field(self, name):
-        field = getattr(self, '_' + name)
-        if isinstance(field, SerializerObjectField):
-            return field.get_instance()
-        elif isinstance(field, BaseSerializerField):
-            return field.to_python()
-        else:
-            return field
-
     def __iter__(self):
         self.to_dict()
         return self._dict_data.__iter__()
 
-    def __getitem__(self, key):
-        return self.to_dict()[key]
-
-    def __setitem__(self, key, value):
-        if key in self.fields:
-            self._set_field(key, value)
+    #def __getitem__(self, key):
+    #    return self.to_dict()[key]
+    #
+    #def __setitem__(self, key, value):
+    #    setattr(self, key, value)
+    #    #field = getattr(self, )
+    #    #if key in self.fields:
+    #    #    self._set_field(key, value)
 
     def initial(self, source):
         if isinstance(source, basestring):
@@ -101,7 +80,7 @@ class Serializer(object):
             try:
                 self.obj = json.loads(source)
             except ValueError:
-                raise ValueError('Source is not sterilizable.')
+                raise ValueError('Source is not serializable.')
         else:
             self.obj = source
         self._errors = None
@@ -152,19 +131,17 @@ class Serializer(object):
     def filter_only_fields(self, fields, only_fields, identity_fields=None):
         field_names = fields.keys()
         only_fields = [str(field_name).split('.')[0] for field_name in only_fields]
-        only_fields =  [field_name for field_name in only_fields if field_name in field_names]
+        only_fields = filter(lambda field_name: field_name in field_names, only_fields)
         if len(only_fields) <= 0:
             return fields
-        result = [(field_name, field) for field_name, field in fields.items() if field.identity or field_name in only_fields]
-        return OrderedDict(result)
+        return OrderedDict(filter(lambda (field_name, field): field.identity or field_name in only_fields, fields.items()))
 
     def filter_excluded_fields(self, fields, exclude):
         field_names = fields.keys()
-        exclude =  [field_name for field_name in exclude if field_name in field_names]
+        exclude = filter(lambda field_name: field_name in field_names, exclude)
         if len(exclude) <= 0:
             return fields
-        result = [(field_name, field) for field_name, field in fields.items() if field.identity or not field_name in exclude]
-        return OrderedDict(result)
+        return OrderedDict(filter(lambda (field_name, field): field.identity or not field_name in exclude, fields.items()))
 
     def has_method(self, name):
         _method = getattr(self, name, None)
@@ -195,23 +172,23 @@ class Serializer(object):
                 self._errors[label] = field.error_messages['required']
 
     def update_field(self, field):
-        #for field_name, f in self.fields.items():
-        for field_name in field.names:
-            #if f == field:
-            if self._errors and field_name in self._errors:
-                del self._errors[field_name]
-            if self._dump_data is not None:
-                try:
-                    self._dump_data[field_name] = self._field_to_native(field_name, field)
-                except IgnoreField:
-                    pass
-            if self._dict_data is not None:
-                _name = field.map_field or field_name
-                try:
-                    self._dict_data[_name] = self._field_to_python(field_name, field)
-                except IgnoreField:
-                    pass
-
+        for field_name, f in self.fields.items():
+        #for field_name in field.names:
+            if f == field:
+                if self._errors and field_name in self._errors:
+                    del self._errors[field_name]
+                if self._dump_data is not None:
+                    try:
+                        self._dump_data[field_name] = self._field_to_native(field_name, field)
+                    except IgnoreField:
+                        pass
+                if self._dict_data is not None and field_name:
+                    _name = field.map_field or field_name
+                    try:
+                        self._dict_data[_name] = self._field_to_python(field_name, field)
+                    except IgnoreField:
+                        pass
+                break
 
     def clean_field_value(self, field_name, value):
         method_name = '{}_clean_value'.format(field_name)
@@ -274,6 +251,9 @@ class Serializer(object):
             return self._custom_field_method(method_name, field)
         else:
             return field.to_native()
+
+
+
 
 
 class NestSerializer(Serializer):
@@ -357,7 +337,7 @@ class NestListObject(object):
 
     def __init__(self):
         self.id = 122
-        self.name = 'test nest'
+        self.name = 'test list nest'
         self.number = 12
         self.dec = '23.012'
 
@@ -396,7 +376,7 @@ class TestObject2(object):
         self.name = 'ggg'
         self.street = 'ggg'
         self.nickname = 'ggg'
-        self.uuid = '679fadc8-a156-4f7a-8930-0cc216875ac7'
+        self.uuid = '779fadc8-a156-4f7a-8930-0cc216875ac7'
         self.maxmin = 6
         self.created = datetime.now()
         #self.created = '2013-10-07T22:58:40'
@@ -404,6 +384,8 @@ class TestObject2(object):
         self.aaa = '2013-10-07'
         self.ccc = '22:58:40'
         #self.name = 1
+        self.nest = NestObject()
+        self.list_value = [NestListObject()]
 
 
 if '__main__'==__name__:
@@ -427,7 +409,7 @@ if '__main__'==__name__:
     #    print 'STRING VALID'
     #    print string_test.to_json()
 
-    test = TestSerializer(source=TestObject(), fields=[], exclude=[])#, 'nest.nestnest.uuida'])
+    test = TestSerializer(source=TestObject(), fields=None, exclude=None)#, 'nest.nestnest.uuida'])
     if not test.is_valid():
         print 'first in invalid'
         #print test.errors
@@ -446,9 +428,9 @@ if '__main__'==__name__:
         #for value in test.list_value:
         #    for item in value:
         #        print value[item]
-        print test.list_value[0]['name']
-        test.list_value[0]['name'] = 'RONALD'
-        print test.to_json()
+        #print test.list_value[0].name
+        #test.list_value[0].name = 'RONALD'
+        #print test.to_json()
     #print test.name
     ##print test.ron
     #print '-' * 60
@@ -494,23 +476,30 @@ if '__main__'==__name__:
     #print test.to_json()
 
     #test2 = TestSerializer(object=None) #, fields=['name', 'street'])
-    #
-    ##test2 = TestSerializer(object=TestObject2()) #, fields=['name', 'street'])
-    #if not test2.is_valid():
-    #    print 'first in invalid'
-    #    print test2.errors
-    #else:
-    #    print 'first is valid'
-    #    print test2.to_json()
-    #print '-' * 80
+
+    test2 = TestSerializer(source=TestObject2()) #, fields=['name', 'street'])
+    if not test2.is_valid():
+        print '2 first in invalid'
+        print test2.errors_to_json()
+    else:
+        print '2 first is valid'
+        print test2.to_json()
+    print '-' * 80
     #print test.to_json()
     #print test2.to_json()
+    test2.house = 'VALUE HOUSE'
+    print test2.errors_to_json()
+    test2.email = 'test@test.de'
+    print test2.to_json()
 
 
 
 
     #print test.id
     #print test.uuid
+    #test.uuid = uuid.UUID('879fadc8-a156-4f7a-8930-0cc216875ac7')
+    #print test.uuid
+    #print test2.uuid
     #print test.to_json()
     #print test.to_dict()
     #print test.dump()
