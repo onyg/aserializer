@@ -58,6 +58,7 @@ class Serializer(object):
         self._extras = extras
         self.__show_field_list = fields or []
         self.__exclude_field_list = exclude or []
+        self.source_is_invalid = False
         self.initial(source=source)
 
     def __iter__(self):
@@ -80,7 +81,9 @@ class Serializer(object):
             try:
                 self.obj = json.loads(source)
             except ValueError:
-                raise ValueError('Source is not serializable.')
+                self.obj = object()
+                #self.source_is_invalid + True
+                #raise ValueError('Source is not serializable.')
         else:
             self.obj = source
         self._errors = None
@@ -92,22 +95,26 @@ class Serializer(object):
     def _set_source_to_fields(self, source):
         source_attr = self.get_fieldnames_from_source(source)
         for field_name, field in self.fields.items():
-            _name = field.map_field or field_name
-            if _name in source_attr:
-                if isinstance(field, SerializerObjectField):
-                    only_fields, exclude =  self.get_nested_fields(field_name)
-                    field.pre_value(fields=only_fields, exclude=exclude, **self._extras)
-                try:
-                    field.set_value(self.get_value_from_source(self.obj, _name))
-                except IgnoreField:
-                    pass
+            if field_name in source_attr:
+                _name = field_name
+            elif field.map_field and field.map_field in source_attr:
+                _name = field.map_field
+            else:
+                continue
+            if isinstance(field, SerializerObjectField):
+                only_fields, exclude =  self.get_nested_fields(field_name)
+                field.pre_value(fields=only_fields, exclude=exclude, **self._extras)
+            try:
+                value = self.get_value_from_source(self.obj, _name)
+                field.set_value(self.clean_field_value(field_name, value))
+            except IgnoreField:
+                pass
 
     def get_value_from_source(self, source, field_name):
         if isinstance(source, dict):
             value = source.get(field_name)
         else:
             value = getattr(source, field_name)
-        value = self.clean_field_value(field_name, value)
         return value
 
     def has_attribute(self, source, field_name):
@@ -160,8 +167,7 @@ class Serializer(object):
             if field.identity and not field_name in source_attr:
                 continue
             label = field_name
-            _name = field.map_field or field_name
-            if _name in source_attr:
+            if field_name in source_attr or field.map_field in source_attr:
                 try:
                     field.validate()
                 except SerializerFieldValueError as e:

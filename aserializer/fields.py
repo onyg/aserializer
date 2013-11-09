@@ -36,7 +36,7 @@ class IgnoreField(Exception):
 
 class SerializerFieldValueError(Exception):
 
-    def __init__(self, message):
+    def __init__(self, message, field_names=None):
         if isinstance(message, basestring):
             self.error_message = message
         elif isinstance(message, dict):
@@ -44,8 +44,11 @@ class SerializerFieldValueError(Exception):
             self.error_dict = message
         elif isinstance(message, list):
             self.error_list = message
+        self.message = str(message)
+        if field_names:
+            self.field_name = ','.join(field_names)
         else:
-            self.message = message
+            self.field_name = 'field'
 
     @property
     def errors(self):
@@ -60,6 +63,9 @@ class SerializerFieldValueError(Exception):
     def __repr__(self):
         return self.errors
 
+    def __str__(self):
+        return '[{}]: {}'.format(self.field_name, self.message)
+
 
 HIDE_FIELD = 0
 
@@ -68,6 +74,8 @@ class BaseSerializerField(object):
 
     error_messages = {
         'required': 'This field is required.',
+        'invalid': 'Invalid value.',
+        'identity_missing': 'Identity is missing'
     }
     validators = []
 
@@ -117,7 +125,7 @@ class BaseSerializerField(object):
                 else:
                     errors.append(e.message)
         if errors:
-            raise SerializerFieldValueError(' '.join(errors))
+            raise SerializerFieldValueError(' '.join(errors), field_names=self.names)
 
     def set_value(self, value):
         self.value = value
@@ -131,11 +139,14 @@ class BaseSerializerField(object):
     def to_native(self):
         try:
             result = self._to_native()
+        except SerializerFieldValueError, e:
+            raise
+            #raise SerializerFieldValueError(e.errors, field_names=self.names)
         except:
-            raise SerializerFieldValueError(self._error_messages['invalid'])
+            raise SerializerFieldValueError(self._error_messages['invalid'], field_names=self.names)
         else:
             if (self.identity and self.required) and result in v.VALIDATORS_EMPTY_VALUES:
-                raise SerializerFieldValueError(self._error_messages['required'])
+                raise SerializerFieldValueError(self._error_messages['required'], field_names=self.names)
             elif result in v.VALIDATORS_EMPTY_VALUES and self.on_null_value == HIDE_FIELD:
                 raise IgnoreField()
             return result
@@ -143,11 +154,14 @@ class BaseSerializerField(object):
     def to_python(self):
         try:
             result = self._to_python()
+        except SerializerFieldValueError, e:
+            raise
+            #raise SerializerFieldValueError(e.errors, field_names=self.names)
         except:
-            raise SerializerFieldValueError(self._error_messages['invalid'])
+            raise SerializerFieldValueError(self._error_messages['invalid'], field_names=self.names)
         else:
             if (self.identity and self.required) and result in v.VALIDATORS_EMPTY_VALUES:
-                raise SerializerFieldValueError(self._error_messages['required'])
+                raise SerializerFieldValueError(self._error_messages['required'], field_names=self.names)
             elif result in v.VALIDATORS_EMPTY_VALUES and self.on_null_value == HIDE_FIELD:
                 return None
             return result
@@ -376,15 +390,15 @@ class BaseDatetimeField(BaseSerializerField):
 
     def validate(self):
         if self.invalid:
-            raise SerializerFieldValueError(self._error_messages['invalid'])
+            raise SerializerFieldValueError(self._error_messages['invalid'], field_names=self.names)
         if self.value in v.VALIDATORS_EMPTY_VALUES and (self.required or self.identity):
-            raise SerializerFieldValueError(self._error_messages['required'])
+            raise SerializerFieldValueError(self._error_messages['required'], field_names=self.names)
         if self._is_instance(self.value):
             return
 
         _value = self.strptime(self.value, self._date_formats)
         if _value is None and self.invalid:
-            raise SerializerFieldValueError(self._error_messages['invalid'])
+            raise SerializerFieldValueError(self._error_messages['invalid'], field_names=self.names)
 
     def set_value(self, value):
         if self._is_instance(value):
@@ -590,9 +604,9 @@ class NestedSerializerField(SerializerObjectField):
     def validate(self):
         if self._serializer:
             if not self._serializer.is_valid():
-                raise SerializerFieldValueError(self._serializer.errors)
+                raise SerializerFieldValueError(self._serializer.errors, field_names=self.names)
         elif self.required:
-            raise SerializerFieldValueError(self._error_messages['required'])
+            raise SerializerFieldValueError(self._error_messages['required'], field_names=self.names)
 
     def set_value(self, value):
         if self._serializer is None:
@@ -639,7 +653,7 @@ class ListSerializerField(SerializerObjectField):
             if _errors:
                 raise SerializerFieldValueError(_errors)
         elif self.required:
-            raise SerializerFieldValueError(self._error_messages['required'])
+            raise SerializerFieldValueError(self._error_messages['required'], field_names=self.names)
 
     def pre_value(self, fields=None, exclude=None, **extras):
         self.only_fields = fields
