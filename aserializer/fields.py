@@ -351,20 +351,27 @@ class UUIDField(BaseSerializerField):
 
 class BaseDatetimeField(BaseSerializerField):
     date_formats = ['%Y-%m-%dT%H:%M:%S',]
+    error_messages = {
+        'required': 'This field is required.',
+        'invalid': 'Invalid date value.',
+    }
 
     def __init__(self, formats=None, *args, **kwargs):
         super(BaseDatetimeField, self).__init__(*args, **kwargs)
         self._date_formats = formats or self.date_formats
+        self.invalid = False
 
 
     def validate(self):
+        if self.invalid:
+            raise SerializerFieldValueError(self._error_messages['invalid'])
         if self.value in validators.VALIDATORS_EMPTY_VALUES and (self.required or self.mandatory):
             raise SerializerFieldValueError(self._error_messages['required'])
         if self._is_instance(self.value):
             return
 
         _value = self.strptime(self.value, self._date_formats)
-        if _value is None and (self.required or self.mandatory):
+        if _value is None and self.invalid:#(self.required or self.mandatory):
             raise SerializerFieldValueError(self._error_messages['invalid'])
 
     def set_value(self, value):
@@ -372,6 +379,8 @@ class BaseDatetimeField(BaseSerializerField):
             self.value = value
         elif isinstance(value, basestring):
             self.value = self.strptime(value, self._date_formats)
+            self.invalid = self.value is None
+
 
     def _is_instance(self, value):
         return False
@@ -390,6 +399,10 @@ class BaseDatetimeField(BaseSerializerField):
 class DatetimeField(BaseDatetimeField):
 
     date_formats = ['%Y-%m-%dT%H:%M:%S',]
+    error_messages = {
+        'required': 'This field is required.',
+        'invalid': 'Invalid date time value.',
+    }
 
     def _is_instance(self, value):
         return isinstance(value, datetime)
@@ -413,6 +426,10 @@ class DatetimeField(BaseDatetimeField):
 class DateField(BaseDatetimeField):
 
     date_formats = ['%Y-%m-%d',]
+    error_messages = {
+        'required': 'This field is required.',
+        'invalid': 'Invalid date value.',
+    }
 
     def _is_instance(self, value):
         return isinstance(value, date)
@@ -426,6 +443,7 @@ class DateField(BaseDatetimeField):
             _value = self.strptime(value, self._date_formats)
             if _value is not None:
                 self.value = _value.date()
+            self.invalid = _value is None
 
     def _to_native(self):
         if self.value in validators.VALIDATORS_EMPTY_VALUES:
@@ -448,6 +466,10 @@ class DateField(BaseDatetimeField):
 class TimeField(BaseDatetimeField):
 
     date_formats = ['%H:%M:%S',]
+    error_messages = {
+        'required': 'This field is required.',
+        'invalid': 'Invalid time value.',
+    }
 
     def _is_instance(self, value):
         return isinstance(value, time)
@@ -461,6 +483,7 @@ class TimeField(BaseDatetimeField):
             _value = self.strptime(value, self._date_formats)
             if _value is not None:
                 self.value = _value.time()
+            self.invalid = _value is None
 
     def _to_native(self):
         if self.value in validators.VALIDATORS_EMPTY_VALUES:

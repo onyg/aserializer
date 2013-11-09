@@ -331,7 +331,7 @@ class NestObject(object):
         self.id = 122
         self.name = 'test nest'
         self.nestnest = NestNestObject()
-        self.number = 12
+        self.number = '12a'
 
 class NestListObject(object):
 
@@ -354,9 +354,9 @@ class TestObject(object):
         self.maxmin = 10
         self.created = datetime.now()
         #self.created = '2013-10-07T22:58:40'
-        self.bbb = '2013-10-07T22:58:40'
-        self.aaa = '2013-10-07'
-        self.ccc = '22:58:40'
+        self.bbb = 'asas' #'2013-10-07T22:58:40'
+        self.aaa = 'sd'#'2013-10-07'
+        self.ccc = 'wee'#'22:58:40'
         self.house = 'ENGLISCH'
         #self.name = 1
         self.no = 1
@@ -409,7 +409,7 @@ if '__main__'==__name__:
     #    print 'STRING VALID'
     #    print string_test.to_json()
 
-    test = TestSerializer(source=TestObject(), fields=None, exclude=None)#, 'nest.nestnest.uuida'])
+    test = TestSerializer(source=TestObject(), fields=[], exclude=[])#, 'nest.nestnest.uuida'])
     if not test.is_valid():
         print 'first in invalid'
         #print test.errors
@@ -417,10 +417,11 @@ if '__main__'==__name__:
     else:
         print 'first is valid'
         print test.to_json()
-        #print test.bbb
-        #print test.aaa
-        #print test.ccc
-        #print test.name
+        print test.bbb
+        print test.aaa
+        print test.ccc
+        print test.name
+        test.bbb = '2013-10-07T22:58:40'
         #test.street = 'HALLO'
         #print test.to_json()
         #print test.name
@@ -477,20 +478,20 @@ if '__main__'==__name__:
 
     #test2 = TestSerializer(object=None) #, fields=['name', 'street'])
 
-    test2 = TestSerializer(source=TestObject2()) #, fields=['name', 'street'])
-    if not test2.is_valid():
-        print '2 first in invalid'
-        print test2.errors_to_json()
-    else:
-        print '2 first is valid'
-        print test2.to_json()
-    print '-' * 80
-    #print test.to_json()
+    #test2 = TestSerializer(source=TestObject2()) #, fields=['name', 'street'])
+    #if not test2.is_valid():
+    #    print '2 first in invalid'
+    #    print test2.errors_to_json()
+    #else:
+    #    print '2 first is valid'
+    #    print test2.to_json()
+    #print '-' * 80
+    ##print test.to_json()
+    ##print test2.to_json()
+    #test2.house = 'VALUE HOUSE'
+    #print test2.errors_to_json()
+    #test2.email = 'test@test.de'
     #print test2.to_json()
-    test2.house = 'VALUE HOUSE'
-    print test2.errors_to_json()
-    test2.email = 'test@test.de'
-    print test2.to_json()
 
 
 
