@@ -252,6 +252,12 @@ class Serializer(object):
         else:
             return field.to_native()
 
+    def set_value(self, field_name, value):
+        setattr(self, field_name, value)
+
+    def get_value(self, field_name):
+        return getattr(self, field_name)
+
 
 
 

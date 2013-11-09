@@ -249,14 +249,21 @@ class FloatField(IntegerField):
 
 
 class DecimalField(IntegerField):
+    OUTPUT_AS_FLOAT = 0
+    OUTPUT_AS_STRING = 1
     validators = [validators.validate_decimal,]
 
-    def __init__(self, decimal_places=3, precision=None, max_value=None, min_value=None, *args, **kwargs):
+    def __init__(self, decimal_places=3, precision=None, max_value=None, min_value=None, output=None, *args, **kwargs):
         super(DecimalField, self).__init__(max_value=max_value, min_value=min_value, *args, **kwargs)
         self.decimal_places = decimal_places
         self.precision = precision
         if self.value and not isinstance(self.value, decimal.Decimal):
             self.set_value(self.value)
+        if output is None or output not in (0, 1):
+            self.output = self.OUTPUT_AS_FLOAT
+        else:
+            self.output = output
+
 
     def set_value(self, value):
         context = decimal.getcontext().copy()
@@ -277,7 +284,13 @@ class DecimalField(IntegerField):
     def _to_native(self):
         if self.value in validators.VALIDATORS_EMPTY_VALUES:
             return None
-        return float(u'{}'.format(self.value))
+        #if self.output == self.OUTPUT_AS_FLOAT:
+        #    result =  float(u'{}'.format(self.value))
+        if self.output == self.OUTPUT_AS_STRING:
+            result = str(self.value)
+        else:
+            result =  float(u'{}'.format(self.value))
+        return result
 
     def _to_python(self):
         if self.value in validators.VALIDATORS_EMPTY_VALUES:
@@ -287,10 +300,17 @@ class DecimalField(IntegerField):
     def __pre_eq__(self, other):
         if isinstance(other, decimal.Decimal):
             return other
-        if isinstance(other, (int, long)):
+        elif isinstance(other, (int, long)):
             return Decimal(other)
-        if  isinstance(other, float):
+        elif  isinstance(other, float):
             return Decimal(str(other))
+        elif  isinstance(other, basestring):
+            try:
+                d = Decimal(str(other))
+            except:
+                raise ValueError()
+            else:
+                return d
         raise ValueError()
 
     def __eq__(self, other):
@@ -365,13 +385,13 @@ class BaseDatetimeField(BaseSerializerField):
     def validate(self):
         if self.invalid:
             raise SerializerFieldValueError(self._error_messages['invalid'])
-        if self.value in validators.VALIDATORS_EMPTY_VALUES and (self.required or self.mandatory):
+        if self.value in validators.VALIDATORS_EMPTY_VALUES and (self.required or self.identity):
             raise SerializerFieldValueError(self._error_messages['required'])
         if self._is_instance(self.value):
             return
 
         _value = self.strptime(self.value, self._date_formats)
-        if _value is None and self.invalid:#(self.required or self.mandatory):
+        if _value is None and self.invalid:
             raise SerializerFieldValueError(self._error_messages['invalid'])
 
     def set_value(self, value):

@@ -114,6 +114,21 @@ class FieldsTestCase(unittest.TestCase):
         field.set_value(23.4)
         field.validate()
         self.assertEqual(field, 23.4)
+        self.assertEqual(field.to_python(), decimal.Decimal('23.4'))
+        self.assertEqual(field.to_native(), 23.4)
+
+        field = DecimalField(required=True, decimal_places=2, output=DecimalField.OUTPUT_AS_STRING)
+        field.set_value(23.42)
+        field.validate()
+        self.assertEqual(field, '23.42')
+        self.assertEqual(field.to_python(), decimal.Decimal('23.42'))
+        self.assertEqual(field.to_native(), '23.42')
+
+        field = DecimalField(required=True, decimal_places=1, output='no_valid_output')
+        field.set_value(23.4)
+        field.validate()
+        self.assertEqual(field, 23.4)
+        self.assertEqual(field.to_python(), decimal.Decimal('23.4'))
         self.assertEqual(field.to_native(), 23.4)
 
         field = DecimalField(required=True, max_value=24.5, min_value=22.1)
@@ -373,7 +388,7 @@ class TestSerializer(Serializer):
     action = StringField(required=False, action_field=True)
 
 
-class SerializerTestCase(unittest.TestCase):
+class SerializerFlatTestCase(unittest.TestCase):
 
     def test_object_valid_serialize(self):
         class TestObject(object):
@@ -440,6 +455,89 @@ class SerializerTestCase(unittest.TestCase):
                 'street': None
         }
         self.assertDictEqual(serializer.to_dict(), to_dict)
+
+    def test_serializer_validation(self):
+        class TestObject(object):
+            def __init__(self):
+                self.id = 1
+                #self.name = 'NAME' #missiong
+                self.street = None
+                self.uuid_var = 'wrong-a156-4f7a-8930-0cc216875ac7'
+                self.maxmin = 13 #to high
+                self.datetime_var = 'no_datetime'
+                self.date_var = 'no_date'
+                self.time_var = 'no_time'
+                self.house = 'MAP_TO_HAUS'
+
+        serializer = TestSerializer(source=TestObject())
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('name', serializer.errors)
+        self.assertIn('uuid_var', serializer.errors)
+        self.assertIn('maxmin', serializer.errors)
+        self.assertIn('datetime_var', serializer.errors)
+        self.assertIn('date_var', serializer.errors)
+        self.assertIn('time_var', serializer.errors)
+
+    def test_serializer_set_values_after_validation(self):
+        class TestObject(object):
+            def __init__(self):
+                self.id = 1
+                #self.name = 'NAME' #missiong
+                self.street = None
+                self.uuid_var = 'wrong-a156-4f7a-8930-0cc216875ac7'
+                self.maxmin = 13 #to high
+                self.datetime_var = 'no_datetime'
+                self.date_var = 'no_date'
+                self.time_var = 'no_time'
+                self.house = 'MAP_TO_HAUS'
+
+        serializer = TestSerializer(source=TestObject())
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('name', serializer.errors)
+        self.assertIn('uuid_var', serializer.errors)
+        self.assertIn('maxmin', serializer.errors)
+        self.assertIn('datetime_var', serializer.errors)
+        self.assertIn('date_var', serializer.errors)
+        self.assertIn('time_var', serializer.errors)
+
+        serializer.name = 'NAME'
+        serializer.uuid_var = '679fadc8-a156-4f7a-8930-0cc216875ac7'
+        serializer.maxmin = 9
+        serializer.datetime_var = '2013-10-07T20:15:23'
+        serializer.date_var = '2013-10-07'
+        serializer.time_var = '20:15:23'
+        self.assertTrue(serializer.is_valid())
+        self.assertDictEqual(serializer.errors, {})
+
+    def test_serializer_set_values_by_attributes(self):
+        serializer = TestSerializer()
+        self.assertFalse(serializer.is_valid())
+        serializer.id = 12112
+        serializer.street = 'Street 23'
+        serializer.name = 'NAME'
+        serializer.uuid_var = uuid.UUID('679fadc8-a156-4f7a-8930-0cc216875ac7')
+        serializer.maxmin = 9
+        serializer.datetime_var = datetime.strptime('2013-10-07T20:15:23', '%Y-%m-%dT%H:%M:%S')
+        serializer.date_var = datetime.strptime('2013-10-07T20:15:23', '%Y-%m-%dT%H:%M:%S').date()
+        serializer.time_var = datetime.strptime('2013-10-07T20:15:23', '%Y-%m-%dT%H:%M:%S').time()
+        serializer.haus = 'THE HOUSE'
+        self.assertTrue(serializer.is_valid())
+        self.assertDictEqual(serializer.errors, {})
+
+    def test_serializer_set_values_by_attributes(self):
+        serializer = TestSerializer()
+        self.assertFalse(serializer.is_valid())
+        serializer.set_value('id', 12121)
+        serializer.set_value('street', 'Street 23')
+        serializer.set_value('uuid_var', uuid.UUID('679fadc8-a156-4f7a-8930-0cc216875ac7'))
+        serializer.set_value('maxmin', 7)
+        serializer.set_value('datetime_var', '2013-10-07T20:15:23')
+        serializer.set_value('date_var', '2013-10-07')
+        serializer.set_value('time_var', '20:15:23')
+        serializer.set_value('haus', 'THE HOUSE')
+        serializer.set_value('name', 'NAME')
+        self.assertTrue(serializer.is_valid())
+        self.assertDictEqual(serializer.errors, {})
 
 
 
