@@ -6,13 +6,9 @@ import decimal
 from datetime import datetime, date, time
 from decimal import Decimal
 from collections import Iterable
+import validators as v
 
-#from validators import (SerializerValidatorError,
-#                        VALIDATORS_EMPTY_VALUES,
-#                        validate_integer,)
-import validators
 logger = logging.getLogger(__name__)
-
 
 
 _serializer_registry = {}
@@ -37,6 +33,7 @@ def get_serializer(name):
 class IgnoreField(Exception):
     pass
 
+
 class SerializerFieldValueError(Exception):
 
     def __init__(self, message):
@@ -60,7 +57,6 @@ class SerializerFieldValueError(Exception):
             return self.error_dict
         return self.message
 
-
     def __repr__(self):
         return self.errors
 
@@ -75,12 +71,17 @@ class BaseSerializerField(object):
     }
     validators = []
 
-    def __init__(self, required=True, identity=False, label=None, map_field=None, on_null=None, action_field=False, validators=[], error_messages=None, default=None):
+    def __init__(self, required=True, identity=False,
+                 label=None, map_field=None, on_null=None,
+                 action_field=False, error_messages=None, default=None, validators=None):
         self.required = required
         self.identity = identity
         self.label = label
         self.map_field = map_field
-        self._validators = self.validators + validators
+        self._validators = []
+        self._validators.extend(self.validators)
+        if isinstance(validators, (list, tuple,)):
+            self._validators.extend(validators)
         self._error_messages = {}
         for cls in reversed(self.__class__.__mro__):
             self._error_messages.update(getattr(cls, 'error_messages', {}))
@@ -97,9 +98,8 @@ class BaseSerializerField(object):
     def add_name(self, name):
         self.names = list(set(self.names + [name]))
 
-
     def validate(self):
-        is_empty_value = self.value in validators.VALIDATORS_EMPTY_VALUES
+        is_empty_value = self.value in v.VALIDATORS_EMPTY_VALUES
         if is_empty_value and (self.required or self.identity):
             raise SerializerFieldValueError(self._error_messages['required'])
         elif is_empty_value and not (self.required or self.identity):
@@ -109,7 +109,7 @@ class BaseSerializerField(object):
         for validator in self._validators:
             try:
                 validator(self.value)
-            except validators.SerializerValidatorError as e:
+            except v.SerializerValidatorError as e:
                 if hasattr(e, 'error_code') and e.error_code in self._error_messages:
                     message = self._error_messages[e.error_code]
                     errors.append(message)
@@ -134,9 +134,9 @@ class BaseSerializerField(object):
         except:
             raise SerializerFieldValueError(self._error_messages['invalid'])
         else:
-            if (self.identity and self.required) and result in validators.VALIDATORS_EMPTY_VALUES:
+            if (self.identity and self.required) and result in v.VALIDATORS_EMPTY_VALUES:
                 raise SerializerFieldValueError(self._error_messages['required'])
-            elif result in validators.VALIDATORS_EMPTY_VALUES and self.on_null_value == HIDE_FIELD:
+            elif result in v.VALIDATORS_EMPTY_VALUES and self.on_null_value == HIDE_FIELD:
                 raise IgnoreField()
             return result
 
@@ -146,9 +146,9 @@ class BaseSerializerField(object):
         except:
             raise SerializerFieldValueError(self._error_messages['invalid'])
         else:
-            if (self.identity and self.required) and result in validators.VALIDATORS_EMPTY_VALUES:
+            if (self.identity and self.required) and result in v.VALIDATORS_EMPTY_VALUES:
                 raise SerializerFieldValueError(self._error_messages['required'])
-            elif result in validators.VALIDATORS_EMPTY_VALUES and self.on_null_value == HIDE_FIELD:
+            elif result in v.VALIDATORS_EMPTY_VALUES and self.on_null_value == HIDE_FIELD:
                 return None
             return result
 
@@ -212,17 +212,19 @@ class TypeField(BaseSerializerField):
 
 
 class IntegerField(BaseSerializerField):
-    validators = [validators.validate_integer,]
+
+    validators = [v.validate_integer, ]
 
     def __init__(self, max_value=None, min_value=None, *args, **kwargs):
         super(IntegerField, self).__init__(*args, **kwargs)
         if max_value is not None:
-            self._validators.append(validators.MaxValueValidator(max_value))
+            self._validators.append(v.MaxValueValidator(max_value))
         if min_value is not None:
-            self._validators.append(validators.MinValueValidator(min_value))
+            self._validators.append(v.MinValueValidator(min_value))
 
-    def to_int(self, value):
-        if value in validators.VALIDATORS_EMPTY_VALUES:
+    @staticmethod
+    def to_int(value):
+        if value in v.VALIDATORS_EMPTY_VALUES:
             return None
         return int(value)
 
@@ -234,10 +236,11 @@ class IntegerField(BaseSerializerField):
 
 
 class FloatField(IntegerField):
-    validators = [validators.validate_float,]
+    validators = [v.validate_float, ]
 
-    def to_float(self, value):
-        if value in validators.VALIDATORS_EMPTY_VALUES:
+    @staticmethod
+    def to_float(value):
+        if value in v.VALIDATORS_EMPTY_VALUES:
             return None
         return float(value)
 
@@ -251,10 +254,10 @@ class FloatField(IntegerField):
 class DecimalField(IntegerField):
     OUTPUT_AS_FLOAT = 0
     OUTPUT_AS_STRING = 1
-    validators = [validators.validate_decimal,]
+    validators = [v.validate_decimal, ]
 
-    def __init__(self, decimal_places=3, precision=None, max_value=None, min_value=None, output=None, *args, **kwargs):
-        super(DecimalField, self).__init__(max_value=max_value, min_value=min_value, *args, **kwargs)
+    def __init__(self, decimal_places=3, precision=None, max_value=None, min_value=None, output=None, **kwargs):
+        super(DecimalField, self).__init__(max_value=max_value, min_value=min_value, **kwargs)
         self.decimal_places = decimal_places
         self.precision = precision
         if self.value and not isinstance(self.value, decimal.Decimal):
@@ -263,7 +266,6 @@ class DecimalField(IntegerField):
             self.output = self.OUTPUT_AS_FLOAT
         else:
             self.output = output
-
 
     def set_value(self, value):
         context = decimal.getcontext().copy()
@@ -282,29 +284,28 @@ class DecimalField(IntegerField):
             self.value = None
 
     def _to_native(self):
-        if self.value in validators.VALIDATORS_EMPTY_VALUES:
+        if self.value in v.VALIDATORS_EMPTY_VALUES:
             return None
-        #if self.output == self.OUTPUT_AS_FLOAT:
-        #    result =  float(u'{}'.format(self.value))
         if self.output == self.OUTPUT_AS_STRING:
             result = str(self.value)
         else:
-            result =  float(u'{}'.format(self.value))
+            result = float(u'{}'.format(self.value))
         return result
 
     def _to_python(self):
-        if self.value in validators.VALIDATORS_EMPTY_VALUES:
+        if self.value in v.VALIDATORS_EMPTY_VALUES:
             return None
         return self.value
 
-    def __pre_eq__(self, other):
+    @staticmethod
+    def __pre_eq__(other):
         if isinstance(other, decimal.Decimal):
             return other
         elif isinstance(other, (int, long)):
             return Decimal(other)
-        elif  isinstance(other, float):
+        elif isinstance(other, float):
             return Decimal(str(other))
-        elif  isinstance(other, basestring):
+        elif isinstance(other, basestring):
             try:
                 d = Decimal(str(other))
             except:
@@ -324,12 +325,12 @@ class DecimalField(IntegerField):
             return self.value == _other
 
 
-
 class StringField(BaseSerializerField):
-    validators = [validators.validate_string,]
+    validators = [v.validate_string, ]
 
-    def to_unicode(self, value):
-        if value in validators.VALIDATORS_EMPTY_VALUES:
+    @staticmethod
+    def to_unicode(value):
+        if value in v.VALIDATORS_EMPTY_VALUES:
             return u''
         return unicode(value)
 
@@ -341,27 +342,19 @@ class StringField(BaseSerializerField):
 
 
 class EmailField(StringField):
-    validators = [validators.validate_email,]
-    #error_messages = {
-    #    'required': 'This field is required.',
-    #    'invalid': 'Invalid email.',
-    #}
+    validators = [v.validate_email, ]
 
 
 class UUIDField(BaseSerializerField):
-    validators = [validators.validate_uuid,]
-    #error_messages = {
-    #    'required': 'This field is required.',
-    #    'invalid': 'Invalid uuid value.',
-    #}
+    validators = [v.validate_uuid, ]
 
     def _to_native(self):
-        if self.value in validators.VALIDATORS_EMPTY_VALUES:
+        if self.value in v.VALIDATORS_EMPTY_VALUES:
             return u''
         return unicode(self.value)
 
     def _to_python(self):
-        if self.value in validators.VALIDATORS_EMPTY_VALUES:
+        if self.value in v.VALIDATORS_EMPTY_VALUES:
             return None
         if isinstance(self.value, uuid.UUID):
             return self.value
@@ -370,7 +363,7 @@ class UUIDField(BaseSerializerField):
 
 
 class BaseDatetimeField(BaseSerializerField):
-    date_formats = ['%Y-%m-%dT%H:%M:%S',]
+    date_formats = ['%Y-%m-%dT%H:%M:%S', ]
     error_messages = {
         'required': 'This field is required.',
         'invalid': 'Invalid date value.',
@@ -381,11 +374,10 @@ class BaseDatetimeField(BaseSerializerField):
         self._date_formats = formats or self.date_formats
         self.invalid = False
 
-
     def validate(self):
         if self.invalid:
             raise SerializerFieldValueError(self._error_messages['invalid'])
-        if self.value in validators.VALIDATORS_EMPTY_VALUES and (self.required or self.identity):
+        if self.value in v.VALIDATORS_EMPTY_VALUES and (self.required or self.identity):
             raise SerializerFieldValueError(self._error_messages['required'])
         if self._is_instance(self.value):
             return
@@ -401,11 +393,11 @@ class BaseDatetimeField(BaseSerializerField):
             self.value = self.strptime(value, self._date_formats)
             self.invalid = self.value is None
 
-
     def _is_instance(self, value):
         return False
 
-    def strptime(self, value, formats):
+    @staticmethod
+    def strptime(value, formats):
         for f in formats:
             try:
                 result = datetime.strptime(value, f)
@@ -418,7 +410,7 @@ class BaseDatetimeField(BaseSerializerField):
 
 class DatetimeField(BaseDatetimeField):
 
-    date_formats = ['%Y-%m-%dT%H:%M:%S',]
+    date_formats = ['%Y-%m-%dT%H:%M:%S', ]
     error_messages = {
         'required': 'This field is required.',
         'invalid': 'Invalid date time value.',
@@ -428,14 +420,14 @@ class DatetimeField(BaseDatetimeField):
         return isinstance(value, datetime)
 
     def _to_native(self):
-        if self.value in validators.VALIDATORS_EMPTY_VALUES:
+        if self.value in v.VALIDATORS_EMPTY_VALUES:
             return None
         if isinstance(self.value, datetime):
             return unicode(self.value.isoformat())
         return unicode(self.value)
 
     def _to_python(self):
-        if self.value in validators.VALIDATORS_EMPTY_VALUES:
+        if self.value in v.VALIDATORS_EMPTY_VALUES:
             return None
         if isinstance(self.value, datetime):
             return self.value
@@ -445,7 +437,7 @@ class DatetimeField(BaseDatetimeField):
 
 class DateField(BaseDatetimeField):
 
-    date_formats = ['%Y-%m-%d',]
+    date_formats = ['%Y-%m-%d', ]
     error_messages = {
         'required': 'This field is required.',
         'invalid': 'Invalid date value.',
@@ -466,14 +458,14 @@ class DateField(BaseDatetimeField):
             self.invalid = _value is None
 
     def _to_native(self):
-        if self.value in validators.VALIDATORS_EMPTY_VALUES:
+        if self.value in v.VALIDATORS_EMPTY_VALUES:
             return None
         if isinstance(self.value, date):
             return unicode(self.value.isoformat())
         return unicode(self.value)
 
     def _to_python(self):
-        if self.value in validators.VALIDATORS_EMPTY_VALUES:
+        if self.value in v.VALIDATORS_EMPTY_VALUES:
             return None
         if isinstance(self.value, date):
             return self.value
@@ -485,7 +477,7 @@ class DateField(BaseDatetimeField):
 
 class TimeField(BaseDatetimeField):
 
-    date_formats = ['%H:%M:%S',]
+    date_formats = ['%H:%M:%S', ]
     error_messages = {
         'required': 'This field is required.',
         'invalid': 'Invalid time value.',
@@ -506,14 +498,14 @@ class TimeField(BaseDatetimeField):
             self.invalid = _value is None
 
     def _to_native(self):
-        if self.value in validators.VALIDATORS_EMPTY_VALUES:
+        if self.value in v.VALIDATORS_EMPTY_VALUES:
             return None
         if isinstance(self.value, time):
             return unicode(self.value.isoformat())
         return unicode(self.value)
 
     def _to_python(self):
-        if self.value in validators.VALIDATORS_EMPTY_VALUES:
+        if self.value in v.VALIDATORS_EMPTY_VALUES:
             return None
         if isinstance(self.value, time):
             return self.value
@@ -525,7 +517,7 @@ class TimeField(BaseDatetimeField):
 
 class UrlField(BaseSerializerField):
 
-    validators = [validators.validate_url,]
+    validators = [v.validate_url, ]
 
     def __init__(self, base=None, *args, **kwargs):
         super(UrlField, self).__init__(*args, **kwargs)
@@ -535,8 +527,9 @@ class UrlField(BaseSerializerField):
         if self.value:
             self.set_value(value=self.value)
 
-    def to_unicode(self, value):
-        if value in validators.VALIDATORS_EMPTY_VALUES:
+    @staticmethod
+    def to_unicode(value):
+        if value in v.VALIDATORS_EMPTY_VALUES:
             return u''
         return unicode(value)
 
@@ -561,7 +554,8 @@ class SerializerObjectField(BaseSerializerField):
         self.exclude = []
         self.extras = {}
 
-    def normalize_serializer_cls(self, serializer_cls):
+    @staticmethod
+    def normalize_serializer_cls(serializer_cls):
         if isinstance(serializer_cls, basestring):
             serializer_cls = get_serializer(serializer_cls)
         return serializer_cls
@@ -581,6 +575,7 @@ class SerializerObjectField(BaseSerializerField):
         if field:
             return field.get_instance()
         return self
+
 
 class NestedSerializerField(SerializerObjectField):
 
@@ -618,10 +613,6 @@ class NestedSerializerField(SerializerObjectField):
             return self._serializer.to_dict()
         return None
 
-    #def __get__(self, instance, owner):
-    #    if instance is None:
-    #        return self
-    #    return self._serializer
 
 class ListSerializerField(SerializerObjectField):
 
@@ -684,4 +675,3 @@ class ListSerializerField(SerializerObjectField):
             for item in self.items:
                 self._python_items.append(item.to_dict())
         return self._python_items
-

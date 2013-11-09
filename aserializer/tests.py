@@ -179,7 +179,6 @@ class FieldsTestCase(unittest.TestCase):
         self.assertRaises(IgnoreField, string_field.to_native)
         self.assertIsNone(string_field.to_python())
 
-
     def test_uuid_field(self):
         uuid_field = UUIDField(required=True)
         uuid_field.set_value(uuid.uuid4())
@@ -287,7 +286,6 @@ class FieldsTestCase(unittest.TestCase):
         self.assertRaises(IgnoreField, field.to_native)
         self.assertIsNone(field.to_python())
 
-
     def test_time_field(self):
         t = datetime.strptime('2013-10-07T22:58:40', '%Y-%m-%dT%H:%M:%S').time()
         field = TimeField(required=True)
@@ -321,7 +319,6 @@ class FieldsTestCase(unittest.TestCase):
         field = TimeField(required=False, on_null=HIDE_FIELD)
         self.assertRaises(IgnoreField, field.to_native)
         self.assertIsNone(field.to_python())
-
 
     def test_url_field(self):
         field = UrlField(required=True)
@@ -359,7 +356,6 @@ class FieldsTestCase(unittest.TestCase):
         self.assertEqual(field.to_python(), 'test@test.de')
         self.assertEqual(field.to_native(), 'test@test.de')
 
-
         field = EmailField(required=True, default='test@test.de')
         field.validate()
         self.assertEqual(field.to_python(), 'test@test.de')
@@ -373,7 +369,7 @@ class FieldsTestCase(unittest.TestCase):
         self.assertIsNone(field.to_python())
 
 
-class TestSerializer(Serializer):
+class TestFlatSerializer(Serializer):
     _type = TypeField('test_object')
     id = IntegerField(required=True, identity=True)
     name = StringField(required=True)
@@ -403,7 +399,7 @@ class SerializerFlatTestCase(unittest.TestCase):
                 self.time_var = datetime.strptime('2013-10-07T20:15:23', '%Y-%m-%dT%H:%M:%S').time()
                 self.house = 'MAP_TO_HAUS'
 
-        serializer = TestSerializer(source=TestObject())
+        serializer = TestFlatSerializer(source=TestObject())
         self.assertTrue(serializer.is_valid())
         self.assertDictEqual(serializer.errors, {})
 
@@ -428,31 +424,31 @@ class SerializerFlatTestCase(unittest.TestCase):
         self.assertEqual(serializer.time_var, datetime.strptime('2013-10-07T20:15:23', '%Y-%m-%dT%H:%M:%S').time())
 
         dump_dict = {
-                '_type': u'test_object',
-                'id': 1,
-                'name': u'NAME',
-                'uuid_var': u'679fadc8-a156-4f7a-8930-0cc216875ac7',
-                'maxmin': 7,
-                'datetime_var': u'2013-10-07T20:15:23',
-                'date_var': u'2013-10-07',
-                'time_var': u'20:15:23',
-                'haus': u'MAP_TO_HAUS',
-                'url': u'http://www.base.com/api',
+            '_type': u'test_object',
+            'id': 1,
+            'name': u'NAME',
+            'uuid_var': u'679fadc8-a156-4f7a-8930-0cc216875ac7',
+            'maxmin': 7,
+            'datetime_var': u'2013-10-07T20:15:23',
+            'date_var': u'2013-10-07',
+            'time_var': u'20:15:23',
+            'haus': u'MAP_TO_HAUS',
+            'url': u'http://www.base.com/api',
         }
         self.assertDictEqual(serializer.dump(), dump_dict)
         to_dict = {
-                '_type': u'test_object',
-                'action': u'',
-                'id': 1,
-                'name': u'NAME',
-                'uuid_var': uuid.UUID('679fadc8-a156-4f7a-8930-0cc216875ac7'),
-                'maxmin': 7,
-                'datetime_var': datetime.strptime('2013-10-07T20:15:23', '%Y-%m-%dT%H:%M:%S'),
-                'date_var': datetime.strptime('2013-10-07T20:15:23', '%Y-%m-%dT%H:%M:%S').date(),
-                'time_var': datetime.strptime('2013-10-07T20:15:23', '%Y-%m-%dT%H:%M:%S').time(),
-                'house': u'MAP_TO_HAUS',
-                'url': u'http://www.base.com/api',
-                'street': None
+            '_type': u'test_object',
+            'action': u'',
+            'id': 1,
+            'name': u'NAME',
+            'uuid_var': uuid.UUID('679fadc8-a156-4f7a-8930-0cc216875ac7'),
+            'maxmin': 7,
+            'datetime_var': datetime.strptime('2013-10-07T20:15:23', '%Y-%m-%dT%H:%M:%S'),
+            'date_var': datetime.strptime('2013-10-07T20:15:23', '%Y-%m-%dT%H:%M:%S').date(),
+            'time_var': datetime.strptime('2013-10-07T20:15:23', '%Y-%m-%dT%H:%M:%S').time(),
+            'house': u'MAP_TO_HAUS',
+            'url': u'http://www.base.com/api',
+            'street': None
         }
         self.assertDictEqual(serializer.to_dict(), to_dict)
 
@@ -460,16 +456,16 @@ class SerializerFlatTestCase(unittest.TestCase):
         class TestObject(object):
             def __init__(self):
                 self.id = 1
-                #self.name = 'NAME' #missiong
+                #self.name = 'NAME' # missiong
                 self.street = None
                 self.uuid_var = 'wrong-a156-4f7a-8930-0cc216875ac7'
-                self.maxmin = 13 #to high
+                self.maxmin = 13  # to high
                 self.datetime_var = 'no_datetime'
                 self.date_var = 'no_date'
                 self.time_var = 'no_time'
                 self.house = 'MAP_TO_HAUS'
 
-        serializer = TestSerializer(source=TestObject())
+        serializer = TestFlatSerializer(source=TestObject())
         self.assertFalse(serializer.is_valid())
         self.assertIn('name', serializer.errors)
         self.assertIn('uuid_var', serializer.errors)
@@ -485,13 +481,13 @@ class SerializerFlatTestCase(unittest.TestCase):
                 #self.name = 'NAME' #missiong
                 self.street = None
                 self.uuid_var = 'wrong-a156-4f7a-8930-0cc216875ac7'
-                self.maxmin = 13 #to high
+                self.maxmin = 13  # to high
                 self.datetime_var = 'no_datetime'
                 self.date_var = 'no_date'
                 self.time_var = 'no_time'
                 self.house = 'MAP_TO_HAUS'
 
-        serializer = TestSerializer(source=TestObject())
+        serializer = TestFlatSerializer(source=TestObject())
         self.assertFalse(serializer.is_valid())
         self.assertIn('name', serializer.errors)
         self.assertIn('uuid_var', serializer.errors)
@@ -510,7 +506,7 @@ class SerializerFlatTestCase(unittest.TestCase):
         self.assertDictEqual(serializer.errors, {})
 
     def test_serializer_set_values_by_attributes(self):
-        serializer = TestSerializer()
+        serializer = TestFlatSerializer()
         self.assertFalse(serializer.is_valid())
         serializer.id = 12112
         serializer.street = 'Street 23'
@@ -524,8 +520,8 @@ class SerializerFlatTestCase(unittest.TestCase):
         self.assertTrue(serializer.is_valid())
         self.assertDictEqual(serializer.errors, {})
 
-    def test_serializer_set_values_by_attributes(self):
-        serializer = TestSerializer()
+    def test_serializer_set_values(self):
+        serializer = TestFlatSerializer()
         self.assertFalse(serializer.is_valid())
         serializer.set_value('id', 12121)
         serializer.set_value('street', 'Street 23')
