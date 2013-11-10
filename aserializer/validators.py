@@ -85,6 +85,18 @@ def validate_string(value):
         raise SerializerValidatorError('Enter a valid string.', error_code='invalid')
 
 
+class MinStringLengthValidator(CompareValidator):
+    compare = lambda self, a, b: len(str(a)) < b
+    message = 'Value is to short. Minimum value length is %(compare_value)s.'
+    code = 'min_length'
+
+
+class MaxStringLengthValidator(CompareValidator):
+    compare = lambda self, a, b: len(str(a)) > b
+    message = 'Value is to long. Maximum value length is %(compare_value)s.'
+    code = 'max_length'
+
+
 RE_UUID = re.compile(r'[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}', re.I)
 
 def validate_uuid(value):

@@ -141,7 +141,6 @@ class BaseSerializerField(object):
             result = self._to_native()
         except SerializerFieldValueError, e:
             raise
-            #raise SerializerFieldValueError(e.errors, field_names=self.names)
         except:
             raise SerializerFieldValueError(self._error_messages['invalid'], field_names=self.names)
         else:
@@ -156,7 +155,6 @@ class BaseSerializerField(object):
             result = self._to_python()
         except SerializerFieldValueError, e:
             raise
-            #raise SerializerFieldValueError(e.errors, field_names=self.names)
         except:
             raise SerializerFieldValueError(self._error_messages['invalid'], field_names=self.names)
         else:
@@ -341,6 +339,13 @@ class DecimalField(IntegerField):
 
 class StringField(BaseSerializerField):
     validators = [v.validate_string, ]
+
+    def __init__(self, max_length=None, min_length=None, **kwargs):
+        super(StringField, self).__init__( **kwargs)
+        if max_length is not None:
+            self._validators.append(v.MaxStringLengthValidator(max_length))
+        if min_length is not None:
+            self._validators.append(v.MinStringLengthValidator(min_length))
 
     @staticmethod
     def to_unicode(value):
@@ -595,7 +600,7 @@ class NestedSerializerField(SerializerObjectField):
 
     def __init__(self, serializer, *args, **kwargs):
         super(NestedSerializerField, self).__init__(*args, **kwargs)
-        self._serializer_cls = self.normalize_serializer_cls(serializer)
+        self._serializer_cls = serializer
         self._serializer = None
 
     def get_instance(self):
@@ -610,6 +615,7 @@ class NestedSerializerField(SerializerObjectField):
 
     def set_value(self, value):
         if self._serializer is None:
+            self._serializer_cls = self.normalize_serializer_cls(self._serializer_cls)
             self._serializer = self._serializer_cls(source=value,
                                                     fields=self.only_fields,
                                                     exclude=self.exclude,
@@ -636,7 +642,7 @@ class ListSerializerField(SerializerObjectField):
 
     def __init__(self, serializer, *args, **kwargs):
         super(ListSerializerField, self).__init__(*args, **kwargs)
-        self._serializer_cls = self.normalize_serializer_cls(serializer)
+        self._serializer_cls = serializer
         self.items = []
         self.only_fields = []
         self.exclude = []
@@ -664,6 +670,7 @@ class ListSerializerField(SerializerObjectField):
         return self.items
 
     def add_item(self, source):
+        self._serializer_cls = self.normalize_serializer_cls(self._serializer_cls)
         _serializer = self._serializer_cls(source=source,
                                            fields=self.only_fields,
                                            exclude=self.exclude,
