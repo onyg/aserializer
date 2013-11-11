@@ -6,15 +6,18 @@ from ..base import Serializer
 
 class CollectionSerializer(object):
     ITEM_SERIALIZER_CLS = None
+    WITH_METADATA = True
+    FIELDS = []
+    EXCLUDE = []
 
-    def __init__(self, objects, fields=None, exclude=None, sort=None, limit=None, offset=None, with_metadata=True, **extras):
+    def __init__(self, objects, fields=None, exclude=None, sort=None, limit=None, offset=None, **extras):
         self.objects = objects
-        self._fields = fields or []
-        self._fields_excluded = exclude or []
+        self._fields = fields or self.FIELDS
+        self._fields_excluded = exclude or self.EXCLUDE
         self._sort = sort
         self._limit = limit or 10
         self._offset = offset or 0
-        self.with_metadata = bool(with_metadata)
+        self.with_metadata = self.WITH_METADATA
         self._extras = extras
         if self.ITEM_SERIALIZER_CLS is None or not issubclass(self.ITEM_SERIALIZER_CLS, Serializer):
             raise Exception('No item serialiser set')
