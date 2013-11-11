@@ -102,11 +102,14 @@ class BaseSerializerField(object):
         self.names = []
         self.on_null_value = on_null
         self.action_field = action_field
+        self.ignore = False
 
     def add_name(self, name):
         self.names = list(set(self.names + [name]))
 
     def validate(self):
+        if self.ignore:
+            return
         is_empty_value = self.value in v.VALIDATORS_EMPTY_VALUES
         if is_empty_value and (self.required or self.identity):
             raise SerializerFieldValueError(self._error_messages['required'])
@@ -137,6 +140,8 @@ class BaseSerializerField(object):
         raise NotImplemented()
 
     def to_native(self):
+        if self.ignore:
+            raise IgnoreField()
         try:
             result = self._to_native()
         except SerializerFieldValueError, e:
@@ -184,11 +189,12 @@ class BaseSerializerField(object):
         field = self._get_field_from_instance(instance=instance)
         if field is None:
             return
+        self.ignore = False
         for name in self.names:
             try:
                 value = instance.clean_field_value(name, value)
             except IgnoreField:
-                pass
+                self.ignore = True
         field.set_value(value=value)
         field.validate()
         instance.update_field(field)
@@ -394,6 +400,8 @@ class BaseDatetimeField(BaseSerializerField):
         self.invalid = False
 
     def validate(self):
+        if self.ignore:
+            return
         if self.invalid:
             raise SerializerFieldValueError(self._error_messages['invalid'], field_names=self.names)
         if self.value in v.VALIDATORS_EMPTY_VALUES and (self.required or self.identity):

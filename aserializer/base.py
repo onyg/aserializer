@@ -108,7 +108,9 @@ class Serializer(object):
                 value = self.get_value_from_source(self.obj, _name)
                 field.set_value(self.clean_field_value(field_name, value))
             except IgnoreField:
-                pass
+                field.ignore = True
+            else:
+                field.ignore = False
 
     def get_value_from_source(self, source, field_name):
         if isinstance(source, dict):
