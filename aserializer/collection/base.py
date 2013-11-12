@@ -11,16 +11,20 @@ class CollectionSerializer(object):
     EXCLUDE = []
 
     def __init__(self, objects, fields=None, exclude=None, sort=None, limit=None, offset=None, **extras):
+        if self.ITEM_SERIALIZER_CLS is None or not issubclass(self.ITEM_SERIALIZER_CLS, Serializer):
+            raise Exception('No item serializer set')
         self.objects = objects
         self._fields = fields or self.FIELDS
-        self._fields_excluded = exclude or self.EXCLUDE
+        self._exclude = exclude or self.EXCLUDE
         self._sort = sort
         self._limit = limit or 10
         self._offset = offset or 0
         self.with_metadata = self.WITH_METADATA
         self._extras = extras
-        if self.ITEM_SERIALIZER_CLS is None or not issubclass(self.ITEM_SERIALIZER_CLS, Serializer):
-            raise Exception('No item serialiser set')
+        self.handle_extras(extras=self._extras)
+
+    def handle_extras(self, extras):
+        pass
 
     def metadata(self, objects):
         total_count = len(objects)
@@ -35,7 +39,7 @@ class CollectionSerializer(object):
         return _metadata
 
     def item(self, obj, fields):
-        return self.ITEM_SERIALIZER_CLS(source=obj, fields=fields, exclude=self._fields_excluded, **self._extras).dump()
+        return self.ITEM_SERIALIZER_CLS(source=obj, fields=fields, exclude=self._exclude, **self._extras).dump()
 
     def _pre(self, objects, limit=None, offset=None, sort=[]):
         if offset is None:
