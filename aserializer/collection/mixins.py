@@ -23,8 +23,7 @@ class DjangoRequestMixin(object):
         sort = params.get('sort', None)
         if sort is not None:
             if not isinstance(sort, (list, tuple,)):
-                sort = sort.split(',')
-            self._sort = self._prepare_sort_attr(sort)
+                self._sort = sort.split(',')
         limit = params.get('limit', None)
         if limit is not None:
             try:

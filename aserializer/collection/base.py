@@ -4,22 +4,69 @@ import json
 
 from ..base import Serializer
 
+class CollectionMetaOptions(object):
+
+    def __init__(self, meta):
+        self.with_metadata = True
+        self.offset_key = 'offset'
+        self.limit_key = 'limit'
+        self.total_count_key = 'totalCount'
+        self.fields = []
+        self.exclude = []
+        self.sort = []
+
+        if hasattr(meta, 'with_metadata'):
+            self.with_metadata = meta.with_metadata
+        if hasattr(meta, 'fields'):
+            self.fields[:] = meta.fields
+        if hasattr(meta, 'exclude'):
+            self.exclude[:] = meta.exclude
+        if hasattr(meta, 'sort'):
+            self.sort[:] = meta.sort
+        if hasattr(meta, 'offset_key'):
+            self.offset_key = meta.offset_key
+        if hasattr(meta, 'limit_key'):
+            self.limit_key = meta.limit_key
+        if hasattr(meta, 'total_count_key'):
+            self.total_count_key = meta.total_count_key
+
+
+class CollectionBase(type):
+
+    def __new__(cls, name, bases, attrs):
+        if 'META' in attrs:
+            meta = attrs.pop('META')
+        else:
+            meta = object()
+        new_class = super(CollectionBase, cls).__new__(cls, name, bases, attrs)
+        setattr(new_class, '_meta', CollectionMetaOptions(meta))
+        return new_class
+
+
 class CollectionSerializer(object):
     ITEM_SERIALIZER_CLS = None
-    WITH_METADATA = True
-    FIELDS = []
-    EXCLUDE = []
+
+    __metaclass__ = CollectionBase
+
+    class META:
+        with_metadata = True
+        fields = []
+        exclude = []
+        sort = []
+        offset_key = 'offset'
+        limit_key = 'limit'
+        total_count_key = 'totalCount'
 
     def __init__(self, objects, fields=None, exclude=None, sort=None, limit=None, offset=None, **extras):
         if self.ITEM_SERIALIZER_CLS is None or not issubclass(self.ITEM_SERIALIZER_CLS, Serializer):
             raise Exception('No item serializer set')
         self.objects = objects
-        self._fields = fields or self.FIELDS
-        self._exclude = exclude or self.EXCLUDE
-        self._sort = sort
+        self._fields = fields or self._meta.fields
+        self._exclude = exclude or self._meta.exclude
+        self._sort = sort or self._meta.sort
         self._limit = limit or 10
         self._offset = offset or 0
-        self.with_metadata = self.WITH_METADATA
+        self.with_metadata = self._meta.with_metadata
         self._extras = extras
         self.handle_extras(extras=self._extras)
 
@@ -33,13 +80,13 @@ class CollectionSerializer(object):
         if self._offset >= total_count:
             self._limit = 0
         _metadata = {}
-        _metadata['offset'] = self._offset or 0
-        _metadata['limit'] = self._limit or total_count
-        _metadata['total_count'] = total_count
+        _metadata[self._meta.offset_key] = self._offset or 0
+        _metadata[self._meta.limit_key] = self._limit or total_count
+        _metadata[self._meta.total_count_key] = total_count
         return _metadata
 
-    def item(self, obj, fields):
-        return self.ITEM_SERIALIZER_CLS(source=obj, fields=fields, exclude=self._exclude, **self._extras).dump()
+    def item(self, obj):
+        return self.ITEM_SERIALIZER_CLS(source=obj, fields=self._fields, exclude=self._exclude, **self._extras).dump()
 
     def _pre(self, objects, limit=None, offset=None, sort=[]):
         if offset is None:
@@ -61,7 +108,7 @@ class CollectionSerializer(object):
 
     def _items(self, objects):
         objects = self._pre(objects=objects, limit=self._limit, offset=self._offset, sort=self._sort)
-        return map(lambda o: self.item(obj=o, fields=self._fields), objects)
+        return map(lambda o: self.item(obj=o), objects)
 
     def _generate(self, objects):
         if hasattr(self, 'result'):

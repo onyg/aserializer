@@ -342,6 +342,25 @@ class DecimalField(IntegerField):
         else:
             return self.value == _other
 
+class BooleanField(BaseSerializerField):
+
+    def set_value(self, value):
+        if value in v.VALIDATORS_EMPTY_VALUES:
+            self.value = None
+        elif isinstance(value, basestring) and value.lower() in ('false', '0'):
+            self.value = False
+        else:
+            self.value = bool(value)
+
+    def _to_native(self):
+        return self.value
+
+    def _to_python(self):
+        return self.value
+
+    def to_native(self):
+        result = super(BooleanField, self).to_native()
+        return bool(result)
 
 class StringField(BaseSerializerField):
     validators = [v.validate_string, ]
@@ -580,12 +599,16 @@ class SerializerObjectField(BaseSerializerField):
         self.only_fields = []
         self.exclude = []
         self.extras = {}
+        self._serializer_cls = None
 
     @staticmethod
     def normalize_serializer_cls(serializer_cls):
         if isinstance(serializer_cls, basestring):
             serializer_cls = get_serializer(serializer_cls)
         return serializer_cls
+
+    def get_serializer_cls(self):
+        return self.normalize_serializer_cls(self._serializer_cls)
 
     def pre_value(self, fields=None, exclude=None, **extras):
         self.only_fields = fields

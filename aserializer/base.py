@@ -65,14 +65,24 @@ class Serializer(object):
         self.to_dict()
         return self._dict_data.__iter__()
 
-    #def __getitem__(self, key):
-    #    return self.to_dict()[key]
-    #
-    #def __setitem__(self, key, value):
-    #    setattr(self, key, value)
-    #    #field = getattr(self, )
-    #    #if key in self.fields:
-    #    #    self._set_field(key, value)
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def __setitem__(self, key, value):
+        setattr(self, key, value)
+
+    @classmethod
+    def get_fieldnames(cls):
+        result = []
+        for name, field in cls._base_fields.items():
+            map_field_name = field.map_field or name
+            result.append((name, map_field_name))
+            if isinstance(field, SerializerObjectField):
+                for nested_name, nested_map_field_name in field.get_serializer_cls().get_fieldnames().items():
+                    result.append(('{}.{}'.format(name, nested_name),
+                                   '{}.{}'.format(map_field_name, nested_map_field_name)))
+        return OrderedDict(result)
+
 
     def initial(self, source):
         if isinstance(source, basestring):
@@ -82,8 +92,6 @@ class Serializer(object):
                 self.obj = json.loads(source)
             except ValueError:
                 self.obj = object()
-                #self.source_is_invalid + True
-                #raise ValueError('Source is not serializable.')
         else:
             self.obj = source
         self._errors = None
@@ -181,7 +189,6 @@ class Serializer(object):
 
     def update_field(self, field):
         for field_name, f in self.fields.items():
-        #for field_name in field.names:
             if f == field:
                 if self._errors and field_name in self._errors:
                     del self._errors[field_name]
@@ -265,8 +272,6 @@ class Serializer(object):
 
     def get_value(self, field_name):
         return getattr(self, field_name)
-
-
 
 
 
