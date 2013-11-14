@@ -8,6 +8,8 @@ class CollectionMetaOptions(object):
 
     def __init__(self, meta):
         self.with_metadata = True
+        self.metadata_key = '_metadata'
+        self.items_key = 'items'
         self.offset_key = 'offset'
         self.limit_key = 'limit'
         self.total_count_key = 'totalCount'
@@ -29,6 +31,10 @@ class CollectionMetaOptions(object):
             self.limit_key = meta.limit_key
         if hasattr(meta, 'total_count_key'):
             self.total_count_key = meta.total_count_key
+        if hasattr(meta, 'metadata_key'):
+            self.metadata_key = meta.metadata_key
+        if hasattr(meta, 'items_key'):
+            self.items_key = meta.items_key
 
 
 class CollectionBase(type):
@@ -53,6 +59,8 @@ class CollectionSerializer(object):
         fields = []
         exclude = []
         sort = []
+        metadata_key = '_metadata'
+        items_key = 'items'
         offset_key = 'offset'
         limit_key = 'limit'
         total_count_key = 'totalCount'
@@ -115,8 +123,8 @@ class CollectionSerializer(object):
             return self.result
         if self.with_metadata:
             self.result = {}
-            self.result['_metadata'] = self.metadata(objects)
-            self.result['items'] = self._items(objects)
+            self.result[self._meta.metadata_key] = self.metadata(objects)
+            self.result[self._meta.items_key] = self._items(objects)
         else:
             self.result = self._items(objects)
 
