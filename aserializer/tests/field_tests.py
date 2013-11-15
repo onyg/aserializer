@@ -18,7 +18,8 @@ from aserializer.fields import (IntegerField,
                                 IgnoreField,
                                 TypeField,
                                 EmailField,
-                                DecimalField,)
+                                DecimalField,
+                                BooleanField,)
 
 
 class FieldsTestCase(unittest.TestCase):
@@ -364,6 +365,25 @@ class FieldsTestCase(unittest.TestCase):
         self.assertRaises(SerializerFieldValueError, field.validate)
 
         field = EmailField(required=False, on_null=HIDE_FIELD)
+        self.assertRaises(IgnoreField, field.to_native)
+        self.assertIsNone(field.to_python())
+
+    def test_boolean_field(self):
+        field = BooleanField(required=True)
+        field.set_value(False)
+        field.validate()
+        self.assertEqual(field.to_python(), False)
+        self.assertEqual(field.to_native(), False)
+
+        field = BooleanField(required=True, default=True)
+        field.validate()
+        self.assertEqual(field.to_python(), True)
+        self.assertEqual(field.to_native(), True)
+
+        field = BooleanField(required=True)
+        self.assertRaises(SerializerFieldValueError, field.validate)
+
+        field = BooleanField(required=False, on_null=HIDE_FIELD)
         self.assertRaises(IgnoreField, field.to_native)
         self.assertIsNone(field.to_python())
 

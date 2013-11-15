@@ -28,7 +28,7 @@ class DjangoCollectionSerializer(DjangoRequestMixin, CollectionSerializer):
                     self.get_model_field_list(item.rel.to, item_name, result)
         return result
 
-    def _pre(self, objects, limit=None, offset=None, sort=[]):
+    def _pre(self, objects, limit=None, offset=None, sort=None):
         if offset is None:
             offset = 0
         try:

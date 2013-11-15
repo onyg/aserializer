@@ -7,19 +7,19 @@ class MongoEngineCollectionSerializer(CollectionSerializer):
 
     def metadata(self, objects):
         total_count = objects.count()
-        _metadata = {}
+        _metadata = dict()
         _metadata[self._meta.offset_key] = self._offset or 0
         _metadata[self._meta.limit_key] = self._limit or total_count
         _metadata[self._meta.total_count_key] = total_count
         return _metadata
 
-    def _pre(self, objects, limit=None, offset=None, sort=[]):
+    def _pre(self, objects, limit=None, offset=None, sort=None):
         if offset is None:
             offset = 0
         try:
             offset = int(offset)
             limit = int(limit)
-        except Exception, e:
+        except Exception:
             limit = 10
 
         if sort is not None and not isinstance(sort, list):

@@ -96,7 +96,7 @@ class CollectionSerializer(object):
     def item(self, obj):
         return self.ITEM_SERIALIZER_CLS(source=obj, fields=self._fields, exclude=self._exclude, **self._extras).dump()
 
-    def _pre(self, objects, limit=None, offset=None, sort=[]):
+    def _pre(self, objects, limit=None, offset=None, sort=None):
         if offset is None:
             offset = 0
         try:
@@ -104,7 +104,7 @@ class CollectionSerializer(object):
             limit = int(limit)
         except Exception, e:
             limit = None
-        if sort is None or not isinstance(sort, list):
+        if sort is not None or not isinstance(sort, list):
             sort = [str(sort)]
         try:
             if limit:
@@ -122,7 +122,7 @@ class CollectionSerializer(object):
         if hasattr(self, 'result'):
             return self.result
         if self.with_metadata:
-            self.result = {}
+            self.result = dict()
             self.result[self._meta.metadata_key] = self.metadata(objects)
             self.result[self._meta.items_key] = self._items(objects)
         else:
