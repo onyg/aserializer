@@ -1,0 +1,9 @@
+*~
+*.egg
+aserializer.egg-info/
+.coverage
+docs/.build
+docs/_build
+build/
+dist/
+coverage/
