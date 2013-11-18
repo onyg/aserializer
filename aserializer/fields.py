@@ -342,6 +342,7 @@ class DecimalField(IntegerField):
         else:
             return self.value == _other
 
+
 class BooleanField(BaseSerializerField):
 
     def set_value(self, value):
@@ -361,6 +362,7 @@ class BooleanField(BaseSerializerField):
     def to_native(self):
         result = super(BooleanField, self).to_native()
         return bool(result)
+
 
 class StringField(BaseSerializerField):
     validators = [v.validate_string, ]
