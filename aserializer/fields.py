@@ -409,7 +409,7 @@ class UUIDField(BaseSerializerField):
 
 
 class BaseDatetimeField(BaseSerializerField):
-    date_formats = ['%Y-%m-%dT%H:%M:%S', ]
+    date_formats = ['%Y-%m-%dT%H:%M:%S.%f', ]
     error_messages = {
         'required': 'This field is required.',
         'invalid': 'Invalid date value.',
@@ -458,7 +458,7 @@ class BaseDatetimeField(BaseSerializerField):
 
 class DatetimeField(BaseDatetimeField):
 
-    date_formats = ['%Y-%m-%dT%H:%M:%S', ]
+    date_formats = ['%Y-%m-%dT%H:%M:%S.%f', '%Y-%m-%dT%H:%M:%S']
     error_messages = {
         'required': 'This field is required.',
         'invalid': 'Invalid date time value.',
@@ -592,6 +592,47 @@ class UrlField(BaseSerializerField):
 
     def _to_python(self):
         return self.to_unicode(self.value)
+
+
+class ChoiceField(BaseSerializerField):
+
+    error_messages = {
+        'required': 'This field is required.',
+        'invalid': 'Invalid choice value.',
+    }
+
+    def __init__(self, choices=(), *args, **kwargs):
+        super(ChoiceField, self).__init__(*args, **kwargs)
+        self.choices = choices
+        self.python_value = None
+
+    def validate(self):
+        super(ChoiceField, self).validate()
+        if self.value in v.VALIDATORS_EMPTY_VALUES:
+            return
+        for val in self.choices:
+            if isinstance(val, (list, tuple)):
+                try:
+                    val2 = val[0]
+                    key2 = val[1]
+                except:
+                    continue
+                else:
+                    if self.value == key2:
+                        self.python_value = val2
+                        return
+            else:
+                if self.value == val:
+                    self.python_value = val
+                    return
+        raise SerializerFieldValueError(self._error_messages['invalid'], field_names=self.names)
+
+    def _to_native(self):
+        return self.value
+
+    def _to_python(self):
+        return self.python_value
+
 
 
 class SerializerObjectField(BaseSerializerField):

@@ -19,7 +19,8 @@ from aserializer.fields import (IntegerField,
                                 TypeField,
                                 EmailField,
                                 DecimalField,
-                                BooleanField,)
+                                BooleanField,
+                                ChoiceField,)
 
 
 class FieldsTestCase(unittest.TestCase):
@@ -367,6 +368,34 @@ class FieldsTestCase(unittest.TestCase):
         field = EmailField(required=False, on_null=HIDE_FIELD)
         self.assertRaises(IgnoreField, field.to_native)
         self.assertIsNone(field.to_python())
+
+    def test_choice_field(self):
+        choices = ('one', 'two', 'three',)
+        field = ChoiceField(required=True, choices=choices)
+        field.set_value('one')
+        field.validate()
+        self.assertEqual(field.to_python(), 'one')
+        self.assertEqual(field.to_native(), 'one')
+
+        choices = (
+            (1, 'one'),
+            (2, 'two'),
+            (3, 'three'),
+        )
+        field = ChoiceField(required=True, choices=choices)
+        field.set_value('two')
+        field.validate()
+        self.assertEqual(field.to_python(), 2)
+        self.assertEqual(field.to_native(), 'two')
+
+        field = ChoiceField(required=True, choices=choices)
+        field.set_value('four')
+        self.assertRaises(SerializerFieldValueError, field.validate)
+
+        field = ChoiceField(required=True, choices=choices, default='three')
+        field.validate()
+        self.assertEqual(field.to_python(), 3)
+        self.assertEqual(field.to_native(), 'three')
 
     def test_boolean_field(self):
         field = BooleanField(required=True)
