@@ -40,7 +40,6 @@ class SerializerFieldValueError(Exception):
         if isinstance(message, basestring):
             self.error_message = message
         elif isinstance(message, dict):
-            print message
             self.error_dict = message
         elif isinstance(message, list):
             self.error_list = message
