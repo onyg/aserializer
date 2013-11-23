@@ -633,6 +633,97 @@ class ChoiceField(BaseSerializerField):
         return self.python_value
 
 
+class ListField(BaseSerializerField):
+
+    def __init__(self, field, *args, **kwargs):
+        super(ListField, self).__init__(*args, **kwargs)
+        self._field_cls = field
+        self.items = []
+        self._python_items = []
+        self._native_items = []
+
+    def validate(self):
+        if self.items:
+            _errors = []
+            for field in self.items:
+                try:
+                    field.validate()
+                except SerializerFieldValueError, e:
+                    _errors.append(e.errors)
+            if _errors:
+                raise SerializerFieldValueError(_errors)
+        elif self.required:
+            raise SerializerFieldValueError(self._error_messages['required'], field_names=self.names)
+
+    def add_item(self, value):
+        field = self._field_cls()
+        field.set_value(value=value)
+        self.items.append(field)
+
+    def set_value(self, value):
+        self.items[:] = []
+        self._native_items[:] = []
+        self._python_items[:] = []
+        if isinstance(value, Iterable):
+            for item in value:
+                self.add_item(value=item)
+
+    def _to_native(self):
+        if not self._native_items:
+            for field in self.items:
+                self._native_items.append(field.to_native())
+        return self._native_items
+
+    def _to_python(self):
+        if not self._python_items:
+            for field in self.items:
+                self._python_items.append(field.to_python())
+        return self._python_items
+
+
+    def append(self, value):
+        self.add_item(value=value)
+        self.validate()
+
+    def __iter__(self):
+        return self.to_python().__iter__()
+
+    def __get__(self, instance, owner):
+        if instance is None:
+            return self
+        field = self._get_field_from_instance(instance=instance)
+        return field
+
+    def __set__(self, instance, value):
+        if instance is None:
+            return
+        field = self._get_field_from_instance(instance=instance)
+        if field is None:
+            return
+        self.ignore = False
+        for name in self.names:
+            try:
+                value = instance.clean_field_value(name, value)
+            except IgnoreField:
+                self.ignore = True
+        field.set_value(value=value)
+        field.validate()
+        instance.update_field(field)
+
+    def __setitem__(self, i, value):
+        del self.items[i]
+        self.add_item(value=value)
+        self.validate()
+
+    def __getitem__(self, y):
+        return self.to_python()[y]
+
+    def __len__(self):
+        return len(self.items)
+
+    def __contains__(self, value):
+        return value in self.to_python()
+
 
 class SerializerObjectField(BaseSerializerField):
 

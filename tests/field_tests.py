@@ -20,7 +20,8 @@ from aserializer.fields import (IntegerField,
                                 EmailField,
                                 DecimalField,
                                 BooleanField,
-                                ChoiceField,)
+                                ChoiceField,
+                                ListField,)
 
 
 class FieldsTestCase(unittest.TestCase):
@@ -415,6 +416,43 @@ class FieldsTestCase(unittest.TestCase):
         field = BooleanField(required=False, on_null=HIDE_FIELD)
         self.assertRaises(IgnoreField, field.to_native)
         self.assertIsNone(field.to_python())
+
+    def test_list_field(self):
+        uuids = [
+            '0203a23f-032c-46be-a1fa-c85fd0284b4c',
+            'd2e6a469-a4fd-415e-8c22-b8d73856a714',
+            '8832f5cd-c024-49ce-b27a-8d6e388f3b08'
+        ]
+        field = ListField(UUIDField, required=True)
+        field.set_value(value=uuids)
+        field.validate()
+        self.assertIn('0203a23f-032c-46be-a1fa-c85fd0284b4c', field.to_native())
+        self.assertIn('d2e6a469-a4fd-415e-8c22-b8d73856a714', field.to_native())
+        self.assertIn('8832f5cd-c024-49ce-b27a-8d6e388f3b08', field.to_native())
+        self.assertIn(uuid.UUID('0203a23f-032c-46be-a1fa-c85fd0284b4c'), field.to_python())
+        self.assertIn(uuid.UUID('d2e6a469-a4fd-415e-8c22-b8d73856a714'), field.to_python())
+        self.assertIn(uuid.UUID('8832f5cd-c024-49ce-b27a-8d6e388f3b08'), field.to_python())
+        self.assertEqual(len(field), 3)
+        self.assertEqual(uuid.UUID('0203a23f-032c-46be-a1fa-c85fd0284b4c'), field[0])
+        self.assertEqual(uuid.UUID('d2e6a469-a4fd-415e-8c22-b8d73856a714'), field[1])
+        self.assertEqual(uuid.UUID('8832f5cd-c024-49ce-b27a-8d6e388f3b08'), field[2])
+
+        uuids = [
+            '1203a23f-032c-46be-a1fa-c85fd0284b4c',
+            '22e6a469-a4fd-415e-8c22-b8d73856a714',
+            'no_uuid_value'
+        ]
+        field = ListField(UUIDField, required=True)
+        field.set_value(value=uuids)
+        self.assertRaises(SerializerFieldValueError, field.validate)
+        field[2] = '3832f5cd-c024-49ce-b27a-8d6e388f3b08'
+        field.validate()
+        self.assertEqual(len(field), 3)
+        self.assertEqual(uuid.UUID('1203a23f-032c-46be-a1fa-c85fd0284b4c'), field[0])
+        self.assertEqual(uuid.UUID('22e6a469-a4fd-415e-8c22-b8d73856a714'), field[1])
+        self.assertEqual(uuid.UUID('3832f5cd-c024-49ce-b27a-8d6e388f3b08'), field[2])
+        field.append(uuid.UUID('4832f5cd-c024-49ce-b27a-8d6e388f3b08'))
+        self.assertEqual(len(field), 4)
 
 
 
