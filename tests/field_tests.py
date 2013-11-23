@@ -454,6 +454,26 @@ class FieldsTestCase(unittest.TestCase):
         field.append(uuid.UUID('4832f5cd-c024-49ce-b27a-8d6e388f3b08'))
         self.assertEqual(len(field), 4)
 
+        emails = [
+            'foobar0@test.de',
+            'foobar1@test.de',
+            'foobar2@test.de',
+            'foobar3@test.de'
+        ]
+        field = ListField(EmailField, required=True)
+        field.set_value(value=emails)
+        field.validate()
+        self.assertIn('foobar0@test.de', field.to_native())
+        self.assertIn('foobar0@test.de', field.to_python())
+        self.assertEqual(len(field), 4)
+        self.assertEqual('foobar0@test.de', field[0])
+        self.assertEqual('foobar1@test.de', field[1])
+        self.assertEqual('foobar2@test.de', field[2])
+        self.assertEqual('foobar3@test.de', field[3])
+
+        field = ListField(EmailField, required=True)
+        field.set_value(value=['no_email'])
+        self.assertRaises(SerializerFieldValueError, field.validate)
 
 
 if __name__ == '__main__':
