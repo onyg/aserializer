@@ -15,8 +15,8 @@ def get_serializer_fields(bases, attrs, with_base_fields=True):
         return iter(getattr(d, 'iteritems')(**kw))
     fields = [(field_name, attrs.pop(field_name)) for field_name, obj in list(items(attrs)) if isinstance(obj, BaseSerializerField)]
     for base in bases[::-1]:
-        if hasattr(base, 'fields'):
-            fields = list(items(base.fields)) + fields
+        if hasattr(base, '_base_fields'):
+            fields = list(items(base._base_fields)) + fields
     return OrderedDict(fields)
 
 
