@@ -25,8 +25,9 @@ Examples how code looks like::
         tel = StringField(required=False, min_length=10, max_length=50)
         address = NestedSerializerField(Address, required=True)
 
-Result::
-
+Result:
+user = User(DATA)
+user.dump()
 	{
 		"_type": "user",
 		"id": 1,

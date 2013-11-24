@@ -471,9 +471,32 @@ class FieldsTestCase(unittest.TestCase):
         self.assertEqual('foobar2@test.de', field[2])
         self.assertEqual('foobar3@test.de', field[3])
 
+        for email in field:
+            self.assertIn(email, emails)
+
         field = ListField(EmailField, required=True)
         field.set_value(value=['no_email'])
         self.assertRaises(SerializerFieldValueError, field.validate)
+
+        field = ListField(EmailField, required=True)
+        self.assertRaises(SerializerFieldValueError, field.validate)
+
+
+    def test_serializerfieldvalueerror(self):
+        int_field = IntegerField(required=True)
+        try:
+            int_field.validate()
+        except SerializerFieldValueError, e:
+            self.assertEqual(repr(e), 'This field is required.')
+            self.assertEqual(str(e), '[field]: This field is required.')
+
+        uuid_field = UUIDField(required=True)
+        uuid_field.set_value('no_uuid')
+        try:
+            uuid_field.validate()
+        except SerializerFieldValueError, e:
+            self.assertEqual(repr(e), 'Invalid value.')
+            self.assertEqual(str(e), '[field]: Invalid value.')
 
 
 if __name__ == '__main__':
