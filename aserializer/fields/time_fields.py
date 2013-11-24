@@ -44,7 +44,6 @@ class BaseDatetimeField(BaseSerializerField):
     def _is_instance(self, value):
         return False
 
-    #@staticmethod
     def strptime(self, value, formats):
         for f in formats:
             try:
