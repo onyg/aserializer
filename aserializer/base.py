@@ -5,7 +5,7 @@ import copy
 from collections import OrderedDict
 import json
 from fields import *
-from fields import register_serializer
+from fields.registry import register_serializer
 
 logger = logging.getLogger(__name__)
 
