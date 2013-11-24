@@ -239,7 +239,13 @@ class FieldsTestCase(unittest.TestCase):
         field.set_value('07.10.2013 20:15:23')
         field.validate()
         self.assertEqual(field.to_python(), datetime.strptime('2013-10-07T20:15:23', '%Y-%m-%dT%H:%M:%S'))
-        self.assertEqual(field.to_native(), '2013-10-07T20:15:23')
+        self.assertEqual(field.to_native(), '07.10.2013 20:15:23')
+
+        field = DatetimeField(required=True, formats=['%d.%m.%Y %H:%M:%S'], serialize_to='%Y-%m-%dT%H:%M:%S.%f')
+        field.set_value('07.10.2013 20:15:23')
+        field.validate()
+        self.assertEqual(field.to_python(), datetime.strptime('2013-10-07T20:15:23', '%Y-%m-%dT%H:%M:%S'))
+        self.assertEqual(field.to_native(), '2013-10-07T20:15:23.000000')
 
         field = DatetimeField(required=True)
         field.set_value('datetime')

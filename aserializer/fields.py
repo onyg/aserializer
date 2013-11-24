@@ -414,9 +414,11 @@ class BaseDatetimeField(BaseSerializerField):
         'invalid': 'Invalid date value.',
     }
 
-    def __init__(self, formats=None, *args, **kwargs):
+    def __init__(self, formats=None, serialize_to=None, *args, **kwargs):
         super(BaseDatetimeField, self).__init__(*args, **kwargs)
         self._date_formats = formats or self.date_formats
+        self._serialize_format = serialize_to
+        self._current_format = None
         self.invalid = False
 
     def validate(self):
@@ -443,21 +445,30 @@ class BaseDatetimeField(BaseSerializerField):
     def _is_instance(self, value):
         return False
 
-    @staticmethod
-    def strptime(value, formats):
+    #@staticmethod
+    def strptime(self, value, formats):
         for f in formats:
             try:
                 result = datetime.strptime(value, f)
+                self._current_format = f
             except (ValueError, TypeError):
                 continue
             else:
                 return result
         return None
 
+    def strftime(self, value):
+        if self._serialize_format:
+            return value.strftime(self._serialize_format)
+        elif self._current_format:
+            return value.strftime(self._current_format)
+        else:
+            return unicode(value.isoformat())
+
 
 class DatetimeField(BaseDatetimeField):
 
-    date_formats = ['%Y-%m-%dT%H:%M:%S.%f', '%Y-%m-%dT%H:%M:%S']
+    date_formats = ['%Y-%m-%dT%H:%M:%S.%f%z', '%Y-%m-%dT%H:%M:%S.%f', '%Y-%m-%dT%H:%M:%S']
     error_messages = {
         'required': 'This field is required.',
         'invalid': 'Invalid date time value.',
@@ -470,7 +481,7 @@ class DatetimeField(BaseDatetimeField):
         if self.value in v.VALIDATORS_EMPTY_VALUES:
             return None
         if isinstance(self.value, datetime):
-            return unicode(self.value.isoformat())
+            return self.strftime(self.value)
         return unicode(self.value)
 
     def _to_python(self):
@@ -508,7 +519,7 @@ class DateField(BaseDatetimeField):
         if self.value in v.VALIDATORS_EMPTY_VALUES:
             return None
         if isinstance(self.value, date):
-            return unicode(self.value.isoformat())
+            return self.strftime(self.value)
         return unicode(self.value)
 
     def _to_python(self):
@@ -548,7 +559,7 @@ class TimeField(BaseDatetimeField):
         if self.value in v.VALIDATORS_EMPTY_VALUES:
             return None
         if isinstance(self.value, time):
-            return unicode(self.value.isoformat())
+            return self.strftime(self.value)
         return unicode(self.value)
 
     def _to_python(self):
