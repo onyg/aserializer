@@ -69,6 +69,9 @@ class Serializer(object):
 
     @classmethod
     def get_fieldnames(cls):
+        """
+        This method returns the map field names of the serializer object including nested field names.
+        """
         result = []
         for name, field in cls._base_fields.items():
             map_field_name = field.map_field or name
@@ -81,6 +84,9 @@ class Serializer(object):
 
 
     def initial(self, source):
+        """
+        The initial method is preparing the serializer and the source object for the source values set to the fields.
+        """
         if isinstance(source, basestring):
             if not isinstance(source, unicode):
                 source = unicode(source, 'utf-8')
@@ -97,6 +103,9 @@ class Serializer(object):
             self._set_source_to_fields(self.obj)
 
     def _set_source_to_fields(self, source):
+        """
+        This method is setting the source values to the fields.
+        """
         source_attr = self.get_fieldnames_from_source(source)
         for field_name, field in self.fields.items():
             if field_name in source_attr:
@@ -118,6 +127,9 @@ class Serializer(object):
 
     @staticmethod
     def get_value_from_source(source, field_name):
+        """
+        This method returns the value for one field from the source object.
+        """
         if isinstance(source, dict):
             value = source.get(field_name, None)
         else:
@@ -126,6 +138,9 @@ class Serializer(object):
 
     @staticmethod
     def has_attribute(source, field_name):
+        """
+        This method checks if the source object got an variable for a field.
+        """
         if isinstance(source, dict):
             return source.has_key(field_name)
         else:
@@ -133,6 +148,9 @@ class Serializer(object):
 
     @staticmethod
     def get_fieldnames_from_source(source):
+        """
+        This method returns a list of all variable names of an object.
+        """
         if isinstance(source, dict):
             return source.keys()
         else:
@@ -145,6 +163,9 @@ class Serializer(object):
         return only, exclude
 
     def filter_only_fields(self, only_fields):
+        """
+        This method filter the current serializer fields dictionary by the list of field names.
+        """
         field_names = self.fields.keys()
         only_fields = [str(field_name).split('.')[0] for field_name in only_fields]
         only_fields = filter(lambda field_name: field_name in field_names, only_fields)
@@ -153,23 +174,34 @@ class Serializer(object):
         return OrderedDict(filter(lambda (field_name, field): field.identity or field_name in only_fields, self.fields.items()))
 
     def filter_excluded_fields(self, exclude):
+        """
+        This method excluding the current serializer fields dictionary by the list of field names.
+        """
         field_names = self.fields.keys()
         exclude = filter(lambda field_name: field_name in field_names, exclude)
         if len(exclude) <= 0:
             return self.fields
         return OrderedDict(filter(lambda (field_name, field): field.identity or not field_name in exclude, self.fields.items()))
 
-    def has_method(self, name):
-        _method = getattr(self, name, None)
+    def has_method(self, method_name):
+        _method = getattr(self, method_name, None)
         return callable(_method)
 
-    def _custom_field_method(self, name, field):
-        _method = getattr(self, name, None)
+    def _custom_field_method(self, method_name, field):
+        """
+        This method calling a method by the giving method_name and returns the result.
+        """
+        _method = getattr(self, method_name, None)
         if callable(_method):
             return _method(field)
         return None
 
     def _validate(self):
+        """
+        This method is calling all validate methods of all fields. If a validate raises a SerializerFieldValueError the
+        error will be stored in an dictionary.
+        If a field is an identity field it only will be validate if the source object got the varialbe name.
+        """
         self._errors = {}
         source_attr = self.get_fieldnames_from_source(self.obj)
         for field_name, field in self.fields.items():
@@ -187,6 +219,9 @@ class Serializer(object):
                 self._errors[label] = field.error_messages['required']
 
     def update_field(self, field):
+        """
+        This method updates the instance result lists and dictionaries for one field object.
+        """
         for field_name, f in self.fields.items():
             if f == field:
                 if self._errors and field_name in self._errors:
@@ -205,6 +240,9 @@ class Serializer(object):
                 break
 
     def clean_field_value(self, field_name, value):
+        """
+        This method calls a custom clean_value method if it exists before the value is set to the field object.
+        """
         method_name = '{}_clean_value'.format(field_name)
         if self.has_method(method_name):
             return getattr(self, method_name)(value)
@@ -212,6 +250,9 @@ class Serializer(object):
 
     @property
     def errors(self):
+        """
+        This property checks if an error is inside of the instance error dictionary and calling the validate method.
+        """
         if self._errors is None:
             self._validate()
         return self._errors
@@ -220,12 +261,19 @@ class Serializer(object):
         return json.dumps(self.errors, indent=indent)
 
     def is_valid(self):
+        """
+        This method checkes if an error was inserted.
+        """
         if self.errors:
             return False
         else:
             return True
 
     def to_dict(self):
+        """
+        Returns a dictionary with the field values for the python env.
+        It ingores fields by the IgnoreField exception.
+        """
         if self._dict_data is None:
             self._dict_data = dict()
             for field_name, field in self.fields.items():
@@ -237,6 +285,10 @@ class Serializer(object):
         return self._dict_data
 
     def dump(self):
+        """
+        This method returns a dictionary with the field values for a serialization (i.e. json.dumps)
+        It ignores fields by the IgnoreField exception and if the field is an action filed.
+        """
         if self._dump_data is None:
             self._dump_data = dict()
             for field_name, field in self.fields.items():
@@ -253,6 +305,10 @@ class Serializer(object):
         return json.dumps(dump, indent=indent)
 
     def _field_to_python(self, field_name, field):
+        """
+        This method checks if a custom method for the field python value was implemented otherwise returns the result of the field method.
+        i.g. for the field with the key 'name' def name_to_python(field):
+        """
         method_name = '{}_to_python'.format(field_name)
         if self.has_method(method_name):
             return self._custom_field_method(method_name, field)
@@ -260,6 +316,10 @@ class Serializer(object):
             return field.to_python()
 
     def _field_to_native(self, field_name, field):
+        """
+        This method checks if a custom method for the field native value was implemented otherwise returns the result of the field method.
+        i.g. for the field with the key 'name' def name_to_native(field):
+        """
         method_name = '{}_to_native'.format(field_name)
         if self.has_method(method_name):
             return self._custom_field_method(method_name, field)
