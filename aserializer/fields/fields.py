@@ -30,9 +30,6 @@ class TypeField(BaseSerializerField):
     def to_python(self):
         return unicode(self.name)
 
-    def __get__(self, instance, owner):
-        pass
-
     def __set__(self, instance, value):
         pass
 
@@ -345,13 +342,13 @@ class ListField(BaseSerializerField):
     def __get__(self, instance, owner):
         if instance is None:
             return self
-        field = self._get_field_from_instance(instance=instance)
+        field, field_name = self._get_field_from_instance(instance=instance)
         return field
 
     def __set__(self, instance, value):
         if instance is None:
             return
-        field = self._get_field_from_instance(instance=instance)
+        field, field_name = self._get_field_from_instance(instance=instance)
         if field is None:
             return
         self.ignore = False

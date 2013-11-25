@@ -20,6 +20,7 @@ from aserializer.fields import (IntegerField,
                                 EmailField,
                                 DecimalField,
                                 NestedSerializerField,)
+from aserializer.fields.registry import SerializerNotRegistered
 from aserializer.base import Serializer
 
 
@@ -329,27 +330,27 @@ class SerializerFlatTestCase(unittest.TestCase):
         self.assertDictEqual(serializer.errors, {})
 
 
-class TestNestSerializer(Serializer):
-
-    class NestSerializer(Serializer):
-        name = StringField(required=True)
-        id = IntegerField(required=True, identity=True)
-
-    _type = TypeField('test_object')
-    id = IntegerField(required=True, identity=True)
-    name = StringField(required=True)
-    street = StringField(required=False, on_null=HIDE_FIELD)
-    uuid_var = UUIDField(required=True)
-    maxmin = IntegerField(max_value=10, min_value=6, required=True)
-    datetime_var = DatetimeField(required=True)
-    date_var = DateField(required=True)
-    time_var = TimeField(required=True)
-    haus = StringField(required=True, map_field='house')
-    url = UrlField(required=True, base='http://www.base.com', default='api')
-    nest = NestedSerializerField(NestSerializer, required=True)
-
-
 class SerializerNestTestCase(unittest.TestCase):
+
+    class TestNestSerializer(Serializer):
+
+        class NestSerializer(Serializer):
+            name = StringField(required=True)
+            id = IntegerField(required=True, identity=True)
+
+        _type = TypeField('test_object')
+        id = IntegerField(required=True, identity=True)
+        name = StringField(required=True)
+        street = StringField(required=False, on_null=HIDE_FIELD)
+        uuid_var = UUIDField(required=True)
+        maxmin = IntegerField(max_value=10, min_value=6, required=True)
+        datetime_var = DatetimeField(required=True)
+        date_var = DateField(required=True)
+        time_var = TimeField(required=True)
+        haus = StringField(required=True, map_field='house')
+        url = UrlField(required=True, base='http://www.base.com', default='api')
+        nest = NestedSerializerField(NestSerializer, required=True)
+
 
     def test_nest_object_valid_serialize(self):
 
@@ -371,7 +372,7 @@ class SerializerNestTestCase(unittest.TestCase):
                 self.house = 'MAP_TO_HAUS'
                 self.nest = NestTestObject()
 
-        serializer = TestNestSerializer(source=TestObject())
+        serializer = self.TestNestSerializer(source=TestObject())
         self.assertTrue(serializer.is_valid())
         self.assertDictEqual(serializer.errors, {})
 
@@ -435,6 +436,215 @@ class SerializerNestTestCase(unittest.TestCase):
             }
         }
         self.assertDictEqual(serializer.to_dict(), to_dict)
+
+    def test_lazy_nested_serializer_load(self):
+
+        class LazyFieldSerializer(Serializer):
+            _type = TypeField('test_object')
+            id = IntegerField(required=True, identity=True)
+            nest = NestedSerializerField('LazyFieldNestSerializer', required=True)
+
+        class LazyFieldNestSerializer(Serializer):
+            name = StringField(required=True)
+            id = IntegerField(required=True, identity=True)
+
+        class NestTestObject(object):
+            def __init__(self):
+                self.id = 23
+                self.name = 'NEST NAME'
+
+        class TestObject(object):
+            def __init__(self):
+                self.id = 1
+                self.nest = NestTestObject()
+
+        serializer = LazyFieldSerializer(source=TestObject())
+        self.assertTrue(serializer.is_valid())
+        self.assertDictEqual(serializer.errors, {})
+        self.assertIsInstance(serializer.nest, Serializer)
+        self.assertEqual(serializer.nest.name, 'NEST NAME')
+        self.assertEqual(serializer.nest.id, 23)
+
+
+    def test_lazy_nested_wrong_serializer_load(self):
+
+        class LazyFieldSerializer(Serializer):
+            nest = NestedSerializerField('NotASerializer', required=True)
+
+        class TestObject(object):
+            def __init__(self):
+                self.nest = {'name': 'name'}
+
+        self.assertRaises(SerializerNotRegistered, LazyFieldSerializer, source=TestObject())
+
+
+    def test_json_source(self):
+        class TestSerializer(Serializer):
+            _type = TypeField('test_object')
+            street = StringField(required=True)
+
+        serializer = TestSerializer(source='{"street":"street"}')
+        self.assertTrue(serializer.is_valid())
+        self.assertEqual(serializer.street, 'street')
+
+        self.assertEqual(serializer.to_json(), '{"_type": "test_object", "street": "street"}')
+
+        serializer = TestSerializer(source='{"street":"Musterstraße"}')
+        self.assertTrue(serializer.is_valid())
+        self.assertEqual(serializer.street, u'Musterstraße')
+
+        serializer = TestSerializer(source='No valid source')
+        self.assertFalse(serializer.is_valid())
+        self.assertEqual(serializer.errors, {'street':'This field is required.'})
+
+    def test_iteration_and_set(self):
+        class TestSerializer(Serializer):
+            _type = TypeField('test_type')
+            name = StringField(required=True)
+            email = EmailField(required=True)
+            street = StringField(required=True)
+
+        source = dict(name='name', email='test@test.com', street='the street')
+        serializer = TestSerializer(source=source)
+        self.assertTrue(serializer.is_valid())
+        for field in serializer:
+            self.assertIn(serializer[field], ('name', 'test@test.com', 'the street', 'test_type'))
+
+        serializer['name'] = 'new name'
+        serializer['email'] = 'new@test.com'
+        serializer['street'] = 'new street'
+        for field in serializer:
+            self.assertIn(serializer[field], ('new name', 'new@test.com', 'new street', 'test_type'))
+
+    def test_setter_getter(self):
+        class TestSerializer(Serializer):
+            _type = TypeField('test_type')
+            name = StringField(required=True)
+            email = EmailField(required=True)
+
+        serializer = TestSerializer()
+        self.assertFalse(serializer.is_valid())
+        serializer.name = 'John'
+        serializer.email = 'john@test.com'
+        self.assertTrue(serializer.is_valid())
+        self.assertEqual(serializer.name, 'John')
+        self.assertEqual(serializer.email, 'john@test.com')
+        self.assertEqual(serializer['name'], 'John')
+        self.assertEqual(serializer['email'], 'john@test.com')
+        self.assertEqual(serializer.get_value('name'), 'John')
+        self.assertEqual(serializer.get_value('email'), 'john@test.com')
+
+        serializer['name'] = 'John Doe'
+        serializer['email'] = 'john-doe@test.com'
+        self.assertEqual(serializer.name, 'John Doe')
+        self.assertEqual(serializer.email, 'john-doe@test.com')
+        self.assertEqual(serializer['name'], 'John Doe')
+        self.assertEqual(serializer['email'], 'john-doe@test.com')
+        self.assertEqual(serializer.get_value('name'), 'John Doe')
+        self.assertEqual(serializer.get_value('email'), 'john-doe@test.com')
+
+        serializer.set_value('email', 'john-doe@example.com')
+        serializer.set_value('name', 'John Example')
+        self.assertEqual(serializer.email, 'john-doe@example.com')
+        self.assertEqual(serializer.name, 'John Example')
+        self.assertEqual(serializer['name'], 'John Example')
+        self.assertEqual(serializer['email'], 'john-doe@example.com')
+        self.assertEqual(serializer.get_value('name'), 'John Example')
+        self.assertEqual(serializer.get_value('email'), 'john-doe@example.com')
+
+
+class CustomValueMethods(unittest.TestCase):
+
+    class TestSerializerOne(Serializer):
+        _type = TypeField('test_object_one')
+        street = StringField(required=True)
+
+        def street_clean_value(self, value):
+            if unicode(value).startswith('sesame'):
+                return 'Street for kids'
+            else:
+                return value
+
+
+    class TestSerializerTwo(Serializer):
+        _type = TypeField('test_object_two')
+        street = StringField(required=True)
+
+        def street_to_python(self, field):
+            value = field.to_python()
+            return 'Changed for python: {}'.format(value)
+
+        def street_to_native(self, field):
+            value = field.to_native()
+            return 'Changed for native: {}'.format(value)
+
+
+    class TestSerializerThree(Serializer):
+        _type = TypeField('test_object_three')
+        street = StringField(required=True)
+
+        def street_to_python(self, field):
+            value = field.to_python()
+            if value.startswith('ignore'):
+                raise IgnoreField()
+            return value
+
+        def street_to_native(self, field):
+            value = field.to_native()
+            if value.startswith('ignore'):
+                raise IgnoreField()
+            return value
+
+
+    def test_clean_value_method(self):
+        class TestObject(object):
+            def __init__(self):
+                self.street = 'sesame street'
+        test_obj = TestObject()
+        serializer = self.TestSerializerOne(source=test_obj)
+        self.assertTrue(serializer.is_valid())
+        self.assertEqual(serializer.street, 'Street for kids')
+
+        test_obj.street = 'Street 23'
+        serializer = self.TestSerializerOne(source=test_obj)
+        self.assertTrue(serializer.is_valid())
+        self.assertEqual(serializer.street, 'Street 23')
+
+    def test_custom_value_methods(self):
+        class TestObject(object):
+            def __init__(self):
+                self.street = 'street'
+        test_obj = TestObject()
+        serializer = self.TestSerializerTwo(source=test_obj)
+        self.assertEqual(serializer.street, 'Changed for python: street')
+        self.assertEqual(serializer.dump()['street'], 'Changed for native: street')
+        self.assertEqual(serializer.to_dict()['street'], 'Changed for python: street')
+
+        serializer.street = 'The Street'
+        self.assertEqual(serializer.street, 'Changed for python: The Street')
+        self.assertEqual(serializer.dump()['street'], 'Changed for native: The Street')
+        self.assertEqual(serializer.to_dict()['street'], 'Changed for python: The Street')
+
+    def test_custom_ignore_field(self):
+        class TestObject(object):
+            def __init__(self):
+                self.street = 'ignore street'
+        test_obj = TestObject()
+        serializer = self.TestSerializerThree(source=test_obj)
+        self.assertEqual(serializer.street, None)
+        self.assertNotIn('street', serializer.dump())
+        self.assertNotIn('street', serializer.to_dict())
+
+        serializer.street = 'show street'
+        self.assertEqual(serializer.street, 'show street')
+        self.assertEqual(serializer.dump()['street'], 'show street')
+        self.assertEqual(serializer.to_dict()['street'], 'show street')
+
+        serializer.street = 'ignore'
+        self.assertEqual(serializer.street, None)
+        self.assertNotIn('street', serializer.dump())
+        self.assertNotIn('street', serializer.to_dict())
+
 
 
 if __name__ == '__main__':

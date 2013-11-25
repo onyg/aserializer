@@ -144,21 +144,26 @@ class BaseSerializerField(object):
     def _get_field_from_instance(self, instance):
         for name in self.names:
             if name in instance._data:
-                return instance._data[name]
-        return None
+                return instance._data[name], name
+        return None, None
 
     def __get__(self, instance, owner):
         if instance is None:
             return self
-        field = self._get_field_from_instance(instance=instance)
+        field, field_name = self._get_field_from_instance(instance=instance)
         if field:
-            return field.to_python()
+            try:
+                value = instance._field_to_python(field_name=field_name, field=field)
+            except IgnoreField:
+                return None
+            else:
+                return value
         return self
 
     def __set__(self, instance, value):
         if instance is None:
             return
-        field = self._get_field_from_instance(instance=instance)
+        field, field_name = self._get_field_from_instance(instance=instance)
         if field is None:
             return
         self.ignore = False

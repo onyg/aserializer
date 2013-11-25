@@ -35,7 +35,7 @@ class SerializerObjectField(BaseSerializerField):
     def __get__(self, instance, owner):
         if instance is None:
             return self
-        field = self._get_field_from_instance(instance=instance)
+        field, field_name = self._get_field_from_instance(instance=instance)
         if field:
             return field.get_instance()
         return self

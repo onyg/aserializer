@@ -227,12 +227,16 @@ class Serializer(object):
                 if self._errors and field_name in self._errors:
                     del self._errors[field_name]
                 if self._dump_data is not None:
+                    if field_name in self._dump_data:
+                        del self._dump_data[field_name]
                     try:
                         self._dump_data[field_name] = self._field_to_native(field_name, field)
                     except IgnoreField:
                         pass
                 if self._dict_data is not None and field_name:
                     _name = field.map_field or field_name
+                    if _name in self._dict_data:
+                        del self._dict_data[_name]
                     try:
                         self._dict_data[_name] = self._field_to_python(field_name, field)
                     except IgnoreField:
@@ -257,7 +261,7 @@ class Serializer(object):
             self._validate()
         return self._errors
 
-    def errors_to_json(self, indent=4):
+    def errors_to_json(self, indent=None):
         return json.dumps(self.errors, indent=indent)
 
     def is_valid(self):
@@ -300,7 +304,7 @@ class Serializer(object):
                     pass
         return self._dump_data
 
-    def to_json(self, indent=4):
+    def to_json(self, indent=None):
         dump = self.dump()
         return json.dumps(dump, indent=indent)
 
