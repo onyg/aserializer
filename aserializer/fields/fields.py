@@ -199,10 +199,17 @@ class EmailField(StringField):
 class UUIDField(BaseSerializerField):
     validators = [v.validate_uuid, ]
 
+    def __init__(self, upper=True, *args, **kwargs):
+        super(UUIDField, self).__init__(*args, **kwargs)
+        self.upper = upper
+
     def _to_native(self):
         if self.value in v.VALIDATORS_EMPTY_VALUES:
             return u''
-        return unicode(self.value)
+        if self.upper:
+            return unicode(self.value).upper()
+        else:
+            return unicode(self.value)
 
     def _to_python(self):
         if self.value in v.VALIDATORS_EMPTY_VALUES:
