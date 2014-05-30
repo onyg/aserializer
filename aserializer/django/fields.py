@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
+from collections import Iterable
 
 from aserializer.fields import ListSerializerField
 
@@ -13,7 +14,10 @@ class RelatedManagerListSerializerField(ListSerializerField):
         self.items[:] = []
         self._native_items[:] = []
         self._python_items[:] = []
-        # if isinstance(value, Iterable):
-        for item in value.all():
+        if isinstance(value, Iterable):
+            values = value
+        else:
+            values = value.all()
+        for item in values:
             self.add_item(source=item)
 
