@@ -150,6 +150,9 @@ class DecimalField(IntegerField):
 
 class BooleanField(BaseSerializerField):
 
+    def __init__(self, required=False, *args, **kwargs):
+        super(BooleanField, self).__init__(required=required, *args, **kwargs)
+
     def set_value(self, value):
         if value in v.VALIDATORS_EMPTY_VALUES:
             self.value = None
