@@ -8,7 +8,9 @@ aserializer is a object serializer inspired by the django forms.
 
 Examples
 --------
-Examples how code looks like::
+Examples how code looks like:
+
+```
 
     class Address(Serializer):
         id = IntegerField(required=True, identity=True)
@@ -24,10 +26,14 @@ Examples how code looks like::
         email = EmailField(required=True)
         tel = StringField(required=False, min_length=10, max_length=50)
         address = NestedSerializerField(Address, required=True)
+```
 
 Result:
+
+```
 user = User(DATA)
 user.dump()
+
 	{
 		"_type": "user",
 		"id": 1,
@@ -42,3 +48,4 @@ user.dump()
 			"country": "Germany"
 		}
 	}
+```
