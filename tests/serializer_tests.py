@@ -553,6 +553,44 @@ class SerializerNestTestCase(unittest.TestCase):
         self.assertEqual(serializer.get_value('email'), 'john-doe@example.com')
 
 
+class NestedSerializerWithLimitOffFields(unittest.TestCase):
+    class TestNestSerializer(Serializer):
+
+        class NestSerializer(Serializer):
+            name = StringField(required=True)
+            id = IntegerField(required=True, identity=True)
+            planet = StringField(required=True)
+            os = StringField(required=True)
+
+        _type = TypeField('test_object')
+        id = IntegerField(required=True, identity=True)
+        name = StringField(required=True)
+        nest = NestedSerializerField(NestSerializer, fields=['name'], required=True)
+
+    def test_limit_of_fields(self):
+        class NestTestObject(object):
+            def __init__(self):
+                self.id = 23
+                self.name = 'NEST NAME'
+                self.planet = 'Earth'
+                self.os = 'BSD'
+
+        class TestObject(object):
+            def __init__(self):
+                self.id = 1
+                self.name = 'NAME'
+                self.nest = NestTestObject()
+
+        serializer = self.TestNestSerializer(source=TestObject())
+        self.assertTrue(serializer.is_valid())
+        self.assertDictEqual(serializer.errors, {})
+        self.assertIn('nest', serializer.to_dict())
+        self.assertIn('name', serializer.to_dict()['nest'])
+        self.assertIn('id', serializer.to_dict()['nest'])
+        self.assertNotIn('planet', serializer.to_dict()['nest'])
+        self.assertNotIn('os', serializer.to_dict()['nest'])
+
+
 class CustomValueMethods(unittest.TestCase):
 
     class TestSerializerOne(Serializer):
@@ -644,7 +682,6 @@ class CustomValueMethods(unittest.TestCase):
         self.assertEqual(serializer.street, None)
         self.assertNotIn('street', serializer.dump())
         self.assertNotIn('street', serializer.to_dict())
-
 
 
 if __name__ == '__main__':

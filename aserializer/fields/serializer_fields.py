@@ -8,9 +8,9 @@ from aserializer.fields.registry import get_serializer
 
 class SerializerObjectField(BaseSerializerField):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, fields=None, *args, **kwargs):
         super(SerializerObjectField, self).__init__(*args, **kwargs)
-        self.only_fields = []
+        self.only_fields = fields or []
         self.exclude = []
         self.extras = {}
         self._serializer_cls = None
@@ -25,7 +25,8 @@ class SerializerObjectField(BaseSerializerField):
         return self.normalize_serializer_cls(self._serializer_cls)
 
     def pre_value(self, fields=None, exclude=None, **extras):
-        self.only_fields = fields
+        if isinstance(fields, list):
+            self.only_fields = set(list(self.only_fields) + fields)
         self.exclude = exclude
         self.extras = extras
 
@@ -89,9 +90,6 @@ class ListSerializerField(SerializerObjectField):
         super(ListSerializerField, self).__init__(*args, **kwargs)
         self._serializer_cls = serializer
         self.items = []
-        self.only_fields = []
-        self.exclude = []
-        self.extras = {}
         self._python_items = []
         self._native_items = []
 
@@ -105,11 +103,6 @@ class ListSerializerField(SerializerObjectField):
                 raise SerializerFieldValueError(_errors)
         elif self.required:
             raise SerializerFieldValueError(self._error_messages['required'], field_names=self.names)
-
-    def pre_value(self, fields=None, exclude=None, **extras):
-        self.only_fields = fields
-        self.exclude = exclude
-        self.extras = extras
 
     def get_instance(self):
         return self.items
