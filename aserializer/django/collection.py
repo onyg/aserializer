@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from .base import CollectionSerializer
+from aserializer.collection.base import CollectionSerializer
 from .mixins import DjangoRequestMixin
 
 
