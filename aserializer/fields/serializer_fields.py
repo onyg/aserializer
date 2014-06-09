@@ -42,10 +42,10 @@ class SerializerObjectField(BaseSerializerField):
         return self
 
 
-class NestedSerializerField(SerializerObjectField):
+class SerializerField(SerializerObjectField):
 
     def __init__(self, serializer, *args, **kwargs):
-        super(NestedSerializerField, self).__init__(*args, **kwargs)
+        super(SerializerField, self).__init__(*args, **kwargs)
         self._serializer_cls = serializer
         self._serializer = None
 

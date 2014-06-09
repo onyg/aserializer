@@ -25,7 +25,7 @@ Examples how code looks like:
         name = StringField(required=True)
         email = EmailField(required=True)
         tel = StringField(required=False, min_length=10, max_length=50)
-        address = NestedSerializerField(Address, required=True)
+        address = SerializerField(Address, required=True)
 ```
 
 Result:

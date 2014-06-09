@@ -19,7 +19,7 @@ from aserializer.fields import (IntegerField,
                                 TypeField,
                                 EmailField,
                                 DecimalField,
-                                NestedSerializerField,)
+                                SerializerField,)
 from aserializer.fields.registry import SerializerNotRegistered
 from aserializer.base import Serializer
 
@@ -38,7 +38,7 @@ class MySerializer(Serializer):
     date_var = DateField(required=True, map_field='dt')
     time_var = TimeField(required=True, map_field='t')
     url = UrlField(required=True, base='http://www.base.com', default='api')
-    nest = NestedSerializerField(MyNestSerializer, required=True)
+    nest = SerializerField(MyNestSerializer, required=True)
 
 
 class MyObject(object):
@@ -103,7 +103,7 @@ class SerializeTestCase(unittest.TestCase):
         self.assertIn('_type', fields)
         self.assertIsInstance(fields['id'], IntegerField)
         self.assertIsInstance(fields['name'], StringField)
-        self.assertIsInstance(fields['nest'], NestedSerializerField)
+        self.assertIsInstance(fields['nest'], SerializerField)
         self.assertIsInstance(fields['_type'], TypeField)
 
     def test_filter_excluded_fields(self):
@@ -349,7 +349,7 @@ class SerializerNestTestCase(unittest.TestCase):
         time_var = TimeField(required=True)
         haus = StringField(required=True, map_field='house')
         url = UrlField(required=True, base='http://www.base.com', default='api')
-        nest = NestedSerializerField(NestSerializer, required=True)
+        nest = SerializerField(NestSerializer, required=True)
 
 
     def test_nest_object_valid_serialize(self):
@@ -442,7 +442,7 @@ class SerializerNestTestCase(unittest.TestCase):
         class LazyFieldSerializer(Serializer):
             _type = TypeField('test_object')
             id = IntegerField(required=True, identity=True)
-            nest = NestedSerializerField('LazyFieldNestSerializer', required=True)
+            nest = SerializerField('LazyFieldNestSerializer', required=True)
 
         class LazyFieldNestSerializer(Serializer):
             name = StringField(required=True)
@@ -469,7 +469,7 @@ class SerializerNestTestCase(unittest.TestCase):
     def test_lazy_nested_wrong_serializer_load(self):
 
         class LazyFieldSerializer(Serializer):
-            nest = NestedSerializerField('NotASerializer', required=True)
+            nest = SerializerField('NotASerializer', required=True)
 
         class TestObject(object):
             def __init__(self):
@@ -565,7 +565,7 @@ class NestedSerializerWithLimitOffFields(unittest.TestCase):
         _type = TypeField('test_object')
         id = IntegerField(required=True, identity=True)
         name = StringField(required=True)
-        nest = NestedSerializerField(NestSerializer, fields=['name'], required=True)
+        nest = SerializerField(NestSerializer, fields=['name'], required=True)
 
     def test_limit_of_fields(self):
         class NestTestObject(object):
