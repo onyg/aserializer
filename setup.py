@@ -9,17 +9,11 @@ except ImportError:
     pass
 
 
-LONG_DESCRIPTION = None
-try:
-    LONG_DESCRIPTION = open('README.rst').read()
-except:
-    pass
 
 CLASSIFIERS = [
     'Intended Audience :: Developers',
-    'License :: OSI Approved :: BSD License',
+    'License :: OSI Approved :: MIT License',
     'Operating System :: OS Independent',
-    'Framework :: Django',
     'Programming Language :: Python',
     'Programming Language :: Python :: 2',
     'Programming Language :: Python :: 2.6',
@@ -38,12 +32,11 @@ if "test" in sys.argv or "nosetests" in sys.argv:
 basic_setup = dict(
     name='aserializer',
     version='0.5',
-    author='onyg',
+    author='Ronald Martins',
     author_email='developer@onyg.de',
-    license='BSD',
-    description='A serializer for rest.',
-    url='',
-    long_description=LONG_DESCRIPTION,
+    license='MIT',
+    description='Object serializer inspired by the django forms.',
+    url='https://github.com/onyg/aserializer',
     packages= find_packages(exclude=('tests', 'tests.*')),
     platforms=['any'],
     classifiers=CLASSIFIERS,
