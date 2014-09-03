@@ -202,9 +202,14 @@ class EmailField(StringField):
 class UUIDField(BaseSerializerField):
     validators = [v.validate_uuid, ]
 
-    def __init__(self, upper=True, *args, **kwargs):
+    def __init__(self, upper=True, binary=True, *args, **kwargs):
+        """
+        To native always returns a string representation.  Upper specifies if it should be upper- or lower-case
+        To python returns a UUID object if binary is True (default), otherwise a lowercase string uuid.
+        """
         super(UUIDField, self).__init__(*args, **kwargs)
         self.upper = upper
+        self.binary = binary
 
     def _to_native(self):
         if self.value in v.VALIDATORS_EMPTY_VALUES:
@@ -217,9 +222,10 @@ class UUIDField(BaseSerializerField):
     def _to_python(self):
         if self.value in v.VALIDATORS_EMPTY_VALUES:
             return None
-        if isinstance(self.value, uuid.UUID):
-            return self.value
-        self.value = uuid.UUID(str(self.value))
+        if self.binary and not isinstance(self.value, uuid.UUID):
+            self.value = uuid.UUID(str(self.value))
+        if not self.binary:
+            return unicode(self.value).lower()
         return self.value
 
 

@@ -194,6 +194,13 @@ class FieldsTestCase(unittest.TestCase):
         self.assertEqual(uuid_field.to_python(),  uuid.UUID('8005ea5e-60b7-4b2a-ab41-a773b8b72e84'))
         self.assertEqual(uuid_field.to_native(), '8005ea5e-60b7-4b2a-ab41-a773b8b72e84'.upper())
 
+        uuid_field = UUIDField(required=True, binary=False)
+        uuid_field.set_value('8005ea5e-60b7-4b2a-ab41-a773b8b72e84'.upper())
+        uuid_field.validate()
+        self.assertIsInstance(uuid_field.to_python(), basestring)
+        self.assertEqual(uuid_field.to_python(), '8005ea5e-60b7-4b2a-ab41-a773b8b72e84')
+        self.assertEqual(uuid_field.to_native(), '8005ea5e-60b7-4b2a-ab41-a773b8b72e84'.upper())
+
         uuid_field = UUIDField(required=True)
         uuid_field.set_value('nono')
         self.assertRaises(SerializerFieldValueError, uuid_field.validate)
