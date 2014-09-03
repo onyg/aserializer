@@ -2,11 +2,19 @@
  # -*- coding: utf-8 -*-
 
 import sys
+import os
 from setuptools import setup, find_packages
 try:
     import multiprocessing
 except ImportError:
     pass
+
+
+def get_version():
+    with open(os.path.join('aserializer', '__init__.py')) as f:
+        for line in f:
+            if line.startswith('__version__ ='):
+                return line.split('=')[1].strip().strip('"\'')
 
 
 
@@ -31,11 +39,11 @@ if "test" in sys.argv or "nosetests" in sys.argv:
 
 basic_setup = dict(
     name='aserializer',
-    version='0.5',
+    version=get_version(),
     author='Ronald Martins',
     author_email='developer@onyg.de',
     license='MIT',
-    description='Object serializer inspired by the django forms.',
+    description='An object serializer inspired by the django forms.',
     url='https://github.com/onyg/aserializer',
     packages= find_packages(exclude=('tests', 'tests.*')),
     platforms=['any'],
