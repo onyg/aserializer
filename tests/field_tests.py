@@ -21,7 +21,9 @@ from aserializer.fields import (IntegerField,
                                 DecimalField,
                                 BooleanField,
                                 ChoiceField,
-                                ListField,)
+                                ListField,
+                                ListSerializerField,)
+from aserializer import Serializer
 
 
 class FieldsTestCase(unittest.TestCase):
@@ -494,7 +496,6 @@ class FieldsTestCase(unittest.TestCase):
         field = ListField(EmailField, required=True)
         self.assertRaises(SerializerFieldValueError, field.validate)
 
-
     def test_serializerfieldvalueerror(self):
         int_field = IntegerField(required=True)
         try:
@@ -510,6 +511,54 @@ class FieldsTestCase(unittest.TestCase):
         except SerializerFieldValueError, e:
             self.assertEqual(repr(e), 'Invalid value.')
             self.assertEqual(str(e), '[field]: Invalid value.')
+
+    def test_list_serializer_field(self):
+        class ASerializer(Serializer):
+            uuid = UUIDField(required=True)
+            name = StringField(required=True)
+            foo_number = IntegerField(required=False)
+
+        class ObjectForList(object):
+            def __init__(self, uuid, name, foo_number):
+                self.uuid = uuid
+                self.name = name
+                self.foo_number = foo_number
+
+            def get(self, key):
+                return getattr(self, key)
+
+        uuids = [
+            '0203a23f-032c-46be-a1fa-c85fd0284b4c',
+            'd2e6a469-a4fd-415e-8c22-b8d73856a714',
+            '8832f5cd-c024-49ce-b27a-8d6e388f3b08'
+        ]
+        objects = [
+            dict(uuid=uuids[0], name='ONE', foo_number=1),
+            dict(uuid=uuids[1], name='TWO', foo_number=2),
+            ObjectForList(uuid=uuids[2], name='THREE', foo_number=3)
+        ]
+
+        field = ListSerializerField(ASerializer, required=True)
+
+        field.set_value(value=objects)
+        field.validate()
+        for value in field.to_python():
+            self.assertIn(str(value.get('uuid')), uuids)
+            self.assertIn(str(value.get('name')), ['ONE', 'TWO', 'THREE'])
+
+        uuids = [
+            '1203a23f-032c-46be-a1fa-c85fd0284b4c',
+            '22e6a469-a4fd-415e-8c22-b8d73856a714',
+            'no_uuid_value'
+        ]
+        objects = [
+            ObjectForList(uuid=uuids[0], name='One', foo_number=1),
+            dict(uuid=uuids[1], name='TWO', foo_number=2),
+            dict(uuid=uuids[2], name='THREE', foo_number=3)
+        ]
+        field = ListSerializerField(ASerializer, required=True)
+        field.set_value(value=objects)
+        self.assertRaises(SerializerFieldValueError, field.validate)
 
 
 if __name__ == '__main__':
