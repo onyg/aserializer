@@ -86,12 +86,16 @@ class ListSerializerField(SerializerObjectField):
         'required': 'This list is empty.',
     }
 
-    def __init__(self, serializer, *args, **kwargs):
+    def __init__(self, serializer, sort_by=None, *args, **kwargs):
         super(ListSerializerField, self).__init__(*args, **kwargs)
         self._serializer_cls = serializer
         self.items = []
         self._python_items = []
         self._native_items = []
+
+        self._sort_by = None
+        if sort_by:
+            self._sort_by = [sort_by, ] if isinstance(sort_by, basestring) else sort_by
 
     def validate(self):
         if self.items:
@@ -127,10 +131,17 @@ class ListSerializerField(SerializerObjectField):
         if not self._native_items:
             for item in self.items:
                 self._native_items.append(item.dump())
+            if self._sort_by:
+                self._native_items = sorted(self._native_items,
+                                            key=lambda item: [item.get(k, None) for k in self._sort_by])
         return self._native_items
 
     def _to_python(self):
         if not self._python_items:
             for item in self.items:
                 self._python_items.append(item.to_dict())
+            # TODO: what about deserialization? do we want/need sorting here as well or do we trust the order of items from json?
+            # if self._sort_by:
+            #     return sorted(unsorted,
+            #                   key=lambda item: [getattr(item, k, None) for k in self._sort_by])
         return self._python_items
