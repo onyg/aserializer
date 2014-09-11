@@ -19,7 +19,8 @@ from aserializer.fields import (IntegerField,
                                 TypeField,
                                 EmailField,
                                 DecimalField,
-                                SerializerField,)
+                                SerializerField,
+                                ListSerializerField,)
 from aserializer.fields.registry import SerializerNotRegistered
 from aserializer.base import Serializer
 
@@ -683,6 +684,74 @@ class CustomValueMethods(unittest.TestCase):
         self.assertNotIn('street', serializer.dump())
         self.assertNotIn('street', serializer.to_dict())
 
+
+class SerializerWithListTestCase(unittest.TestCase):
+
+    def test_serializer_with_listserializerfied(self):
+        class ListItemSerialzer(Serializer):
+            code = StringField(required=True, max_length=3)
+            uuid = UUIDField(required=True)
+
+        class ASerializer(Serializer):
+            _type = TypeField('', fixed=False)
+            objects = ListSerializerField(ListItemSerialzer, required=True)
+
+        class ListItem(object):
+            def __init__(self, code, uuid):
+                self.code = code
+                self.uuid = uuid
+
+        class TestObject(object):
+            _type = 'test'
+            def __init__(self):
+                self.objects = []
+
+        uuids = [
+            '0203a23f-032c-46be-a1fa-c85fd0284b4c',
+            'd2e6a469-a4fd-415e-8c22-b8d73856a714',
+            '8832f5cd-c024-49ce-b27a-8d6e388f3b08',
+            'invalid_uuid'
+        ]
+        test_obj = TestObject()
+        test_obj.objects.append(ListItem(code='123', uuid=uuids[0]))
+        test_obj.objects.append(ListItem(code='321', uuid=uuids[1]))
+        test_obj.objects.append(ListItem(code='421', uuid=uuids[2]))
+        serializer = ASerializer(source=test_obj)
+        self.assertTrue(serializer.is_valid())
+        self.assertIn('objects', serializer.to_dict())
+        self.assertIn('_type', serializer.to_dict())
+        self.assertIsInstance(serializer.to_dict()['objects'], list)
+        self.assertIsInstance(serializer.dump()['objects'], list)
+        self.assertEqual(len(serializer.to_dict()['objects']), 3)
+        self.assertEqual(len(serializer.dump()['objects']), 3)
+        for a in serializer.to_dict()['objects']:
+            self.assertIn('uuid', a)
+            self.assertIn('code', a)
+            self.assertIn(str(a.get('uuid')), uuids)
+        for a in serializer.dump()['objects']:
+            self.assertIn('uuid', a)
+            self.assertIn('code', a)
+            self.assertIn(a.get('uuid'), str(uuids).upper())
+
+        # invalid code length
+        test_obj = TestObject()
+        test_obj.objects.append(ListItem(code='12311', uuid=uuids[0]))
+        test_obj.objects.append(ListItem(code='123', uuid=uuids[1]))
+        serializer = ASerializer(source=test_obj)
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('objects', serializer.errors)
+        self.assertEqual(len(serializer.errors['objects']), 1)
+
+        # invalid uuid
+        test_obj = TestObject()
+        test_obj.objects.append(ListItem(code='32', uuid=uuids[0]))
+        test_obj.objects.append(ListItem(code='12111', uuid=uuids[1]))
+        serializer = ASerializer(source=test_obj)
+
+        self.assertEqual(len(serializer.errors), 1)
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('objects', serializer.errors)
+        self.assertEqual(len(serializer.errors['objects']), 1)
 
 if __name__ == '__main__':
     unittest.main()
