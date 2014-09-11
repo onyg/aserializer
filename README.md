@@ -1,12 +1,13 @@
 aserializer
 ===========
 
-About
------
+###About
+-------
+
 aserializer is a object serializer inspired by the django forms.
 
 
-Examples
+###Examples
 --------
 Examples how code looks like:
 
@@ -49,3 +50,13 @@ user.dump()
 		}
 	}
 ```
+
+###Tests
+--------
+To run the tests use the command: `python setup.py nosetests`
+
+
+###Contributing
+---------------
+
+Please find bugs and send pull requests to the [GitHub repository](https://github.com/onyg/aserializer) and [issue tracker](https://github.com/onyg/aserializer/issues).
