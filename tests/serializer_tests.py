@@ -488,7 +488,7 @@ class SerializerNestTestCase(unittest.TestCase):
         self.assertTrue(serializer.is_valid())
         self.assertEqual(serializer.street, 'street')
 
-        self.assertEqual(serializer.to_json(), '{"_type": "test_object", "street": "street"}')
+        self.assertEqual(json.loads(serializer.to_json()), json.loads('{"_type": "test_object", "street": "street"}'))
 
         serializer = TestSerializer(source='{"street":"Musterstraße"}')
         self.assertTrue(serializer.is_valid())
