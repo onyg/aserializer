@@ -560,6 +560,33 @@ class FieldsTestCase(unittest.TestCase):
         field.set_value(value=objects)
         self.assertRaises(SerializerFieldValueError, field.validate)
 
+    def test_type_field(self):
+        type_field = TypeField('first_type')
+        type_field.set_value('second_type')
+        type_field.validate()
+        self.assertEqual(type_field.to_python(), 'second_type')
+        self.assertEqual(type_field.to_native(), 'second_type')
+
+        type_field = TypeField('first_type', fixed=True)
+        type_field.set_value('second_type')
+        type_field.validate()
+        self.assertEqual(type_field.to_python(), 'first_type')
+        self.assertEqual(type_field.to_native(), 'first_type')
+
+        type_field = TypeField('first_type', fixed=True, validate=True)
+        type_field.set_value('second_type')
+        type_field.validate()
+        self.assertEqual(type_field.to_python(), 'first_type')
+        self.assertEqual(type_field.to_native(), 'first_type')
+
+        type_field = TypeField('first_type', validate=True)
+        type_field.set_value('second_type')
+        self.assertRaises(SerializerFieldValueError, type_field.validate)
+        try:
+            type_field.validate()
+        except SerializerFieldValueError as e:
+            print self.assertEqual(e.errors, 'Value is not first_type.')
+
 
 if __name__ == '__main__':
     unittest.main()
