@@ -10,15 +10,19 @@ from aserializer.fields import validators as v
 
 class TypeField(BaseSerializerField):
 
-    def __init__(self, name, fixed=False, *args, **kwargs):
+    def __init__(self, name, fixed=False, validate=False,  *args, **kwargs):
         super(TypeField, self).__init__(*args, **kwargs)
         self.name = name
+        self._initial_name = name
         self.identity = True
         self.error_messages = {}
+        self.should_validate = validate
         self.fixed = fixed
 
     def validate(self):
-        pass
+        if self.should_validate:
+            if self.name != self._initial_name:
+                raise SerializerFieldValueError('Value is not {}.'.format(self._initial_name), field_names=self.names)
 
     def set_value(self, value):
         if not self.fixed:
