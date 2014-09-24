@@ -8,10 +8,10 @@ from aserializer.fields.registry import get_serializer
 
 class SerializerObjectField(BaseSerializerField):
 
-    def __init__(self, fields=None, *args, **kwargs):
+    def __init__(self, fields=None, exclude=None, *args, **kwargs):
         super(SerializerObjectField, self).__init__(*args, **kwargs)
         self.only_fields = fields or []
-        self.exclude = []
+        self.exclude = exclude or []
         self.extras = {}
         self._serializer_cls = None
 
@@ -25,9 +25,10 @@ class SerializerObjectField(BaseSerializerField):
         return self.normalize_serializer_cls(self._serializer_cls)
 
     def pre_value(self, fields=None, exclude=None, **extras):
-        if isinstance(fields, list):
-            self.only_fields = set(list(self.only_fields) + fields)
-        self.exclude = exclude
+        if isinstance(fields, (list, tuple, set)):
+            self.only_fields = set(list(self.only_fields) + list(fields))
+        if isinstance(exclude, (list, tuple, set)):
+            self.exclude = set(list(self.exclude) + list(exclude))
         self.extras = extras
 
     def get_instance(self):
