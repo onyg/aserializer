@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
+from aserializer.utils import py2to3
 from aserializer.collection.base import CollectionSerializer
-from .mixins import DjangoRequestMixin
+from aserializer.django.mixins import DjangoRequestMixin
 
 
 class DjangoCollectionSerializer(DjangoRequestMixin, CollectionSerializer):
@@ -19,7 +20,7 @@ class DjangoCollectionSerializer(DjangoRequestMixin, CollectionSerializer):
             if parent_name:
                 result.append('{}.{}'.format(parent_name, item.name))
             else:
-                result.append(str(item.name))
+                result.append(py2to3._unicode(item.name))
                 if item.rel is not None:
                     if parent_name:
                         item_name = '{}.{}'.format(parent_name, item.name)
@@ -34,7 +35,7 @@ class DjangoCollectionSerializer(DjangoRequestMixin, CollectionSerializer):
         try:
             offset = int(offset)
             limit = int(limit)
-        except Exception, e:
+        except Exception:
             limit = None
         if sort is not None and not isinstance(sort, list):
             sort = [str(sort)]
@@ -54,11 +55,11 @@ class DjangoCollectionSerializer(DjangoRequestMixin, CollectionSerializer):
                         _sort.append('{}{}'.format(sort_prefix, sort_field_name))
         try:
             if len(_sort) > 0:
-                _sort = [unicode(item).replace('.', '__') for item in _sort]
+                _sort = [py2to3._unicode(item).replace('.', '__') for item in _sort]
                 objects = objects.order_by(*_sort)
             if limit:
                 objects = objects[offset:(offset + limit)]
-        except Exception, e:
+        except Exception:
             return objects.model.objects.none()
         else:
             return objects

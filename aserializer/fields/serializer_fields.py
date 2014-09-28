@@ -2,6 +2,7 @@
 
 from collections import Iterable
 
+from aserializer.utils import py2to3
 from aserializer.fields.fields import BaseSerializerField, SerializerFieldValueError
 from aserializer.fields.registry import get_serializer
 
@@ -17,7 +18,7 @@ class SerializerObjectField(BaseSerializerField):
 
     @staticmethod
     def normalize_serializer_cls(serializer_cls):
-        if isinstance(serializer_cls, basestring):
+        if isinstance(serializer_cls, py2to3.string):
             serializer_cls = get_serializer(serializer_cls)
         return serializer_cls
 
@@ -96,7 +97,7 @@ class ListSerializerField(SerializerObjectField):
 
         self._sort_by = None
         if sort_by:
-            self._sort_by = [sort_by, ] if isinstance(sort_by, basestring) else sort_by
+            self._sort_by = [sort_by, ] if isinstance(sort_by, py2to3.string) else sort_by
 
     def validate(self):
         if self.items:

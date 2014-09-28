@@ -2,6 +2,7 @@
 
 from datetime import datetime, date, time
 
+from aserializer.utils import py2to3
 from aserializer.fields.base import BaseSerializerField, SerializerFieldValueError
 from aserializer.fields import validators as v
 
@@ -37,7 +38,7 @@ class BaseDatetimeField(BaseSerializerField):
     def set_value(self, value):
         if self._is_instance(value):
             self.value = value
-        elif isinstance(value, basestring):
+        elif isinstance(value, py2to3.string):
             self.value = self.strptime(value, self._date_formats)
             self.invalid = self.value is None
 
@@ -61,7 +62,7 @@ class BaseDatetimeField(BaseSerializerField):
         elif self._current_format:
             return value.strftime(self._current_format)
         else:
-            return unicode(value.isoformat())
+            return py2to3._unicode(value.isoformat())
 
 
 class DatetimeField(BaseDatetimeField):
@@ -80,7 +81,7 @@ class DatetimeField(BaseDatetimeField):
             return None
         if isinstance(self.value, datetime):
             return self.strftime(self.value)
-        return unicode(self.value)
+        return py2to3._unicode(self.value)
 
     def _to_python(self):
         if self.value in v.VALIDATORS_EMPTY_VALUES:
@@ -107,7 +108,7 @@ class DateField(BaseDatetimeField):
             self.value = value
         elif isinstance(value, datetime):
             self.value = value.date()
-        elif isinstance(value, basestring):
+        elif isinstance(value, py2to3.string):
             _value = self.strptime(value, self._date_formats)
             if _value is not None:
                 self.value = _value.date()
@@ -118,7 +119,7 @@ class DateField(BaseDatetimeField):
             return None
         if isinstance(self.value, date):
             return self.strftime(self.value)
-        return unicode(self.value)
+        return py2to3._unicode(self.value)
 
     def _to_python(self):
         if self.value in v.VALIDATORS_EMPTY_VALUES:
@@ -147,7 +148,7 @@ class TimeField(BaseDatetimeField):
             self.value = value
         elif isinstance(value, datetime):
             self.value = value.time()
-        elif isinstance(value, basestring):
+        elif isinstance(value, py2to3.string):
             _value = self.strptime(value, self._date_formats)
             if _value is not None:
                 self.value = _value.time()
@@ -158,7 +159,7 @@ class TimeField(BaseDatetimeField):
             return None
         if isinstance(self.value, time):
             return self.strftime(self.value)
-        return unicode(self.value)
+        return py2to3._unicode(self.value)
 
     def _to_python(self):
         if self.value in v.VALIDATORS_EMPTY_VALUES:

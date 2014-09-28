@@ -4,6 +4,8 @@ import uuid
 import decimal
 
 from collections import Iterable
+
+from aserializer.utils import py2to3
 from aserializer.fields.base import BaseSerializerField, IgnoreField, SerializerFieldValueError
 from aserializer.fields import validators as v
 
@@ -29,10 +31,10 @@ class TypeField(BaseSerializerField):
             self.name = value
 
     def to_native(self):
-        return unicode(self.name)
+        return py2to3._unicode(self.name)
 
     def to_python(self):
-        return unicode(self.name)
+        return py2to3._unicode(self.name)
 
     def __set__(self, instance, value):
         pass
@@ -100,9 +102,9 @@ class DecimalField(IntegerField):
             context.prec = self.precision
         if isinstance(value, decimal.Decimal):
             self.value = value.quantize(decimal.Decimal(".1") ** self.decimal_places, context=context)
-        elif isinstance(value, (int, long, float,)):
+        elif isinstance(value, (py2to3.integer, float,)):
             self.value = decimal.Decimal(value).quantize(decimal.Decimal(".1") ** self.decimal_places, context=context)
-        elif isinstance(value, basestring):
+        elif isinstance(value, py2to3.string):
             try:
                 self.value = decimal.Decimal(value).quantize(decimal.Decimal(".1") ** self.decimal_places, context=context)
             except:
@@ -128,11 +130,11 @@ class DecimalField(IntegerField):
     def __pre_eq__(other):
         if isinstance(other, decimal.Decimal):
             return other
-        elif isinstance(other, (int, long)):
+        elif isinstance(other, py2to3.integer):
             return decimal.Decimal(other)
         elif isinstance(other, float):
             return decimal.Decimal(str(other))
-        elif isinstance(other, basestring):
+        elif isinstance(other, py2to3.string):
             try:
                 d = decimal.Decimal(str(other))
             except:
@@ -160,7 +162,7 @@ class BooleanField(BaseSerializerField):
     def set_value(self, value):
         if value in v.VALIDATORS_EMPTY_VALUES:
             self.value = None
-        elif isinstance(value, basestring) and value.lower() in ('false', '0'):
+        elif isinstance(value, py2to3.string) and value.lower() in ('false', '0'):
             self.value = False
         else:
             self.value = bool(value)
@@ -190,7 +192,7 @@ class StringField(BaseSerializerField):
     def to_unicode(value):
         if value in v.VALIDATORS_EMPTY_VALUES:
             return u''
-        return unicode(value)
+        return py2to3._unicode(value)
 
     def _to_native(self):
         return self.to_unicode(self.value)
@@ -219,9 +221,9 @@ class UUIDField(BaseSerializerField):
         if self.value in v.VALIDATORS_EMPTY_VALUES:
             return u''
         if self.upper:
-            return unicode(self.value).upper()
+            return py2to3._unicode(self.value).upper()
         else:
-            return unicode(self.value)
+            return py2to3._unicode(self.value)
 
     def _to_python(self):
         if self.value in v.VALIDATORS_EMPTY_VALUES:
@@ -229,7 +231,7 @@ class UUIDField(BaseSerializerField):
         if self.binary and not isinstance(self.value, uuid.UUID):
             self.value = uuid.UUID(str(self.value))
         if not self.binary:
-            return unicode(self.value).lower()
+            return py2to3._unicode(self.value).lower()
         return self.value
 
 
@@ -249,7 +251,7 @@ class UrlField(BaseSerializerField):
     def to_unicode(value):
         if value in v.VALIDATORS_EMPTY_VALUES:
             return u''
-        return unicode(value)
+        return py2to3._unicode(value)
 
     def set_value(self, value):
         if self.uri_base:
@@ -319,7 +321,7 @@ class ListField(BaseSerializerField):
             for field in self.items:
                 try:
                     field.validate()
-                except SerializerFieldValueError, e:
+                except SerializerFieldValueError as e:
                     _errors.append(e.errors)
             if _errors:
                 raise SerializerFieldValueError(_errors)

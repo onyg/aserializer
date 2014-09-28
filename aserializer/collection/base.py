@@ -2,7 +2,7 @@
 
 import json
 
-from ..base import Serializer
+from aserializer.base import Serializer
 
 class CollectionMetaOptions(object):
 
@@ -102,14 +102,14 @@ class CollectionSerializer(object):
         try:
             offset = int(offset)
             limit = int(limit)
-        except Exception, e:
+        except Exception:
             limit = None
         if sort is not None or not isinstance(sort, list):
             sort = [str(sort)]
         try:
             if limit:
                 objects = objects[offset:(offset + limit)]
-        except Exception, e:
+        except Exception:
             return {}
         else:
             return objects

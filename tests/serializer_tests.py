@@ -5,6 +5,8 @@ import json
 import uuid
 import decimal
 from datetime import datetime, date, time
+
+from aserializer.utils import py2to3
 from aserializer.fields import (IntegerField,
                                 FloatField,
                                 UUIDField,
@@ -23,8 +25,6 @@ from aserializer.fields import (IntegerField,
                                 ListSerializerField,)
 from aserializer.fields.registry import SerializerNotRegistered
 from aserializer.base import Serializer
-
-
 
 
 class MySerializer(Serializer):
@@ -198,7 +198,7 @@ class SerializerFlatTestCase(unittest.TestCase):
         self.assertIsInstance(serializer.id, int)
         self.assertEqual(serializer.id, 1)
 
-        self.assertIsInstance(serializer.name, basestring)
+        self.assertIsInstance(serializer.name, py2to3.string)
         self.assertEqual(serializer.name, 'NAME')
 
         self.assertIsNone(serializer.street)
@@ -380,7 +380,7 @@ class SerializerNestTestCase(unittest.TestCase):
         self.assertIsInstance(serializer.id, int)
         self.assertEqual(serializer.id, 1)
 
-        self.assertIsInstance(serializer.name, basestring)
+        self.assertIsInstance(serializer.name, py2to3.string)
         self.assertEqual(serializer.name, 'NAME')
 
         self.assertIsNone(serializer.street)
@@ -599,7 +599,7 @@ class CustomValueMethods(unittest.TestCase):
         street = StringField(required=True)
 
         def street_clean_value(self, value):
-            if unicode(value).startswith('sesame'):
+            if py2to3._unicode(value).startswith('sesame'):
                 return 'Street for kids'
             else:
                 return value

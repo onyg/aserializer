@@ -5,6 +5,7 @@ import unittest
 import uuid
 import decimal
 from datetime import datetime, date, time
+from aserializer.utils import py2to3
 from aserializer.fields import (IntegerField,
                                 FloatField,
                                 UUIDField,
@@ -199,7 +200,7 @@ class FieldsTestCase(unittest.TestCase):
         uuid_field = UUIDField(required=True, binary=False)
         uuid_field.set_value('8005ea5e-60b7-4b2a-ab41-a773b8b72e84'.upper())
         uuid_field.validate()
-        self.assertIsInstance(uuid_field.to_python(), basestring)
+        self.assertIsInstance(uuid_field.to_python(), py2to3.string)
         self.assertEqual(uuid_field.to_python(), '8005ea5e-60b7-4b2a-ab41-a773b8b72e84')
         self.assertEqual(uuid_field.to_native(), '8005ea5e-60b7-4b2a-ab41-a773b8b72e84'.upper())
 
@@ -500,7 +501,7 @@ class FieldsTestCase(unittest.TestCase):
         int_field = IntegerField(required=True)
         try:
             int_field.validate()
-        except SerializerFieldValueError, e:
+        except SerializerFieldValueError as e:
             self.assertEqual(repr(e), 'This field is required.')
             self.assertEqual(str(e), '[field]: This field is required.')
 
@@ -508,7 +509,7 @@ class FieldsTestCase(unittest.TestCase):
         uuid_field.set_value('no_uuid')
         try:
             uuid_field.validate()
-        except SerializerFieldValueError, e:
+        except SerializerFieldValueError as e:
             self.assertEqual(repr(e), 'Invalid value.')
             self.assertEqual(str(e), '[field]: Invalid value.')
 
@@ -585,7 +586,7 @@ class FieldsTestCase(unittest.TestCase):
         try:
             type_field.validate()
         except SerializerFieldValueError as e:
-            print self.assertEqual(e.errors, 'Value is not first_type.')
+            self.assertEqual(e.errors, 'Value is not first_type.')
 
 
 if __name__ == '__main__':

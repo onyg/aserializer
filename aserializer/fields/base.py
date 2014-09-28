@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from aserializer.utils import py2to3
 from aserializer.fields import validators as v
 
 
@@ -10,7 +11,7 @@ class IgnoreField(Exception):
 class SerializerFieldValueError(Exception):
 
     def __init__(self, message, field_names=None):
-        if isinstance(message, basestring):
+        if isinstance(message, py2to3.string):
             self.error_message = message
         elif isinstance(message, dict):
             self.error_dict = message
@@ -116,7 +117,7 @@ class BaseSerializerField(object):
             raise IgnoreField()
         try:
             result = self._to_native()
-        except SerializerFieldValueError, e:
+        except SerializerFieldValueError:
             raise
         except:
             raise SerializerFieldValueError(self._error_messages['invalid'], field_names=self.names)
@@ -130,7 +131,7 @@ class BaseSerializerField(object):
     def to_python(self):
         try:
             result = self._to_python()
-        except SerializerFieldValueError, e:
+        except SerializerFieldValueError:
             raise
         except:
             raise SerializerFieldValueError(self._error_messages['invalid'], field_names=self.names)

@@ -4,19 +4,19 @@ import logging
 import copy
 from collections import OrderedDict
 import json
-from fields import *
-from fields.registry import register_serializer
+
+from aserializer.utils import py2to3
+from aserializer.fields import *
+from aserializer.fields.registry import register_serializer
 
 logger = logging.getLogger(__name__)
 
 
 def get_serializer_fields(bases, attrs, with_base_fields=True):
-    def items(d, **kw):
-        return iter(getattr(d, 'iteritems')(**kw))
-    fields = [(field_name, attrs.pop(field_name)) for field_name, obj in list(items(attrs)) if isinstance(obj, BaseSerializerField)]
+    fields = [(field_name, attrs.pop(field_name)) for field_name, obj in list(py2to3.iteritems(attrs)) if isinstance(obj, BaseSerializerField)]
     for base in bases[::-1]:
         if hasattr(base, '_base_fields'):
-            fields = list(items(base._base_fields)) + fields
+            fields = list(py2to3.iteritems(base._base_fields)) + fields
     return OrderedDict(fields)
 
 
@@ -40,9 +40,9 @@ class SerializerBase(type):
             setattr(new_class, field.map_field, field)
 
 
-class Serializer(object):
+class Serializer(py2to3.with_metaclass(SerializerBase)):
 
-    __metaclass__ = SerializerBase
+    # __metaclass__ = SerializerBase
 
     def __init__(self, source=None, fields=None, exclude=None, **extras):
         self.fields = copy.deepcopy(self._base_fields)
@@ -87,9 +87,9 @@ class Serializer(object):
         """
         The initial method is preparing the serializer and the source object for the source values set to the fields.
         """
-        if isinstance(source, basestring):
-            if not isinstance(source, unicode):
-                source = unicode(source, 'utf-8')
+        if isinstance(source, py2to3.string):
+            if not isinstance(source, py2to3.text):
+                source = py2to3._unicode(source, 'utf-8')
             try:
                 self.obj = json.loads(source)
             except ValueError:
@@ -142,7 +142,7 @@ class Serializer(object):
         This method checks if the source object got an variable for a field.
         """
         if isinstance(source, dict):
-            return source.has_key(field_name)
+            return field_name in source
         else:
             return hasattr(source, field_name)
 
@@ -168,20 +168,20 @@ class Serializer(object):
         """
         field_names = self.fields.keys()
         only_fields = [str(field_name).split('.')[0] for field_name in only_fields]
-        only_fields = filter(lambda field_name: field_name in field_names, only_fields)
+        only_fields = list(filter(lambda x: x in field_names, only_fields))
         if len(only_fields) <= 0:
             return self.fields
-        return OrderedDict(filter(lambda (field_name, field): field.identity or field_name in only_fields, self.fields.items()))
+        return OrderedDict(filter(lambda x: x[1].identity or x[0] in only_fields, self.fields.items()))
 
     def filter_excluded_fields(self, exclude):
         """
         This method excluding the current serializer fields dictionary by the list of field names.
         """
         field_names = self.fields.keys()
-        exclude = filter(lambda field_name: field_name in field_names, exclude)
+        exclude = list(filter(lambda field_name: field_name in field_names, exclude))
         if len(exclude) <= 0:
             return self.fields
-        return OrderedDict(filter(lambda (field_name, field): field.identity or not field_name in exclude, self.fields.items()))
+        return OrderedDict(filter(lambda x: x[1].identity or not x[0] in exclude, self.fields.items()))
 
     def has_method(self, method_name):
         _method = getattr(self, method_name, None)
