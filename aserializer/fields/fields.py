@@ -273,15 +273,18 @@ class ChoiceField(BaseSerializerField):
         'invalid': 'Invalid choice value.',
     }
 
-    def __init__(self, choices=(), *args, **kwargs):
+    def __init__(self, choices=None, *args, **kwargs):
         super(ChoiceField, self).__init__(*args, **kwargs)
-        self.choices = choices
-        self.python_value = None
+        self.choices = choices or ()
+        self.python_value = self.get_python_value(self.value)
 
-    def validate(self):
-        super(ChoiceField, self).validate()
-        if self.value in v.VALIDATORS_EMPTY_VALUES:
-            return
+    def set_value(self, value):
+        self.value = value
+        self.python_value = self.get_python_value(value)
+
+    def get_python_value(self, value):
+        if value in v.VALIDATORS_EMPTY_VALUES:
+            return None
         for val in self.choices:
             if isinstance(val, (list, tuple)):
                 try:
@@ -291,13 +294,19 @@ class ChoiceField(BaseSerializerField):
                     continue
                 else:
                     if self.value == key2:
-                        self.python_value = val2
-                        return
+                        return val2
             else:
                 if self.value == val:
-                    self.python_value = val
-                    return
-        raise SerializerFieldValueError(self._error_messages['invalid'], field_names=self.names)
+                    return val
+        return None
+
+    def validate(self):
+        super(ChoiceField, self).validate()
+        if self.value in v.VALIDATORS_EMPTY_VALUES:
+            return
+        _val = self.get_python_value(self.value)
+        if _val is None:
+            raise SerializerFieldValueError(self._error_messages['invalid'], field_names=self.names)
 
     def _to_native(self):
         return self.value
