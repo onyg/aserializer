@@ -42,8 +42,6 @@ class SerializerBase(type):
 
 class Serializer(py2to3.with_metaclass(SerializerBase)):
 
-    # __metaclass__ = SerializerBase
-
     def __init__(self, source=None, fields=None, exclude=None, **extras):
         self.fields = copy.deepcopy(self._base_fields)
         self._data = self.fields

@@ -2,11 +2,13 @@
 
 import json
 
+from aserializer.utils import py2to3
 from aserializer.base import Serializer
 
 class CollectionMetaOptions(object):
 
     def __init__(self, meta):
+        self.serializer = None
         self.with_metadata = True
         self.metadata_key = '_metadata'
         self.items_key = 'items'
@@ -35,6 +37,8 @@ class CollectionMetaOptions(object):
             self.metadata_key = meta.metadata_key
         if hasattr(meta, 'items_key'):
             self.items_key = meta.items_key
+        if hasattr(meta, 'serializer'):
+            self.serializer = meta.serializer
 
 
 class CollectionBase(type):
@@ -49,10 +53,8 @@ class CollectionBase(type):
         return new_class
 
 
-class CollectionSerializer(object):
+class CollectionSerializer(py2to3.with_metaclass(CollectionBase)):
     ITEM_SERIALIZER_CLS = None
-
-    __metaclass__ = CollectionBase
 
     class META:
         with_metadata = True
@@ -66,9 +68,10 @@ class CollectionSerializer(object):
         total_count_key = 'totalCount'
 
     def __init__(self, objects, fields=None, exclude=None, sort=None, limit=None, offset=None, **extras):
+        self.ITEM_SERIALIZER_CLS = self._meta.serializer or self.ITEM_SERIALIZER_CLS
         if self.ITEM_SERIALIZER_CLS is None or not issubclass(self.ITEM_SERIALIZER_CLS, Serializer):
             raise Exception('No item serializer set')
-        self.objects = objects
+        self.objects = objects or []
         self._fields = fields or self._meta.fields
         self._exclude = exclude or self._meta.exclude
         self._sort = sort or self._meta.sort
@@ -77,6 +80,9 @@ class CollectionSerializer(object):
         self.with_metadata = self._meta.with_metadata
         self._extras = extras
         self.handle_extras(extras=self._extras)
+
+    def __len__(self):
+        return len(self.objects)
 
     def handle_extras(self, extras):
         pass
@@ -105,7 +111,7 @@ class CollectionSerializer(object):
         except Exception:
             limit = None
         if sort is not None or not isinstance(sort, list):
-            sort = [str(sort)]
+            sort = [py2to3._unicode(sort)]
         try:
             if limit:
                 objects = objects[offset:(offset + limit)]
@@ -116,7 +122,7 @@ class CollectionSerializer(object):
 
     def _items(self, objects):
         objects = self._pre(objects=objects, limit=self._limit, offset=self._offset, sort=self._sort)
-        return map(lambda o: self.item(obj=o), objects)
+        return list(map(lambda o: self.item(obj=o), objects))
 
     def _generate(self, objects):
         if hasattr(self, 'result'):

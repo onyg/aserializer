@@ -97,7 +97,6 @@ class BaseSerializerField(object):
                 if hasattr(e, 'error_code') and e.error_code in self._error_messages:
                     message = self._error_messages[e.error_code]
                     errors.append(message)
-                    #break
                 else:
                     errors.append(e.message)
         if errors:
