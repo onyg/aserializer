@@ -122,6 +122,43 @@ class CollectionTestCase(unittest.TestCase):
         self.assertEqual(olist[1]['name'], '1')
         self.assertEqual(olist[2]['name'], '3')
 
+    def test_pre_multiple_sort(self):
+        collection = TestCollectionSerializer([])
+        objects = [
+            dict(name='3', number=5),
+            dict(name='1', number=6),
+            dict(name='2', number=8),
+            dict(name='2', number=7)
+        ]
+        olist = collection._pre(objects, sort=['name', 'number'])
+        self.assertEqual(len(olist), 4)
+        self.assertEqual(olist[0]['name'], '1')
+        self.assertEqual(olist[0]['number'], 6)
+
+        self.assertEqual(olist[1]['name'], '2')
+        self.assertEqual(olist[1]['number'], 7)
+
+        self.assertEqual(olist[2]['name'], '2')
+        self.assertEqual(olist[2]['number'], 8)
+
+        self.assertEqual(olist[3]['name'], '3')
+        self.assertEqual(olist[3]['number'], 5)
+
+        olist = collection._pre(objects, sort=['name', '-number'])
+        self.assertEqual(len(olist), 4)
+        self.assertEqual(olist[0]['name'], '1')
+        self.assertEqual(olist[0]['number'], 6)
+
+        self.assertEqual(olist[1]['name'], '2')
+        self.assertEqual(olist[1]['number'], 8)
+
+        self.assertEqual(olist[2]['name'], '2')
+        self.assertEqual(olist[2]['number'], 7)
+
+        self.assertEqual(olist[3]['name'], '3')
+        self.assertEqual(olist[3]['number'], 5)
+
+
     def test_metadata(self):
         collection = TestCollectionSerializer([])
         objects = [

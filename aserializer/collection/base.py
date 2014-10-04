@@ -125,7 +125,7 @@ class CollectionSerializer(py2to3.with_metaclass(CollectionBase)):
                 if isinstance(item, dict):
                     return item.get(k, None)
                 return getattr(item, k, None)
-            for s in sort:
+            for s in reversed(sort):
                 reverse = False
                 if s.startswith('-'):
                     reverse = True
