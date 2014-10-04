@@ -50,7 +50,7 @@ class CollectionBase(type):
         if 'META' in attrs:
             meta = attrs.pop('META')
         else:
-            meta = object()
+            meta = None
         new_class = super(CollectionBase, cls).__new__(cls, name, bases, attrs)
         setattr(new_class, '_meta', CollectionMetaOptions(meta))
         return new_class
@@ -118,8 +118,19 @@ class CollectionSerializer(py2to3.with_metaclass(CollectionBase)):
             limit = int(limit)
         except Exception:
             limit = None
-        if sort is not None or not isinstance(sort, list):
-            sort = [py2to3._unicode(sort)]
+        if sort:
+            if not isinstance(sort, list):
+                sort = [py2to3._unicode(sort)]
+            def get_key(item, k):
+                if isinstance(item, dict):
+                    return item.get(k, None)
+                return getattr(item, k, None)
+            for s in sort:
+                reverse = False
+                if s.startswith('-'):
+                    reverse = True
+                    s = s[1:]
+                objects = list(sorted(objects, key=lambda item:get_key(item, s), reverse=reverse))
         try:
             if limit:
                 objects = objects[offset:(offset + limit)]

@@ -2,7 +2,7 @@
 
 import unittest
 
-from aserializer.collection.base import CollectionSerializer
+from aserializer.collection.base import CollectionSerializer, CollectionMetaOptions
 from aserializer import Serializer
 from aserializer.fields import StringField, IntegerField
 
@@ -103,3 +103,111 @@ class CollectionTestCase(unittest.TestCase):
         self.assertEqual(len(olist), 0)
         self.assertListEqual(olist, [])
 
+    def test_pre_sort(self):
+        collection = TestCollectionSerializer([])
+        objects = [
+            dict(name='3', number=5),
+            dict(name='1', number=6),
+            dict(name='2', number=7)
+        ]
+        olist = collection._pre(objects, sort=['name'])
+        self.assertEqual(len(olist), 3)
+        self.assertEqual(olist[0]['name'], '1')
+        self.assertEqual(olist[1]['name'], '2')
+        self.assertEqual(olist[2]['name'], '3')
+
+        olist = collection._pre(objects, sort=['-number'])
+        self.assertEqual(len(olist), 3)
+        self.assertEqual(olist[0]['name'], '2')
+        self.assertEqual(olist[1]['name'], '1')
+        self.assertEqual(olist[2]['name'], '3')
+
+    def test_metadata(self):
+        collection = TestCollectionSerializer([])
+        objects = [
+            dict(name='The Name', number=9),
+            dict(name='The Name 2', number=10),
+            dict(name='The Name 3', number=8)
+        ]
+        metadata = collection.metadata(objects)
+        self.assertIn('totalCount', metadata)
+        self.assertIn('limit', metadata)
+        self.assertIn('offset', metadata)
+        self.assertEqual(metadata['totalCount'], 3)
+        self.assertEqual(metadata['limit'], 10)
+        self.assertEqual(metadata['offset'], 0)
+
+    def test_metadata_changed(self):
+        collection = TestCollectionSerializer([], limit=2, offset=1)
+        objects = [
+            dict(name='The Name', number=9),
+            dict(name='The Name 2', number=10),
+            dict(name='The Name 3', number=8)
+        ]
+        metadata = collection.metadata(objects)
+        self.assertIn('totalCount', metadata)
+        self.assertIn('limit', metadata)
+        self.assertIn('offset', metadata)
+        self.assertEqual(metadata['totalCount'], 3)
+        self.assertEqual(metadata['limit'], 2)
+        self.assertEqual(metadata['offset'], 1)
+
+
+class MetaOptionTests(unittest.TestCase):
+
+    def check_hasattr(self, meta):
+        self.assertTrue(hasattr(meta,'serializer'))
+        self.assertTrue(hasattr(meta,'with_metadata'))
+        self.assertTrue(hasattr(meta,'metadata_key'))
+        self.assertTrue(hasattr(meta,'items_key'))
+        self.assertTrue(hasattr(meta,'offset_key'))
+        self.assertTrue(hasattr(meta,'limit_key'))
+        self.assertTrue(hasattr(meta,'total_count_key'))
+        self.assertTrue(hasattr(meta,'fields'))
+        self.assertTrue(hasattr(meta,'exclude'))
+        self.assertTrue(hasattr(meta,'sort'))
+        self.assertTrue(hasattr(meta,'validation'))
+
+    def check_defaults(self, meta):
+        self.assertIsNone(meta.serializer)
+        self.assertTrue(meta.with_metadata)
+        self.assertEqual(meta.metadata_key, '_metadata')
+        self.assertEqual(meta.items_key, 'items')
+        self.assertEqual(meta.offset_key, 'offset')
+        self.assertEqual(meta.limit_key, 'limit')
+        self.assertEqual(meta.total_count_key, 'totalCount')
+        self.assertEqual(meta.fields, [])
+        self.assertEqual(meta.exclude, [])
+        self.assertEqual(meta.sort, [])
+        self.assertTrue(meta.validation)
+
+    def test_meta_options_class_defaults(self):
+        meta = CollectionMetaOptions(None)
+        self.check_hasattr(meta)
+        self.check_defaults(meta)
+
+    def test_no_META(self):
+        class Collection(CollectionSerializer):
+            ITEM_SERIALIZER_CLS = TestSerializer
+        collection = Collection([])
+        self.assertTrue(hasattr(collection, '_meta'))
+        self.check_defaults(collection._meta)
+
+    def test_META(self):
+        class Collection(CollectionSerializer):
+            class META:
+                serializer = TestSerializer
+                fields = ['name']
+                items_key = 'data'
+                metadata_key = 'info'
+                sort = ['foo', '-bar']
+                validation = False
+        collection = Collection([])
+        self.assertTrue(hasattr(collection, '_meta'))
+        self.check_hasattr(collection._meta)
+        self.assertEqual(collection._meta.serializer, TestSerializer)
+        self.assertEqual(collection._meta.fields, ['name'])
+        self.assertEqual(collection._meta.sort, ['foo', '-bar'])
+        self.assertEqual(collection._meta.items_key, 'data')
+        self.assertEqual(collection._meta.metadata_key, 'info')
+        self.assertFalse(collection._meta.validation)

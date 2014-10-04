@@ -89,13 +89,13 @@ def validate_string(value):
 
 class MinStringLengthValidator(CompareValidator):
     compare = lambda self, a, b: len(py2to3._unicode(a)) < b
-    message = 'Value is to short. Minimum value length is %(compare_value)s.'
+    message = 'Value is too short. Minimum value length is %(compare_value)s.'
     code = 'min_length'
 
 
 class MaxStringLengthValidator(CompareValidator):
     compare = lambda self, a, b: len(py2to3._unicode(a)) > b
-    message = 'Value is to long. Maximum value length is %(compare_value)s.'
+    message = 'Value is too long. Maximum value length is %(compare_value)s.'
     code = 'max_length'
 
 
