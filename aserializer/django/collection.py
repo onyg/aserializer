@@ -42,7 +42,7 @@ class DjangoCollectionSerializer(DjangoRequestMixin, CollectionSerializer):
         _sort = []
         if sort and len(sort) > 0:
             model_fields = self.get_model_field_list(objects.model)
-            serializer_fieldnames = self.ITEM_SERIALIZER_CLS.get_fieldnames()
+            serializer_fieldnames = self._serializer_cls.get_fieldnames()
             for sort_item in sort:
                 sort_field_name = str(sort_item)
                 sort_prefix = ''

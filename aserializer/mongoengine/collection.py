@@ -26,7 +26,7 @@ class MongoEngineCollectionSerializer(CollectionSerializer):
             sort = [str(sort)]
         _sort = []
         if sort and len(sort) > 0:
-            serializer_fieldnames = self.ITEM_SERIALIZER_CLS.get_fieldnames()
+            serializer_fieldnames = self._serializer_cls.get_fieldnames()
             for sort_item in sort:
                 sort_field_name = str(sort_item)
                 sort_prefix = ''

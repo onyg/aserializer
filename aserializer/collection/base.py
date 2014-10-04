@@ -2,7 +2,7 @@
 
 import json
 
-from aserializer.utils import py2to3
+from aserializer.utils import py2to3, registry
 from aserializer.base import Serializer
 
 class CollectionMetaOptions(object):
@@ -18,6 +18,7 @@ class CollectionMetaOptions(object):
         self.fields = []
         self.exclude = []
         self.sort = []
+        self.validation = True
 
         if hasattr(meta, 'with_metadata'):
             self.with_metadata = meta.with_metadata
@@ -39,6 +40,8 @@ class CollectionMetaOptions(object):
             self.items_key = meta.items_key
         if hasattr(meta, 'serializer'):
             self.serializer = meta.serializer
+        if hasattr(meta, 'validation'):
+            self.validation = meta.validation
 
 
 class CollectionBase(type):
@@ -69,7 +72,8 @@ class CollectionSerializer(py2to3.with_metaclass(CollectionBase)):
 
     def __init__(self, objects, fields=None, exclude=None, sort=None, limit=None, offset=None, **extras):
         self.ITEM_SERIALIZER_CLS = self._meta.serializer or self.ITEM_SERIALIZER_CLS
-        if self.ITEM_SERIALIZER_CLS is None or not issubclass(self.ITEM_SERIALIZER_CLS, Serializer):
+        self._serializer_cls = registry.get_serializer(self.ITEM_SERIALIZER_CLS)
+        if self._serializer_cls is None or not issubclass(self._serializer_cls, Serializer):
             raise Exception('No item serializer set')
         self.objects = objects or []
         self._fields = fields or self._meta.fields
@@ -100,7 +104,11 @@ class CollectionSerializer(py2to3.with_metaclass(CollectionBase)):
         return _metadata
 
     def item(self, obj):
-        return self.ITEM_SERIALIZER_CLS(source=obj, fields=self._fields, exclude=self._exclude, **self._extras).dump()
+        _serializer = self._serializer_cls(source=obj, fields=self._fields, exclude=self._exclude, **self._extras)
+        if self._meta.validation:
+            if not _serializer.is_valid():
+                return {}
+        return _serializer.dump()
 
     def _pre(self, objects, limit=None, offset=None, sort=None):
         if offset is None:

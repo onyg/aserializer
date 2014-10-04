@@ -3,27 +3,23 @@
 import unittest
 import json
 import uuid
-import decimal
 from datetime import datetime, date, time
 
 from aserializer.utils import py2to3
 from aserializer.fields import (IntegerField,
-                                FloatField,
                                 UUIDField,
                                 StringField,
                                 DatetimeField,
                                 DateField,
                                 TimeField,
-                                SerializerFieldValueError,
                                 UrlField,
                                 HIDE_FIELD,
                                 IgnoreField,
                                 TypeField,
                                 EmailField,
-                                DecimalField,
                                 SerializerField,
                                 ListSerializerField,)
-from aserializer.fields.registry import SerializerNotRegistered
+from aserializer.utils.registry import SerializerNotRegistered
 from aserializer.base import Serializer
 
 

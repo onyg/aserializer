@@ -2,9 +2,8 @@
 
 from collections import Iterable
 
-from aserializer.utils import py2to3
+from aserializer.utils import py2to3, registry
 from aserializer.fields.fields import BaseSerializerField, SerializerFieldValueError
-from aserializer.fields.registry import get_serializer
 
 
 class SerializerObjectField(BaseSerializerField):
@@ -19,7 +18,7 @@ class SerializerObjectField(BaseSerializerField):
     @staticmethod
     def normalize_serializer_cls(serializer_cls):
         if isinstance(serializer_cls, py2to3.string):
-            serializer_cls = get_serializer(serializer_cls)
+            serializer_cls = registry.get_serializer(serializer_cls)
         return serializer_cls
 
     def get_serializer_cls(self):

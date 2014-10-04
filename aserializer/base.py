@@ -5,9 +5,9 @@ import copy
 from collections import OrderedDict
 import json
 
-from aserializer.utils import py2to3
 from aserializer.fields import *
-from aserializer.fields.registry import register_serializer
+from aserializer.utils import registry
+
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ class SerializerBase(type):
         for field_name, field in base_fields.items():
             cls.add_field(new_class=new_class, name=field_name, field=field)
         setattr(new_class, '_base_fields', base_fields)
-        register_serializer(new_class.__name__, new_class)
+        registry.register_serializer(new_class.__name__, new_class)
         return new_class
 
     @classmethod
