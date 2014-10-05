@@ -18,7 +18,7 @@ class CollectionMetaOptions(object):
         self.fields = []
         self.exclude = []
         self.sort = []
-        self.validation = True
+        self.validation = False
 
         if hasattr(meta, 'with_metadata'):
             self.with_metadata = meta.with_metadata

@@ -16,6 +16,7 @@ class TestCollectionSerializer(CollectionSerializer):
 
     class META:
         serializer = TestSerializer
+        validation = True
 
 
 class TestObject(object):
@@ -70,6 +71,17 @@ class CollectionTestCase(unittest.TestCase):
         self.assertDictEqual(dump, {})
         dump = collection.item(dict(name='The Name', number=15))
         self.assertDictEqual(dump, {})
+
+    def test_item_with_invaild_serializer_no_validation(self):
+        class TestNoValidationCollectionSerializer(CollectionSerializer):
+            class META:
+                serializer = TestSerializer
+
+        collection = TestNoValidationCollectionSerializer([])
+        dump = collection.item(dict(wrongkey='The Name', number=9))
+        self.assertDictEqual(dump, dict(name='', number=9))
+        dump = collection.item(dict(name='The Name', number=15))
+        self.assertDictEqual(dump, dict(name='The Name', number=15))
 
     def test_items(self):
         collection = TestCollectionSerializer([])
@@ -216,7 +228,7 @@ class MetaOptionTests(unittest.TestCase):
         self.assertEqual(meta.fields, [])
         self.assertEqual(meta.exclude, [])
         self.assertEqual(meta.sort, [])
-        self.assertTrue(meta.validation)
+        self.assertFalse(meta.validation)
 
     def test_meta_options_class_defaults(self):
         meta = CollectionMetaOptions(None)
@@ -238,7 +250,7 @@ class MetaOptionTests(unittest.TestCase):
                 items_key = 'data'
                 metadata_key = 'info'
                 sort = ['foo', '-bar']
-                validation = False
+                validation = True
         collection = Collection([])
         self.assertTrue(hasattr(collection, '_meta'))
         self.check_hasattr(collection._meta)
@@ -247,7 +259,7 @@ class MetaOptionTests(unittest.TestCase):
         self.assertEqual(collection._meta.sort, ['foo', '-bar'])
         self.assertEqual(collection._meta.items_key, 'data')
         self.assertEqual(collection._meta.metadata_key, 'info')
-        self.assertFalse(collection._meta.validation)
+        self.assertTrue(collection._meta.validation)
 
     def test_without_metadata(self):
         class MyCollection(CollectionSerializer):
