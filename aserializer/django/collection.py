@@ -15,7 +15,9 @@ class DjangoCollectionSerializer(DjangoRequestMixin, CollectionSerializer):
         _metadata[self._meta.total_count_key] = total_count
         return _metadata
 
-    def get_model_field_list(self, model, parent_name=None, result=[]):
+    def get_model_field_list(self, model, parent_name=None, result=None):
+        if result is None:
+            result = []
         for item, i in model._meta.get_fields_with_model():
             if parent_name:
                 result.append('{}.{}'.format(parent_name, item.name))

@@ -149,7 +149,7 @@ class DjangoCollectionSerializerTests(TestCase):
         SimpleDjangoModel.objects.all().delete()
         RelatedDjangoModel.objects.all().delete()
 
-    def test_simple_collection(self):
+    def test_simple(self):
         qs = SimpleDjangoModel.objects.all()
 
         collection = SimpleDjangoModelCollection(qs)
@@ -189,7 +189,7 @@ class DjangoCollectionSerializerTests(TestCase):
         }
         self.assertDictEqual(collection.dump(), test_value)
 
-    def test_collection_limit_offset(self):
+    def test_limit_offset(self):
         qs = SimpleDjangoModel.objects.all()
 
         collection = SimpleDjangoModelCollection(qs, limit=2, offset=2)
@@ -214,7 +214,7 @@ class DjangoCollectionSerializerTests(TestCase):
         }
         self.assertDictEqual(collection.dump(), test_value)
 
-    def test_collection_sort(self):
+    def test_sort(self):
         qs = SimpleDjangoModel.objects.all()
 
         collection = SimpleDjangoModelCollection(qs, sort=['-number'])
@@ -254,7 +254,7 @@ class DjangoCollectionSerializerTests(TestCase):
         }
         self.assertDictEqual(collection.dump(), test_value)
 
-    def test_collection_multiple_sort(self):
+    def test_multiple_sort(self):
         qs = SimpleDjangoModel.objects.all()
 
         collection = SimpleDjangoModelCollection(qs, limit=2, sort=['number', '-code'])
@@ -278,3 +278,15 @@ class DjangoCollectionSerializerTests(TestCase):
             ]
         }
         self.assertDictEqual(collection.dump(), test_value)
+
+
+    def test_invalid_sort(self):
+        qs = SimpleDjangoModel.objects.all()
+
+        collection = SimpleDjangoModelCollection(qs, sort=['foobar'])
+        dump = collection.dump()
+        self.assertEqual(dump['items'][0]['code'], 'DDDD')
+        self.assertEqual(dump['items'][1]['code'], 'FFFF')
+        self.assertEqual(dump['items'][2]['code'], 'CCCC')
+        self.assertEqual(dump['items'][3]['code'], 'BBBB')
+        self.assertEqual(dump['items'][4]['code'], 'AAAA')
