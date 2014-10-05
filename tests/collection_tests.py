@@ -248,3 +248,19 @@ class MetaOptionTests(unittest.TestCase):
         self.assertEqual(collection._meta.items_key, 'data')
         self.assertEqual(collection._meta.metadata_key, 'info')
         self.assertFalse(collection._meta.validation)
+
+    def test_without_metadata(self):
+        class MyCollection(CollectionSerializer):
+            class META:
+                serializer = TestSerializer
+                with_metadata = False
+        objects = [
+            dict(name='The Name', number=9),
+            dict(name='The Name 2', number=10),
+            dict(name='The Name 3', number=8)
+        ]
+        collection = MyCollection(objects)
+        dump = collection.dump()
+        self.assertNotIn('_metadata', dump)
+        self.assertNotIn('items', dump)
+        self.assertListEqual(dump, objects)
