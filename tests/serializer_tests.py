@@ -749,5 +749,36 @@ class SerializerWithListTestCase(unittest.TestCase):
         self.assertIn('objects', serializer.errors)
         self.assertEqual(len(serializer.errors['objects']), 1)
 
+
+class UnknownFieldError(unittest.TestCase):
+
+    def test_known_field_dict(self):
+        class UnknownTestSerialzer(Serializer):
+            code = StringField(required=True, max_length=3)
+            number = IntegerField(required=True)
+
+        serializer = UnknownTestSerialzer(dict(code='HHH', number=1, name='Test'), unknown_error=True)
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('name', serializer.errors)
+        self.assertEqual(serializer.errors['name'], 'Totally unknown.')
+
+    def test_known_field_object(self):
+        class UnknownFieldObject(object):
+            def __init__(self):
+                self.code = 'HHH'
+                self.number = 1
+                self.name = 'JJJ'
+                self.foobar = 12
+        class UnknownTestSerialzer(Serializer):
+            code = StringField(required=True, max_length=3)
+            number = IntegerField(required=True)
+
+        serializer = UnknownTestSerialzer(UnknownFieldObject(), unknown_error=True)
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('name', serializer.errors)
+        self.assertIn('foobar', serializer.errors)
+        self.assertEqual(serializer.errors['name'], 'Totally unknown.')
+        self.assertEqual(serializer.errors['foobar'], 'Totally unknown.')
+
 if __name__ == '__main__':
     unittest.main()

@@ -41,8 +41,11 @@ class SerializerBase(type):
 
 
 class Serializer(py2to3.with_metaclass(SerializerBase)):
+    error_messages = {
+        'unknown': 'Totally unknown.'
+    }
 
-    def __init__(self, source=None, fields=None, exclude=None, **extras):
+    def __init__(self, source=None, fields=None, exclude=None, unknown_error=False, **extras):
         self.fields = copy.deepcopy(self._base_fields)
         self._data = self.fields
         if fields:
@@ -53,6 +56,7 @@ class Serializer(py2to3.with_metaclass(SerializerBase)):
         self.__show_field_list = fields or []
         self.__exclude_field_list = exclude or []
         self.source_is_invalid = False
+        self._handle_unknown_error = unknown_error
         self.initial(source=source)
 
     def __iter__(self):
@@ -149,10 +153,12 @@ class Serializer(py2to3.with_metaclass(SerializerBase)):
         """
         This method returns a list of all variable names of an object.
         """
-        if isinstance(source, dict):
-            return source.keys()
+        if source is None:
+            return {}
+        elif isinstance(source, dict):
+            return list(source.keys())
         else:
-            return dir(source)
+            return [value for value in dir(source) if not value.startswith('__')]
 
     def get_fields_and_exclude_for_nested(self, field_name):
         field_prefix = '{}.'.format(field_name)
@@ -201,20 +207,28 @@ class Serializer(py2to3.with_metaclass(SerializerBase)):
         If a field is an identity field it only will be validate if the source object got the varialbe name.
         """
         self._errors = {}
-        source_attr = self.get_fieldnames_from_source(self.obj)
+        source_attrs = self.get_fieldnames_from_source(self.obj)
         for field_name, field in self.fields.items():
-            if field.identity and not field_name in source_attr:
+            if field.identity and not field_name in source_attrs:
                 continue
             label = field_name
-            if field_name in source_attr or field.map_field in source_attr:
+            if field_name in source_attrs or field.map_field in source_attrs:
                 try:
                     field.validate()
                 except SerializerFieldValueError as e:
                     self._errors[label] = e.errors
+                if self._handle_unknown_error:
+                    if field_name in source_attrs:
+                        source_attrs.remove(field_name)
+                    elif field.map_field in source_attrs:
+                        source_attrs.remove(field.map_field)
             elif field.required:
                 if field.has_default:
                     continue
                 self._errors[label] = field.error_messages['required']
+        if self._handle_unknown_error:
+            for attr in source_attrs:
+                self._errors[attr] = self.error_messages['unknown']
 
     def update_field(self, field):
         """
