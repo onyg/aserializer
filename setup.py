@@ -31,7 +31,7 @@ CLASSIFIERS = [
 
 extra_opts = {}
 if "test" in sys.argv or "nosetests" in sys.argv:
-    extra_opts['tests_require'] = ['nose', 'coverage', 'blinker']
+    extra_opts['tests_require'] = ['nose', 'coverage', 'django>=1.4.2']
 
 basic_setup = dict(
     name='aserializer',

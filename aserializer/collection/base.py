@@ -157,6 +157,6 @@ class CollectionSerializer(py2to3.with_metaclass(CollectionBase)):
         self._generate(self.objects)
         return self.result
 
-    def to_json(self, indent=4):
+    def to_json(self, indent=None):
         dump = self.dump()
         return json.dumps(dump, indent=indent)

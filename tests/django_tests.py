@@ -1,0 +1,280 @@
+# -*- coding: utf-8 -*-
+
+import os
+import unittest
+
+from aserializer import Serializer
+from aserializer import fields
+from aserializer.django.fields import RelatedManagerListSerializerField
+from aserializer.django.collection import DjangoCollectionSerializer
+
+try:
+    import django
+except ImportError:
+    django = None
+
+
+SKIPTEST_TEXT = "Django is not installed."
+DJANGO_RUNNER = None
+DJANGO_RUNNER_STATE = None
+
+
+if django is not None:
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'tests.django_app.settings')
+
+    from django.test import TestCase
+    from django.test import simple as django_test_simple
+    from django.test import utils as django_test_utils
+    from tests.django_app.models import SimpleDjangoModel, RelatedDjangoModel
+
+else:
+    from unittest import TestCase
+
+
+if django is not None and django.VERSION >= (1, 7, 0):
+    django.setup()
+
+
+def setUpModule():
+    if django is None:
+        raise unittest.SkipTest(SKIPTEST_TEXT)
+    django_test_utils.setup_test_environment()
+    global DJANGO_RUNNER
+    global DJANGO_RUNNER_STATE
+    DJANGO_RUNNER = django_test_simple.DjangoTestSuiteRunner()
+    DJANGO_RUNNER_STATE = DJANGO_RUNNER.setup_databases()
+
+
+def tearDownModule():
+    if django is None:
+        return
+    global DJANGO_RUNNER
+    global DJANGO_RUNNER_STATE
+    if DJANGO_RUNNER and DJANGO_RUNNER_STATE:
+        DJANGO_RUNNER.teardown_databases(DJANGO_RUNNER_STATE)
+    django_test_utils.teardown_test_environment()
+
+
+class SimpleDjangoModelSerializer(Serializer):
+    name = fields.StringField(required=True, max_length=24)
+    code = fields.StringField(max_length=4)
+    number = fields.IntegerField(required=True)
+
+
+class RelatedDjangoModelSerializer(Serializer):
+    name = fields.StringField(required=True, max_length=24)
+    relation = fields.SerializerField(SimpleDjangoModelSerializer)
+
+
+class SecondSimpleDjangoModelSerializer(Serializer):
+    name = fields.StringField(required=True, max_length=24)
+    code = fields.StringField(max_length=4)
+    number = fields.IntegerField(required=True)
+    relations = RelatedManagerListSerializerField(RelatedDjangoModelSerializer, exclude=['relation'])
+
+
+@unittest.skipIf(django is None, SKIPTEST_TEXT)
+class DjangoSerializerTests(TestCase):
+
+    def tearDown(self):
+        SimpleDjangoModel.objects.all().delete()
+        RelatedDjangoModel.objects.all().delete()
+
+    def test_serialize(self):
+        sdm = SimpleDjangoModel.objects.create(name='The Name', code='AAAA', number=1)
+
+        serializer = SimpleDjangoModelSerializer(sdm)
+        self.assertTrue(serializer.is_valid())
+        self.assertDictEqual(serializer.dump(), dict(name='The Name', code='AAAA', number=1))
+
+    def test_relation(self):
+        sdm = SimpleDjangoModel.objects.create(name='The Name', code='AAAA', number=1)
+        rdm = RelatedDjangoModel.objects.create(name='Relation', relation=sdm)
+
+        serializer = RelatedDjangoModelSerializer(rdm)
+        self.assertTrue(serializer.is_valid())
+        test_value = {
+            'name': 'Relation',
+            'relation': {
+                'name': 'The Name',
+                'code': 'AAAA',
+                'number': 1
+            }
+        }
+        self.assertDictEqual(serializer.dump(), test_value)
+
+    def test_relation_list(self):
+        sdm = SimpleDjangoModel.objects.create(name='The Name', code='AAAA', number=1)
+        RelatedDjangoModel.objects.create(name='Relation 1', relation=sdm)
+        RelatedDjangoModel.objects.create(name='Relation 2', relation=sdm)
+        RelatedDjangoModel.objects.create(name='Relation 3', relation=sdm)
+
+        serializer = SecondSimpleDjangoModelSerializer(sdm)
+        self.assertTrue(serializer.is_valid())
+        test_value = {
+            'name': 'The Name',
+            'number': 1,
+            'code': 'AAAA',
+            'relations': [
+                {
+                    'name': 'Relation 1'
+                },
+                {
+                    'name': 'Relation 2'
+                },
+                {
+                    'name': 'Relation 3'
+                }
+            ]
+        }
+        self.assertDictEqual(serializer.dump(), test_value)
+
+
+class SimpleDjangoModelCollection(DjangoCollectionSerializer):
+    class META:
+        serializer = SimpleDjangoModelSerializer
+
+
+@unittest.skipIf(django is None, SKIPTEST_TEXT)
+class DjangoCollectionSerializerTests(TestCase):
+
+    def setUp(self):
+        SimpleDjangoModel.objects.create(name='One', code='DDDD', number=1)
+        SimpleDjangoModel.objects.create(name='One', code='FFFF', number=1)
+        SimpleDjangoModel.objects.create(name='Two', code='CCCC', number=2)
+        SimpleDjangoModel.objects.create(name='Three', code='BBBB', number=3)
+        SimpleDjangoModel.objects.create(name='Four', code='AAAA', number=4)
+
+    def tearDown(self):
+        SimpleDjangoModel.objects.all().delete()
+        RelatedDjangoModel.objects.all().delete()
+
+    def test_simple_collection(self):
+        qs = SimpleDjangoModel.objects.all()
+
+        collection = SimpleDjangoModelCollection(qs)
+        test_value = {
+            "_metadata": {
+                "totalCount": 5,
+                "offset": 0,
+                "limit": 10
+            },
+            "items": [
+                {
+                    "name": "One",
+                    "code": "DDDD",
+                    "number": 1
+                },
+                {
+                    "name": "One",
+                    "code": "FFFF",
+                    "number": 1
+                },
+                {
+                    "name": "Two",
+                    "code": "CCCC",
+                    "number": 2
+                },
+                {
+                    "name": "Three",
+                    "code": "BBBB",
+                    "number": 3
+                },
+                {
+                    "name": "Four",
+                    "code": "AAAA",
+                    "number": 4
+                }
+            ]
+        }
+        self.assertDictEqual(collection.dump(), test_value)
+
+    def test_collection_limit_offset(self):
+        qs = SimpleDjangoModel.objects.all()
+
+        collection = SimpleDjangoModelCollection(qs, limit=2, offset=2)
+        test_value = {
+            "_metadata": {
+                "totalCount": 5,
+                "offset": 2,
+                "limit": 2
+            },
+            "items": [
+                {
+                    "name": "Two",
+                    "code": "CCCC",
+                    "number": 2
+                },
+                {
+                    "name": "Three",
+                    "code": "BBBB",
+                    "number": 3
+                }
+            ]
+        }
+        self.assertDictEqual(collection.dump(), test_value)
+
+    def test_collection_sort(self):
+        qs = SimpleDjangoModel.objects.all()
+
+        collection = SimpleDjangoModelCollection(qs, sort=['-number'])
+        test_value = {
+            "_metadata": {
+                "totalCount": 5,
+                "offset": 0,
+                "limit": 10
+            },
+            "items": [
+                {
+                    "name": "Four",
+                    "code": "AAAA",
+                    "number": 4
+                },
+                {
+                    "name": "Three",
+                    "code": "BBBB",
+                    "number": 3
+                },
+                {
+                    "name": "Two",
+                    "code": "CCCC",
+                    "number": 2
+                },
+                {
+                    "name": "One",
+                    "code": "DDDD",
+                    "number": 1
+                },
+                {
+                    "name": "One",
+                    "code": "FFFF",
+                    "number": 1
+                }
+            ]
+        }
+        self.assertDictEqual(collection.dump(), test_value)
+
+    def test_collection_multiple_sort(self):
+        qs = SimpleDjangoModel.objects.all()
+
+        collection = SimpleDjangoModelCollection(qs, limit=2, sort=['number', '-code'])
+        test_value = {
+            "_metadata": {
+                "totalCount": 5,
+                "offset": 0,
+                "limit": 2
+            },
+            "items": [
+                {
+                    "name": "One",
+                    "code": "FFFF",
+                    "number": 1
+                },
+                {
+                    "name": "One",
+                    "code": "DDDD",
+                    "number": 1
+                }
+            ]
+        }
+        self.assertDictEqual(collection.dump(), test_value)
