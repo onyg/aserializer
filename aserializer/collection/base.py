@@ -5,6 +5,7 @@ import json
 from aserializer.utils import py2to3, registry
 from aserializer.base import Serializer
 
+
 class CollectionMetaOptions(object):
 
     def __init__(self, meta):
@@ -71,6 +72,7 @@ class CollectionSerializer(py2to3.with_metaclass(CollectionBase)):
         total_count_key = 'totalCount'
 
     def __init__(self, objects, fields=None, exclude=None, sort=None, limit=None, offset=None, **extras):
+        self.pre_initial(objects)
         self.ITEM_SERIALIZER_CLS = self._meta.serializer or self.ITEM_SERIALIZER_CLS
         self._serializer_cls = registry.get_serializer(self.ITEM_SERIALIZER_CLS)
         if self._serializer_cls is None or not issubclass(self._serializer_cls, Serializer):
@@ -87,6 +89,9 @@ class CollectionSerializer(py2to3.with_metaclass(CollectionBase)):
 
     def __len__(self):
         return len(self.objects)
+
+    def pre_initial(self, objects):
+        pass
 
     def handle_extras(self, extras):
         pass

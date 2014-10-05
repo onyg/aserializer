@@ -3,9 +3,20 @@
 from aserializer.utils import py2to3
 from aserializer.collection.base import CollectionSerializer
 from aserializer.django.mixins import DjangoRequestMixin
+from aserializer.django.utils import django_required
+
+try:
+    from django.db.models.query import QuerySet
+except ImportError:
+    QuerySet = None
 
 
 class DjangoCollectionSerializer(DjangoRequestMixin, CollectionSerializer):
+
+    @django_required()
+    def pre_initial(self, objects):
+        if not isinstance(objects, QuerySet):
+            raise ValueError('Can only handle a django queryset.')
 
     def metadata(self, objects):
         total_count = objects.count()

@@ -20,4 +20,3 @@ class RelatedManagerListSerializerField(ListSerializerField):
             values = value.all()
         for item in values:
             self.add_item(source=item)
-
