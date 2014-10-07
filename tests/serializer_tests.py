@@ -20,7 +20,7 @@ from aserializer.fields import (IntegerField,
                                 SerializerField,
                                 ListSerializerField,)
 from aserializer.utils.registry import SerializerNotRegistered
-from aserializer.base import Serializer
+from aserializer import Serializer, SerializerFieldValueError
 
 
 class MySerializer(Serializer):
@@ -791,6 +791,54 @@ class UnknownFieldError(unittest.TestCase):
         self.assertIn('foobar', serializer.errors)
         self.assertEqual(serializer.errors['name'], 'Totally unknown.')
         self.assertEqual(serializer.errors['foobar'], 'Totally unknown.')
+
+
+class CustomValidationSerializer(Serializer):
+    code = StringField(required=True, max_length=3)
+    name = StringField(required=True, map_field='foo')
+    pk = UUIDField(required=False)
+
+    def validate_code(self, value):
+        if value == 'ABC':
+            raise SerializerFieldValueError(message='ABC is not allowed.')
+
+    def validate_foo(self, value):
+        if value == 'FOOBAR':
+            raise SerializerFieldValueError(message='FOOBAR is not allowed.')
+
+    def validate_pk(self, value):
+        if not isinstance(value, uuid.UUID):
+            raise SerializerFieldValueError('NEVER RAISE')
+        elif str(value).upper() == 'BD0623E8-27A6-4A94-9B57-2A6D833D55F7':
+            raise SerializerFieldValueError(message='BD0623E8-27A6-4A94-9B57-2A6D833D55F7 is not allowed.')
+
+
+class CustomFieldValidation(unittest.TestCase):
+
+    def test_validate_code(self):
+        serializer = CustomValidationSerializer(dict(code="ABC", name="NAME"))
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('code', serializer.errors)
+        self.assertEqual(serializer.errors['code'], "ABC is not allowed.")
+
+    def test_validate_map_field(self):
+        serializer = CustomValidationSerializer(dict(code="bbb", name="FOOBAR"))
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('name', serializer.errors)
+        self.assertEqual(serializer.errors['name'], "FOOBAR is not allowed.")
+
+    def test_validate_pk(self):
+        serializer = CustomValidationSerializer(
+            dict(code="bbb", name="name", pk="BD0623E8-27A6-4A94-9B57-2A6D833D55F7"))
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('pk', serializer.errors)
+        self.assertEqual(serializer.errors['pk'], "BD0623E8-27A6-4A94-9B57-2A6D833D55F7 is not allowed.")
+
+    def test_validate(self):
+        serializer = CustomValidationSerializer(
+            dict(code="bbb", name="name", pk="821BAA94-14D9-4C09-9527-E19F81FC2A3B"))
+        self.assertTrue(serializer.is_valid())
+        self.assertEqual(serializer.errors, {})
 
 if __name__ == '__main__':
     unittest.main()

@@ -217,7 +217,7 @@ class Serializer(py2to3.with_metaclass(SerializerBase)):
         """
         This method is calling all validate methods of all fields. If a validate raises a SerializerFieldValueError the
         error will be stored in an dictionary.
-        If a field is an identity field it only will be validate if the source object got the varialbe name.
+        If a field is an identity field it only will be validate if the source object got the attribute.
         """
         self._errors = {}
         source_attrs = self.get_fieldnames_from_source(self.obj)
@@ -228,6 +228,7 @@ class Serializer(py2to3.with_metaclass(SerializerBase)):
             if field_name in source_attrs or field.map_field in source_attrs:
                 try:
                     field.validate()
+                    self._custom_field_validation(field)
                 except SerializerFieldValueError as e:
                     self._errors[label] = e.errors
                 if self._handle_unknown_error:
@@ -242,6 +243,13 @@ class Serializer(py2to3.with_metaclass(SerializerBase)):
         if self._handle_unknown_error:
             for attr in source_attrs:
                 self._errors[attr] = self.error_messages['unknown']
+
+    def _custom_field_validation(self, field):
+        for name in field.names:
+            method_name = 'validate_{}'.format(name)
+            _method = getattr(self, method_name, None)
+            if callable(_method):
+                _method(field.to_python())
 
     def update_field(self, field):
         """
