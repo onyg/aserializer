@@ -4,6 +4,7 @@ import logging
 import copy
 from collections import OrderedDict
 import json
+import inspect
 
 from aserializer.fields import *
 from aserializer.utils import registry
@@ -151,14 +152,26 @@ class Serializer(py2to3.with_metaclass(SerializerBase)):
     @staticmethod
     def get_fieldnames_from_source(source):
         """
-        This method returns a list of all variable names of an object.
+        This method returns a list of all variables/attributes of an object.
         """
         if source is None:
             return {}
         elif isinstance(source, dict):
             return list(source.keys())
         else:
-            return [value for value in dir(source) if not value.startswith('__')]
+            def get_members(obj):
+                result = []
+                for key in dir(obj):
+                    if key.startswith('__'):
+                        continue
+                    try:
+                        value = getattr(obj, key)
+                    except AttributeError:
+                        continue
+                    if not inspect.ismethod(value):
+                        result.append(key)
+                return result
+            return get_members(source)
 
     def get_fields_and_exclude_for_nested(self, field_name):
         field_prefix = '{}.'.format(field_name)

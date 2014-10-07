@@ -133,6 +133,15 @@ class SerializeTestCase(unittest.TestCase):
         class ObjSource(object):
             lastname = 'the name'
             nickname = 'nick'
+
+            def amethod(self):
+                return 'A method'
+
+            @property
+            def aproperty(self):
+                return 'A property'
+
+
         names = MySerializer.get_fieldnames_from_source(source=dict_source)
         self.assertIn('lastname', names)
         self.assertIn('nickname', names)
@@ -141,7 +150,10 @@ class SerializeTestCase(unittest.TestCase):
         names = MySerializer.get_fieldnames_from_source(source=ObjSource())
         self.assertIn('lastname', names)
         self.assertIn('nickname', names)
+        self.assertIn('aproperty', names)
         self.assertNotIn('invalid', names)
+        self.assertNotIn('amethod', names)
+        self.assertNotIn('__init__', names)
 
     def test_custom_method(self):
         class SE(Serializer):
