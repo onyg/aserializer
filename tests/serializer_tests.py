@@ -798,15 +798,15 @@ class CustomValidationSerializer(Serializer):
     name = StringField(required=True, map_field='foo')
     pk = UUIDField(required=False)
 
-    def validate_code(self, value):
+    def code_validate(self, value):
         if value == 'ABC':
             raise SerializerFieldValueError(message='ABC is not allowed.')
 
-    def validate_foo(self, value):
+    def foo_validate(self, value):
         if value == 'FOOBAR':
             raise SerializerFieldValueError(message='FOOBAR is not allowed.')
 
-    def validate_pk(self, value):
+    def pk_validate(self, value):
         if not isinstance(value, uuid.UUID):
             raise SerializerFieldValueError('NEVER RAISE')
         elif str(value).upper() == 'BD0623E8-27A6-4A94-9B57-2A6D833D55F7':
@@ -839,6 +839,7 @@ class CustomFieldValidation(unittest.TestCase):
             dict(code="bbb", name="name", pk="821BAA94-14D9-4C09-9527-E19F81FC2A3B"))
         self.assertTrue(serializer.is_valid())
         self.assertEqual(serializer.errors, {})
+
 
 if __name__ == '__main__':
     unittest.main()

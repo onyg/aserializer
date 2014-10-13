@@ -246,7 +246,7 @@ class Serializer(py2to3.with_metaclass(SerializerBase)):
 
     def _custom_field_validation(self, field):
         for name in field.names:
-            method_name = 'validate_{}'.format(name)
+            method_name = '{}_validate'.format(name)
             _method = getattr(self, method_name, None)
             if callable(_method):
                 _method(field.to_python())
