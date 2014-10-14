@@ -1,17 +1,16 @@
+===========
 aserializer
 ===========
 
-###About
--------
+About
+=====
 
 aserializer is a object serializer inspired by the django forms.
 
 
-###Examples
---------
-Examples how code looks like:
-
-```
+Examples
+========
+**Examples how code looks like**::
 
     class Address(Serializer):
         id = IntegerField(required=True, identity=True)
@@ -27,15 +26,14 @@ Examples how code looks like:
         email = EmailField(required=True)
         tel = StringField(required=False, min_length=10, max_length=50)
         address = SerializerField(Address, required=True)
-```
 
-Result:
 
-```
-user = User(DATA)
-user.dump()
+**Result**::
 
-	{
+  user = User(DATA)
+  user.dump()
+
+    {
 		"_type": "user",
 		"id": 1,
 		"name": "Joe",
@@ -49,14 +47,17 @@ user.dump()
 			"country": "Germany"
 		}
 	}
-```
-
-###Tests
---------
-To run the tests use the command: `python setup.py nosetests`
 
 
-###Contributing
----------------
+Tests
+=====
+To run the tests use the command: ``python setup.py nosetests``
 
-Please find bugs and send pull requests to the [GitHub repository](https://github.com/onyg/aserializer) and [issue tracker](https://github.com/onyg/aserializer/issues).
+
+Contributing
+============
+
+Please find bugs and send pull requests to the `GitHub repository`_ and `issue tracker`_.
+
+.. _GitHub repository: https://github.com/onyg/aserializer
+.. _issue tracker: https://github.com/onyg/aserializer
