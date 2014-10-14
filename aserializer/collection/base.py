@@ -48,8 +48,8 @@ class CollectionMetaOptions(object):
 class CollectionBase(type):
 
     def __new__(cls, name, bases, attrs):
-        if 'META' in attrs:
-            meta = attrs.pop('META')
+        if 'Meta' in attrs:
+            meta = attrs.pop('Meta')
         else:
             meta = None
         new_class = super(CollectionBase, cls).__new__(cls, name, bases, attrs)
@@ -60,7 +60,7 @@ class CollectionBase(type):
 class CollectionSerializer(py2to3.with_metaclass(CollectionBase)):
     ITEM_SERIALIZER_CLS = None
 
-    class META:
+    class Meta:
         with_metadata = True
         fields = []
         exclude = []

@@ -131,7 +131,7 @@ class DjangoSerializerTests(TestCase):
 
 
 class SimpleDjangoModelCollection(DjangoCollectionSerializer):
-    class META:
+    class Meta:
         serializer = SimpleDjangoModelSerializer
 
 

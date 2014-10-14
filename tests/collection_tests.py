@@ -14,7 +14,7 @@ class TestSerializer(Serializer):
 
 class TestCollectionSerializer(CollectionSerializer):
 
-    class META:
+    class Meta:
         serializer = TestSerializer
         validation = True
 
@@ -74,7 +74,7 @@ class CollectionTestCase(unittest.TestCase):
 
     def test_item_with_invaild_serializer_no_validation(self):
         class TestNoValidationCollectionSerializer(CollectionSerializer):
-            class META:
+            class Meta:
                 serializer = TestSerializer
 
         collection = TestNoValidationCollectionSerializer([])
@@ -235,16 +235,16 @@ class MetaOptionTests(unittest.TestCase):
         self.check_hasattr(meta)
         self.check_defaults(meta)
 
-    def test_no_META(self):
+    def test_no_Meta(self):
         class Collection(CollectionSerializer):
             ITEM_SERIALIZER_CLS = TestSerializer
         collection = Collection([])
         self.assertTrue(hasattr(collection, '_meta'))
         self.check_defaults(collection._meta)
 
-    def test_META(self):
+    def test_Meta(self):
         class Collection(CollectionSerializer):
-            class META:
+            class Meta:
                 serializer = TestSerializer
                 fields = ['name']
                 items_key = 'data'
@@ -263,9 +263,10 @@ class MetaOptionTests(unittest.TestCase):
 
     def test_without_metadata(self):
         class MyCollection(CollectionSerializer):
-            class META:
+            class Meta:
                 serializer = TestSerializer
                 with_metadata = False
+
         objects = [
             dict(name='The Name', number=9),
             dict(name='The Name 2', number=10),
