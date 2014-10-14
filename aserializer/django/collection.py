@@ -19,7 +19,10 @@ class DjangoCollectionSerializer(DjangoRequestMixin, CollectionSerializer):
             raise ValueError('Can only handle a django queryset.')
 
     def metadata(self, objects):
-        total_count = objects.count()
+        if objects:
+            total_count = objects.count()
+        else:
+            total_count = 0
         _metadata = {}
         _metadata[self._meta.offset_key] = self._offset or 0
         _metadata[self._meta.limit_key] = self._limit or total_count

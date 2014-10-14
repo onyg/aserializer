@@ -290,3 +290,15 @@ class DjangoCollectionSerializerTests(TestCase):
         self.assertEqual(dump['items'][2]['code'], 'CCCC')
         self.assertEqual(dump['items'][3]['code'], 'BBBB')
         self.assertEqual(dump['items'][4]['code'], 'AAAA')
+
+    def test_empty_queryset(self):
+        collection = SimpleDjangoModelCollection(SimpleDjangoModel.objects.none())
+        test_value = {
+            "_metadata": {
+                "totalCount": 0,
+                "offset": 0,
+                "limit": 10
+            },
+            "items": []
+        }
+        self.assertDictEqual(collection.dump(), test_value)
