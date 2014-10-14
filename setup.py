@@ -17,6 +17,8 @@ def get_version():
                 return line.split('=')[1].strip().strip('"\'')
 
 
+long_description = (open('README.rst').read())
+
 
 CLASSIFIERS = [
     'Intended Audience :: Developers',
@@ -40,6 +42,7 @@ basic_setup = dict(
     author_email='developer@onyg.de',
     license='MIT',
     description='An object serializer inspired by the django forms.',
+    long_description=long_description,
     url='https://github.com/onyg/aserializer',
     packages= find_packages(exclude=('tests', 'tests.*')),
     platforms=['any'],

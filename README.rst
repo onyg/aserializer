@@ -5,7 +5,7 @@ aserializer
 About
 =====
 
-aserializer is a object serializer inspired by the django forms.
+aserializer is an object serializer inspired by the django forms.
 
 
 Examples
