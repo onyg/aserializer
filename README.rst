@@ -60,4 +60,4 @@ Contributing
 Please find bugs and send pull requests to the `GitHub repository`_ and `issue tracker`_.
 
 .. _GitHub repository: https://github.com/onyg/aserializer
-.. _issue tracker: https://github.com/onyg/aserializer
+.. _issue tracker: https://github.com/onyg/aserializer/issues
