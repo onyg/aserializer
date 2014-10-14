@@ -13,13 +13,13 @@ Examples
 **Examples how code looks like**::
 
   class Address(Serializer):
-    id = IntegerField(required=True, identity=True)
-    street = StringField(required=True)
-    streetNumber = StringField(required=True)
-    city = StringField(required=False)
-    country = StringField(required=False)
+      id = IntegerField(required=True, identity=True)
+      street = StringField(required=True)
+      streetNumber = StringField(required=True)
+      city = StringField(required=False)
+      country = StringField(required=False)
 
-    class User(Serializer):
+  class User(Serializer):
       _type = TypeField('user')
       id = IntegerField(required=True, identity=True)
       name = StringField(required=True)
@@ -46,7 +46,7 @@ Examples
       "city": "Berlin",
       "country": "Germany"
     }
- }
+  }
 
 
 Tests
