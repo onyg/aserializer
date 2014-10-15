@@ -244,7 +244,8 @@ class Serializer(py2to3.with_metaclass(SerializerBase)):
                 self._errors[label] = field.error_messages['required']
         if self._handle_unknown_error:
             for attr in source_attrs:
-                self._errors[attr] = self.error_messages['unknown']
+                if attr not in self.get_fieldnames():
+                    self._errors[attr] = self.error_messages['unknown']
 
     def _custom_field_validation(self, field):
         for name in field.names:

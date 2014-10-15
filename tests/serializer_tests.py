@@ -813,6 +813,26 @@ class UnknownFieldError(unittest.TestCase):
         self.assertIn('city', serializer.errors['address'])
         self.assertEqual(serializer.errors['address']['city'], 'Totally unknown.')
 
+    def test_fields_parameter(self):
+        class FieldObject(object):
+            def __init__(self):
+                self.code = 'HHH'
+                self.number = 1
+                self.address = {'street': 'mainstreet', 'city':'City'}
+
+        class NestKnownTestSerialzer(Serializer):
+            street = StringField(required=True)
+            city = StringField(required=True)
+
+        class KnownTestSerialzer(Serializer):
+            code = StringField(required=True, max_length=3)
+            number = IntegerField(required=True)
+            address = SerializerField(NestKnownTestSerialzer, required=True, fields=['street'])
+
+        serializer = KnownTestSerialzer(FieldObject(), unknown_error=True)
+        self.assertTrue(serializer.is_valid())
+        self.assertDictEqual(serializer.errors, {})
+
 
 class CustomValidationSerializer(Serializer):
     code = StringField(required=True, max_length=3)
