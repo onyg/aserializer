@@ -119,7 +119,9 @@ class Serializer(py2to3.with_metaclass(SerializerBase)):
                 continue
             if isinstance(field, SerializerObjectField):
                 only_fields, exclude =  self.get_fields_and_exclude_for_nested(field_name)
-                field.pre_value(fields=only_fields, exclude=exclude, **self._extras)
+                field.pre_value(fields=only_fields,
+                                exclude=exclude,
+                                unknown_error=self._handle_unknown_error, **self._extras)
             try:
                 value = self.get_value_from_source(self.obj, _name)
                 field.set_value(self.clean_field_value(field_name, value))

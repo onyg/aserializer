@@ -12,6 +12,7 @@ class SerializerObjectField(BaseSerializerField):
         super(SerializerObjectField, self).__init__(*args, **kwargs)
         self.only_fields = fields or []
         self.exclude = exclude or []
+        self.unknown_error = None
         self.extras = {}
         self._serializer_cls = None
 
@@ -29,6 +30,7 @@ class SerializerObjectField(BaseSerializerField):
             self.only_fields = set(list(self.only_fields) + list(fields))
         if isinstance(exclude, (list, tuple, set)):
             self.exclude = set(list(self.exclude) + list(exclude))
+        self.unknown_error = extras.pop('unknown_error', None)
         self.extras = extras
 
     def get_instance(self):
@@ -66,6 +68,7 @@ class SerializerField(SerializerObjectField):
             self._serializer = self._serializer_cls(source=value,
                                                     fields=self.only_fields,
                                                     exclude=self.exclude,
+                                                    unknown_error=self.unknown_error,
                                                     **self.extras)
         else:
             self._serializer.initial(source=value)
@@ -117,6 +120,7 @@ class ListSerializerField(SerializerObjectField):
         _serializer = self._serializer_cls(source=source,
                                            fields=self.only_fields,
                                            exclude=self.exclude,
+                                           unknown_error=self.unknown_error,
                                            **self.extras)
         self.items.append(_serializer)
 

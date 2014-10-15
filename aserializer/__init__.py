@@ -3,4 +3,4 @@
 from .base import Serializer
 from .fields import SerializerFieldValueError
 
-__version__ = '0.6.1'
+__version__ = '0.6.2'

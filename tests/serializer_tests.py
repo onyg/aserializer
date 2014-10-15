@@ -792,6 +792,27 @@ class UnknownFieldError(unittest.TestCase):
         self.assertEqual(serializer.errors['name'], 'Totally unknown.')
         self.assertEqual(serializer.errors['foobar'], 'Totally unknown.')
 
+    def test_known_nestfield_object(self):
+        class UnknownFieldObject(object):
+            def __init__(self):
+                self.code = 'HHH'
+                self.number = 1
+                self.address = {'street': 'mainstreet', 'city':'City'}
+
+        class UnknownTestSerialzer(Serializer):
+            street = StringField(required=True)
+
+        class KnownTestSerialzer(Serializer):
+            code = StringField(required=True, max_length=3)
+            number = IntegerField(required=True)
+            address = SerializerField(UnknownTestSerialzer, required=True)
+
+        serializer = KnownTestSerialzer(UnknownFieldObject(), unknown_error=True)
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('address', serializer.errors)
+        self.assertIn('city', serializer.errors['address'])
+        self.assertEqual(serializer.errors['address']['city'], 'Totally unknown.')
+
 
 class CustomValidationSerializer(Serializer):
     code = StringField(required=True, max_length=3)
