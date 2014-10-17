@@ -21,13 +21,14 @@ class Parser(object):
                 self.obj = object()
         else:
             self.obj = source
+        self._attribute_names = None
 
     @property
     def attribute_names(self):
         """
         This method returns a list of all variables/attributes of the object.
         """
-        if hasattr(self, '_attribute_names'):
+        if getattr(self, '_attribute_names', None):
             return self._attribute_names
         if self.obj is None:
             self._attribute_names = []
