@@ -63,6 +63,9 @@ class SerializerField(SerializerObjectField):
             raise SerializerFieldValueError(self._error_messages['required'], field_names=self.names)
 
     def set_value(self, value):
+        if value is None:
+            self._serializer = None
+            return
         if self._serializer is None:
             self._serializer_cls = self.normalize_serializer_cls(self._serializer_cls)
             self._serializer = self._serializer_cls(source=value,

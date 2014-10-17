@@ -882,5 +882,46 @@ class CustomFieldValidation(unittest.TestCase):
         self.assertEqual(serializer.errors, {})
 
 
+class NotRequiredNest(Serializer):
+    name = StringField(required=True)
+    foo = StringField(required=False)
+
+
+class NotRequiredSerializerField(Serializer):
+    name = StringField()
+    nest = SerializerField(NotRequiredNest, required=False)
+
+
+class NotRequiredSerializerFieldTests(unittest.TestCase):
+
+    def test_not_requierd(self):
+        d = dict(name='Test')
+        serializer = NotRequiredSerializerField(d)
+        self.assertTrue(serializer.is_valid())
+
+    def test_with_none_value(self):
+        d = dict(name='Test', nest=None)
+        serializer = NotRequiredSerializerField(d)
+        self.assertTrue(serializer.is_valid())
+
+    def test_valid(self):
+        d = dict(name='Test', nest=dict(name='Name', foo='Foo'))
+        serializer = NotRequiredSerializerField(d)
+        self.assertTrue(serializer.is_valid())
+
+        d = dict(name='Test', nest=dict(name='Nest', foo=None))
+        serializer = NotRequiredSerializerField(d)
+        self.assertTrue(serializer.is_valid())
+
+        d = dict(name='Test', nest=dict(name='Nest'))
+        serializer = NotRequiredSerializerField(d)
+        self.assertTrue(serializer.is_valid())
+
+    def test_invalid(self):
+        d = dict(name='Test', nest=dict(foo='Foo'))
+        serializer = NotRequiredSerializerField(d)
+        self.assertFalse(serializer.is_valid())
+
+
 if __name__ == '__main__':
     unittest.main()
