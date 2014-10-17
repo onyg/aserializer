@@ -2,7 +2,8 @@
 
 import unittest
 
-from aserializer.collection.base import CollectionSerializer, CollectionMetaOptions
+from aserializer.collection.base import CollectionSerializer
+from aserializer.utils.options import CollectionMetaOptions
 from aserializer import Serializer
 from aserializer.fields import StringField, IntegerField
 
@@ -202,7 +203,7 @@ class CollectionTestCase(unittest.TestCase):
         self.assertEqual(metadata['offset'], 1)
 
 
-class MetaOptionTests(unittest.TestCase):
+class CollectionMetaOptionsTests(unittest.TestCase):
 
     def check_hasattr(self, meta):
         self.assertTrue(hasattr(meta,'serializer'))

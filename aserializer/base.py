@@ -7,7 +7,7 @@ import json
 import inspect
 
 from aserializer.fields import *
-from aserializer.utils import registry
+from aserializer.utils import registry, options
 
 
 logger = logging.getLogger(__name__)
@@ -25,11 +25,16 @@ class SerializerBase(type):
 
     def __new__(cls, name, bases, attrs):
         base_fields = get_serializer_fields(bases, attrs)
+        if 'Meta' in attrs:
+            meta = attrs.pop('Meta')
+        else:
+            meta = None
         new_class = super(SerializerBase, cls).__new__(cls, name, bases, attrs)
         for field_name, field in base_fields.items():
             cls.add_field(new_class=new_class, name=field_name, field=field)
         setattr(new_class, '_base_fields', base_fields)
         registry.register_serializer(new_class.__name__, new_class)
+        setattr(new_class, '_meta', options.MetaOptions(meta))
         return new_class
 
     @classmethod
@@ -49,6 +54,8 @@ class Serializer(py2to3.with_metaclass(SerializerBase)):
     def __init__(self, source=None, fields=None, exclude=None, unknown_error=False, **extras):
         self.fields = copy.deepcopy(self._base_fields)
         self._data = self.fields
+        fields = fields or self._meta.fields
+        exclude = exclude or self._meta.exclude
         if fields:
             self.fields = self.filter_only_fields(only_fields=fields)
         if exclude:
@@ -197,6 +204,7 @@ class Serializer(py2to3.with_metaclass(SerializerBase)):
         This method excluding the current serializer fields dictionary by the list of field names.
         """
         field_names = self.fields.keys()
+        exclude = set(list(exclude) + self._meta.exclude)
         exclude = list(filter(lambda field_name: field_name in field_names, exclude))
         if len(exclude) <= 0:
             return self.fields

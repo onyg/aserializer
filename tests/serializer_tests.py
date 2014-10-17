@@ -923,5 +923,38 @@ class NotRequiredSerializerFieldTests(unittest.TestCase):
         self.assertFalse(serializer.is_valid())
 
 
+class MetaTestSerializer(Serializer):
+    name = StringField()
+    last_name = StringField()
+    street = StringField()
+    city = StringField()
+    country = StringField()
+
+
+class NameMetaTestSerializer(MetaTestSerializer):
+    class Meta:
+        fields = ['name', 'last_name']
+
+
+class AddressMetaTestSerializer(MetaTestSerializer):
+    class Meta:
+        exclude = ['name', 'last_name']
+
+
+class MetaOptionsSerializerTests(unittest.TestCase):
+
+    def test_fields(self):
+        person = dict(name='John', last_name='Doe', street='Street', city='Big Pie', country='Germany')
+        serializer = NameMetaTestSerializer(person)
+        to_dict = dict(name='John', last_name='Doe')
+        self.assertDictEqual(serializer.to_dict(), to_dict)
+
+    def test_exclude(self):
+        person = dict(name='John', last_name='Doe', street='Street', city='Big Pie', country='Germany')
+        serializer = AddressMetaTestSerializer(person)
+        to_dict = dict(street='Street', city='Big Pie', country='Germany')
+        self.assertDictEqual(serializer.to_dict(), to_dict)
+
+
 if __name__ == '__main__':
     unittest.main()
