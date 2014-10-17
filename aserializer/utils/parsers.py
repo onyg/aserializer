@@ -10,6 +10,7 @@ class Parser(object):
 
     def __init__(self):
         self.obj = None
+        self._attribute_names = None
 
     def initial(self, source):
         if isinstance(source, py2to3.string):
@@ -28,7 +29,7 @@ class Parser(object):
         """
         This method returns a list of all variables/attributes of the object.
         """
-        if getattr(self, '_attribute_names', None):
+        if self._attribute_names is not None:
             return self._attribute_names
         if self.obj is None:
             self._attribute_names = []
