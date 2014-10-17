@@ -4,7 +4,6 @@ import logging
 import copy
 from collections import OrderedDict
 import json
-import inspect
 
 from aserializer.fields import *
 from aserializer.utils import registry, options
@@ -34,7 +33,7 @@ class SerializerBase(type):
             cls.add_field(new_class=new_class, name=field_name, field=field)
         setattr(new_class, '_base_fields', base_fields)
         registry.register_serializer(new_class.__name__, new_class)
-        setattr(new_class, '_meta', options.MetaOptions(meta))
+        setattr(new_class, '_meta', options.SerializerMetaOptions(meta))
         return new_class
 
     @classmethod
@@ -65,6 +64,7 @@ class Serializer(py2to3.with_metaclass(SerializerBase)):
         self.__exclude_field_list = exclude or []
         self.source_is_invalid = False
         self._handle_unknown_error = unknown_error
+        self.parser = self._meta.parser()
         self.initial(source=source)
 
     def __iter__(self):
@@ -95,28 +95,16 @@ class Serializer(py2to3.with_metaclass(SerializerBase)):
 
     def initial(self, source):
         """
-        The initial method is preparing the serializer and the source object for the source values set to the fields.
+        The initial method is preparing the serializer and the source object for the source values set to the fields
+        and is setting the source values to the fields
         """
-        if isinstance(source, py2to3.string):
-            if not isinstance(source, py2to3.text):
-                source = py2to3._unicode(source, 'utf-8')
-            try:
-                self.obj = json.loads(source)
-            except ValueError:
-                self.obj = object()
-        else:
-            self.obj = source
         self._errors = None
         self._dict_data = None
         self._dump_data = None
-        if self.obj is not None:
-            self._set_source_to_fields(self.obj)
-
-    def _set_source_to_fields(self, source):
-        """
-        This method is setting the source values to the fields.
-        """
-        source_attr = self.get_fieldnames_from_source(source)
+        self.parser.initial(source)
+        if self.parser.obj is None:
+            return
+        source_attr = self.parser.attribute_names
         for field_name, field in self.fields.items():
             if field_name in source_attr:
                 _name = field_name
@@ -130,57 +118,12 @@ class Serializer(py2to3.with_metaclass(SerializerBase)):
                                 exclude=exclude,
                                 unknown_error=self._handle_unknown_error, **self._extras)
             try:
-                value = self.get_value_from_source(self.obj, _name)
+                value = self.parser.get_value(_name)
                 field.set_value(self.clean_field_value(field_name, value))
             except IgnoreField:
                 field.ignore = True
             else:
                 field.ignore = False
-
-    @staticmethod
-    def get_value_from_source(source, field_name):
-        """
-        This method returns the value for one field from the source object.
-        """
-        if isinstance(source, dict):
-            value = source.get(field_name, None)
-        else:
-            value = getattr(source, field_name, None)
-        return value
-
-    @staticmethod
-    def has_attribute(source, field_name):
-        """
-        This method checks if the source object got an variable for a field.
-        """
-        if isinstance(source, dict):
-            return field_name in source
-        else:
-            return hasattr(source, field_name)
-
-    @staticmethod
-    def get_fieldnames_from_source(source):
-        """
-        This method returns a list of all variables/attributes of an object.
-        """
-        if source is None:
-            return {}
-        elif isinstance(source, dict):
-            return list(source.keys())
-        else:
-            def get_members(obj):
-                result = []
-                for key in dir(obj):
-                    if key.startswith('__'):
-                        continue
-                    try:
-                        value = getattr(obj, key)
-                    except AttributeError:
-                        continue
-                    if not inspect.ismethod(value):
-                        result.append(key)
-                return result
-            return get_members(source)
 
     def get_fields_and_exclude_for_nested(self, field_name):
         field_prefix = '{}.'.format(field_name)
@@ -230,7 +173,7 @@ class Serializer(py2to3.with_metaclass(SerializerBase)):
         If a field is an identity field it only will be validate if the source object got the attribute.
         """
         self._errors = {}
-        source_attrs = self.get_fieldnames_from_source(self.obj)
+        source_attrs = self.parser.attribute_names
         for field_name, field in self.fields.items():
             if field.identity and not field_name in source_attrs:
                 continue

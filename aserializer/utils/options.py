@@ -1,58 +1,33 @@
 # -*- coding: utf-8 -*-
 
-import logging
-
-logger = logging.getLogger(__name__)
+from aserializer.utils.parsers import Parser
 
 
 
 class MetaOptions(object):
 
     def __init__(self, meta):
-        self.fields = []
-        self.exclude = []
-        if hasattr(meta, 'fields'):
-            self.fields[:] = meta.fields
-        if hasattr(meta, 'exclude'):
-            self.exclude[:] = meta.exclude
+        self.fields = getattr(meta, 'fields', [])
+        self.exclude = getattr(meta, 'exclude', [])
 
+
+class SerializerMetaOptions(MetaOptions):
+
+    def __init__(self, meta):
+        super(SerializerMetaOptions, self).__init__(meta)
+        self.parser = getattr(meta, 'parser', Parser)
 
 
 class CollectionMetaOptions(MetaOptions):
 
     def __init__(self, meta):
         super(CollectionMetaOptions, self).__init__(meta)
-        self.serializer = None
-        self.with_metadata = True
-        self.metadata_key = '_metadata'
-        self.items_key = 'items'
-        self.offset_key = 'offset'
-        self.limit_key = 'limit'
-        self.total_count_key = 'totalCount'
-        # self.fields = []
-        # self.exclude = []
-        self.sort = []
-        self.validation = False
-
-        if hasattr(meta, 'with_metadata'):
-            self.with_metadata = meta.with_metadata
-        # if hasattr(meta, 'fields'):
-        #     self.fields[:] = meta.fields
-        # if hasattr(meta, 'exclude'):
-        #     self.exclude[:] = meta.exclude
-        if hasattr(meta, 'sort'):
-            self.sort[:] = meta.sort
-        if hasattr(meta, 'offset_key'):
-            self.offset_key = meta.offset_key
-        if hasattr(meta, 'limit_key'):
-            self.limit_key = meta.limit_key
-        if hasattr(meta, 'total_count_key'):
-            self.total_count_key = meta.total_count_key
-        if hasattr(meta, 'metadata_key'):
-            self.metadata_key = meta.metadata_key
-        if hasattr(meta, 'items_key'):
-            self.items_key = meta.items_key
-        if hasattr(meta, 'serializer'):
-            self.serializer = meta.serializer
-        if hasattr(meta, 'validation'):
-            self.validation = meta.validation
+        self.serializer = getattr(meta, 'serializer', None)
+        self.with_metadata = getattr(meta, 'with_metadata', True)
+        self.metadata_key = getattr(meta, 'metadata_key', '_metadata')
+        self.items_key = getattr(meta, 'items_key', 'items')
+        self.offset_key = getattr(meta, 'offset_key', 'offset')
+        self.limit_key = getattr(meta, 'limit_key', 'limit')
+        self.total_count_key = getattr(meta, 'total_count_key', 'totalCount')
+        self.sort = getattr(meta, 'sort', [])
+        self.validation = getattr(meta, 'validation', False)

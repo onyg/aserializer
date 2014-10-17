@@ -114,19 +114,78 @@ class SerializeTestCase(unittest.TestCase):
         self.assertIn('time_var', fields)
         self.assertIn('url', fields)
 
+    # def test_value_from_source(self):
+    #     dict_source = dict(name='the name', street='street 5')
+    #     class ObjSource(object):
+    #         name = 'the name'
+    #         street = 'street 5'
+    #
+    #     self.assertTrue(MySerializer.has_attribute(dict_source, 'name'))
+    #     self.assertFalse(MySerializer.has_attribute(dict_source, 'no_key'))
+    #     self.assertEqual(MySerializer.get_value_from_source(dict_source, 'name'), 'the name')
+    #
+    #     self.assertTrue(MySerializer.has_attribute(ObjSource(), 'name'))
+    #     self.assertFalse(MySerializer.has_attribute(ObjSource(), 'no_key'))
+    #     self.assertEqual(MySerializer.get_value_from_source(ObjSource(), 'name'), 'the name')
+    #
+    # def test_get_fieldnames_from_source(self):
+    #     dict_source = dict(lastname='the name', nickname='nick')
+    #     class ObjSource(object):
+    #         lastname = 'the name'
+    #         nickname = 'nick'
+    #
+    #         def amethod(self):
+    #             return 'A method'
+    #
+    #         @property
+    #         def aproperty(self):
+    #             return 'A property'
+    #
+    #
+    #     names = MySerializer.get_fieldnames_from_source(source=dict_source)
+    #     self.assertIn('lastname', names)
+    #     self.assertIn('nickname', names)
+    #     self.assertNotIn('invalid', names)
+    #
+    #     names = MySerializer.get_fieldnames_from_source(source=ObjSource())
+    #     self.assertIn('lastname', names)
+    #     self.assertIn('nickname', names)
+    #     self.assertIn('aproperty', names)
+    #     self.assertNotIn('invalid', names)
+    #     self.assertNotIn('amethod', names)
+    #     self.assertNotIn('__init__', names)
+
+    def test_custom_method(self):
+        class SE(Serializer):
+            name = StringField()
+            def the_method(self, field):
+                return 'test {}'.format(field.to_python())
+
+        s = SE(source={'name':'the name'})
+        self.assertTrue(s.has_method('the_method'))
+        self.assertFalse(s.has_method('the_second_method'))
+
+        self.assertEqual(s._custom_field_method('the_method', s.fields['name']), 'test the name')
+        self.assertIsNone(s._custom_field_method('no_name_method', s.fields['name']))
+
+
+class SerializerParserTests(unittest.TestCase):
+
     def test_value_from_source(self):
         dict_source = dict(name='the name', street='street 5')
         class ObjSource(object):
             name = 'the name'
             street = 'street 5'
 
-        self.assertTrue(MySerializer.has_attribute(dict_source, 'name'))
-        self.assertFalse(MySerializer.has_attribute(dict_source, 'no_key'))
-        self.assertEqual(MySerializer.get_value_from_source(dict_source, 'name'), 'the name')
+        serializer = MySerializer(dict_source)
+        self.assertTrue(serializer.parser.has_attribute('name'))
+        self.assertFalse(serializer.parser.has_attribute('no_key'))
+        self.assertEqual(serializer.parser.get_value('name'), 'the name')
 
-        self.assertTrue(MySerializer.has_attribute(ObjSource(), 'name'))
-        self.assertFalse(MySerializer.has_attribute(ObjSource(), 'no_key'))
-        self.assertEqual(MySerializer.get_value_from_source(ObjSource(), 'name'), 'the name')
+        serializer = MySerializer(ObjSource())
+        self.assertTrue(serializer.parser.has_attribute('name'))
+        self.assertFalse(serializer.parser.has_attribute('no_key'))
+        self.assertEqual(serializer.parser.get_value('name'), 'the name')
 
     def test_get_fieldnames_from_source(self):
         dict_source = dict(lastname='the name', nickname='nick')
@@ -141,32 +200,20 @@ class SerializeTestCase(unittest.TestCase):
             def aproperty(self):
                 return 'A property'
 
-
-        names = MySerializer.get_fieldnames_from_source(source=dict_source)
+        serializer = MySerializer(dict_source)
+        names = serializer.parser.attribute_names
         self.assertIn('lastname', names)
         self.assertIn('nickname', names)
         self.assertNotIn('invalid', names)
 
-        names = MySerializer.get_fieldnames_from_source(source=ObjSource())
+        serializer = MySerializer(ObjSource())
+        names = serializer.parser.attribute_names
         self.assertIn('lastname', names)
         self.assertIn('nickname', names)
         self.assertIn('aproperty', names)
         self.assertNotIn('invalid', names)
         self.assertNotIn('amethod', names)
         self.assertNotIn('__init__', names)
-
-    def test_custom_method(self):
-        class SE(Serializer):
-            name = StringField()
-            def the_method(self, field):
-                return 'test {}'.format(field.to_python())
-
-        s = SE(source={'name':'the name'})
-        self.assertTrue(s.has_method('the_method'))
-        self.assertFalse(s.has_method('the_second_method'))
-
-        self.assertEqual(s._custom_field_method('the_method', s.fields['name']), 'test the name')
-        self.assertIsNone(s._custom_field_method('no_name_method', s.fields['name']))
 
 
 class TestFlatSerializer(Serializer):
