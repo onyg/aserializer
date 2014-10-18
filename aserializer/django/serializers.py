@@ -32,10 +32,10 @@ except ImportError:
     model_field_mapping = {}
 
 
-class ModelSerializerBase(SerializerBase):
+class DjangoModelSerializerBase(SerializerBase):
 
     def __new__(cls, name, bases, attrs):
-        new_class = super(ModelSerializerBase, cls).__new__(cls, name, bases, attrs)
+        new_class = super(DjangoModelSerializerBase, cls).__new__(cls, name, bases, attrs)
         cls.set_fields_from_model(new_class=new_class,
                                   fields=new_class._base_fields,
                                   model=new_class._meta.model)
@@ -64,7 +64,6 @@ class ModelSerializerBase(SerializerBase):
                     new_class.model_fields.append(model_field.name)
             else:
                 new_class.model_fields.append(model_field.name)
-        print new_class.model_fields
 
     @staticmethod
     def get_field_class(model_field, mapping=None):
@@ -108,7 +107,9 @@ class ModelSerializerBase(SerializerBase):
         return True
 
 
-class ModelSerializer(py2to3.with_metaclass(ModelSerializerBase, Serializer)):
+class NestedDjangoModelSerializer(py2to3.with_metaclass(DjangoModelSerializerBase, Serializer)):
+    with_registry = False
 
-    def __init__(self, *args, **kwargs):
-        super(ModelSerializer, self).__init__(*args, **kwargs)
+
+class DjangoModelSerializer(py2to3.with_metaclass(DjangoModelSerializerBase, Serializer)):
+    pass

@@ -7,7 +7,7 @@ from aserializer import Serializer
 from aserializer import fields
 from aserializer.django.fields import RelatedManagerListSerializerField
 from aserializer.django.collection import DjangoCollectionSerializer
-from aserializer.django.serializers import ModelSerializer
+from aserializer.django.serializers import DjangoModelSerializer
 
 try:
     import django
@@ -314,7 +314,7 @@ class DjangoCollectionSerializerTests(TestCase):
         }
         self.assertDictEqual(collection.dump(), test_value)
 
-class TheModelSerializer(ModelSerializer):
+class TheModelSerializer(DjangoModelSerializer):
     name = fields.StringField()
 
     class Meta:

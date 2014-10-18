@@ -33,8 +33,9 @@ class SerializerBase(type):
         for field_name, field in base_fields.items():
             cls.add_field(new_class=new_class, name=field_name, field=field)
         setattr(new_class, '_base_fields', base_fields)
-        registry.register_serializer(new_class.__name__, new_class)
         setattr(new_class, '_meta', options.SerializerMetaOptions(meta))
+        if getattr(new_class, 'with_registry', False):
+            registry.register_serializer(new_class.__name__, new_class)
         return new_class
 
     @classmethod
@@ -47,6 +48,7 @@ class SerializerBase(type):
 
 
 class Serializer(py2to3.with_metaclass(SerializerBase)):
+    with_registry = True
     error_messages = {
         'unknown': 'Totally unknown.'
     }
