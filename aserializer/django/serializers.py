@@ -32,40 +32,6 @@ except ImportError:
     model_field_mapping = {}
 
 
-def _get_field_class(obj):
-    """
-    Takes a dictionary with classes as keys, and an object.
-    Traverses the object's inheritance hierarchy in method
-    resolution order, and returns the first matching value
-    from the dictionary or None.
-
-    """
-    for model in model_field_mapping:
-        # print inspect.getmro(obj.__class__)
-        if isinstance(obj, model):
-            return model_field_mapping[model]
-    return None
-    # return next(
-    #     (model_field_mapping[cls] for cls in inspect.getmro(obj.__class__) if cls in model_field_mapping),
-    #     None
-    # )
-
-
-# def set_fields_from_model(new_class, fields, model):
-#     if django_models is None or model is None:
-#         return
-#     opts = model._meta.concrete_model._meta
-#
-#     pk_field = opts.pk
-#     if pk_field.name not in fields.keys():
-#         print pk_field.name, _get_class_mapping(model_field_mapping, pk_field)
-#     # n = serializer_fields.StringField()
-#     # n.add_name('foo')
-#     # setattr(new_class, 'foo', n)
-#     # fields['foo'] = n
-
-
-
 class ModelSerializerBase(SerializerBase):
 
     def __new__(cls, name, bases, attrs):
