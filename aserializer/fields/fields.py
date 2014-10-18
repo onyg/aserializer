@@ -64,6 +64,12 @@ class IntegerField(BaseSerializerField):
         return self.to_int(self.value)
 
 
+class PositiveIntegerField(IntegerField):
+
+    def __init__(self, max_value=None, *args, **kwargs):
+        super(PositiveIntegerField, self).__init__(max_value=max_value, min_value=0, *args, **kwargs)
+
+
 class FloatField(IntegerField):
     validators = [v.validate_float, ]
 

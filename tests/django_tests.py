@@ -3,6 +3,12 @@
 import os
 import unittest
 
+from aserializer import Serializer
+from aserializer import fields
+from aserializer.django.fields import RelatedManagerListSerializerField
+from aserializer.django.collection import DjangoCollectionSerializer
+from aserializer.django.serializers import ModelSerializer
+
 try:
     import django
 except ImportError:
@@ -25,10 +31,6 @@ if django is not None:
 else:
     from unittest import TestCase
 
-from aserializer import Serializer
-from aserializer import fields
-from aserializer.django.fields import RelatedManagerListSerializerField
-from aserializer.django.collection import DjangoCollectionSerializer
 
 
 def setUpModule():
@@ -311,3 +313,21 @@ class DjangoCollectionSerializerTests(TestCase):
             "items": []
         }
         self.assertDictEqual(collection.dump(), test_value)
+
+class TheModelSerializer(ModelSerializer):
+    name = fields.StringField()
+
+    class Meta:
+        model = RelatedDjangoModel
+
+class ModelSerializerTests(unittest.TestCase):
+
+    def test_one(self):
+        serializer = TheModelSerializer(dict(name='The Name', foo='THE MAGIC FOO'))
+        # serializer.is_valid()
+        # print serializer.errors_to_json(indent=4)
+        # print serializer.to_json(indent=4)
+        # # serializer.foo = 'Changed name'
+        # # serializer.name = 'Changed name'
+        # # print serializer.to_json(indent=4)
+

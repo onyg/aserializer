@@ -17,7 +17,7 @@ def get_serializer_fields(bases, attrs):
               if isinstance(obj, BaseSerializerField)]
     for base in bases[::-1]:
         if hasattr(base, '_base_fields'):
-            fields = list(py2to3.iteritems(base._base_fields)) + fields
+            fields = fields + list(py2to3.iteritems(base._base_fields))
     return OrderedDict(fields)
 
 

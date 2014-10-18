@@ -4,6 +4,7 @@ from .base import Serializer
 from .fields import (
     SerializerFieldValueError,
     IntegerField,
+    PositiveIntegerField,
     FloatField,
     UUIDField,
     StringField,
