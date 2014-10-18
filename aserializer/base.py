@@ -92,7 +92,6 @@ class Serializer(py2to3.with_metaclass(SerializerBase)):
                                    '{}.{}'.format(map_field_name, nested_map_field_name)))
         return OrderedDict(result)
 
-
     def initial(self, source):
         """
         The initial method is preparing the serializer and the source object for the source values set to the fields
@@ -147,7 +146,6 @@ class Serializer(py2to3.with_metaclass(SerializerBase)):
         This method excluding the current serializer fields dictionary by the list of field names.
         """
         field_names = self.fields.keys()
-        exclude = set(list(exclude) + self._meta.exclude)
         exclude = list(filter(lambda field_name: field_name in field_names, exclude))
         if len(exclude) <= 0:
             return self.fields
