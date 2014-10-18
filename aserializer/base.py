@@ -12,8 +12,9 @@ from aserializer.utils import registry, options
 logger = logging.getLogger(__name__)
 
 
-def get_serializer_fields(bases, attrs, with_base_fields=True):
-    fields = [(field_name, attrs.pop(field_name)) for field_name, obj in list(py2to3.iteritems(attrs)) if isinstance(obj, BaseSerializerField)]
+def get_serializer_fields(bases, attrs):
+    fields = [(field_name, attrs.pop(field_name)) for field_name, obj in list(py2to3.iteritems(attrs))
+              if isinstance(obj, BaseSerializerField)]
     for base in bases[::-1]:
         if hasattr(base, '_base_fields'):
             fields = list(py2to3.iteritems(base._base_fields)) + fields
@@ -56,9 +57,9 @@ class Serializer(py2to3.with_metaclass(SerializerBase)):
         fields = fields or self._meta.fields
         exclude = exclude or self._meta.exclude
         if fields:
-            self.fields = self.filter_only_fields(only_fields=fields)
+            self.fields = self.filter_fields(only_fields=fields)
         if exclude:
-            self.fields = self.filter_excluded_fields(exclude=exclude)
+            self.fields = self.exclude_fields(exclude=exclude)
         self._extras = extras
         self.__show_field_list = fields or []
         self.__exclude_field_list = exclude or []
@@ -94,8 +95,7 @@ class Serializer(py2to3.with_metaclass(SerializerBase)):
 
     def initial(self, source):
         """
-        The initial method is preparing the serializer and the source object for the source values set to the fields
-        and is setting the source values to the fields
+        The initial method is preparing the serializer and is setting the source values to the fields
         """
         self._errors = None
         self._dict_data = None
@@ -126,11 +126,13 @@ class Serializer(py2to3.with_metaclass(SerializerBase)):
 
     def get_fields_and_exclude_for_nested(self, field_name):
         field_prefix = '{}.'.format(field_name)
-        only = ['.'.join(field.split('.')[1:]) for field in self.__show_field_list if str(field).startswith(field_prefix)] or None
-        exclude = ['.'.join(field.split('.')[1:]) for field in self.__exclude_field_list if str(field).startswith(field_prefix)] or None
+        only = ['.'.join(field.split('.')[1:]) for field in self.__show_field_list
+                if str(field).startswith(field_prefix)] or None
+        exclude = ['.'.join(field.split('.')[1:]) for field in self.__exclude_field_list
+                   if str(field).startswith(field_prefix)] or None
         return only, exclude
 
-    def filter_only_fields(self, only_fields):
+    def filter_fields(self, only_fields):
         """
         This method filter the current serializer fields dictionary by the list of field names.
         """
@@ -141,7 +143,7 @@ class Serializer(py2to3.with_metaclass(SerializerBase)):
             return self.fields
         return OrderedDict(filter(lambda x: x[1].identity or x[0] in only_fields, self.fields.items()))
 
-    def filter_excluded_fields(self, exclude):
+    def exclude_fields(self, exclude):
         """
         This method excluding the current serializer fields dictionary by the list of field names.
         """
@@ -295,7 +297,8 @@ class Serializer(py2to3.with_metaclass(SerializerBase)):
 
     def _field_to_python(self, field_name, field):
         """
-        This method checks if a custom method for the field python value was implemented otherwise returns the result of the field method.
+        This method checks if a custom method for the field python value was implemented
+        otherwise returns the result of the field method.
         i.g. for the field with the key 'name' def name_to_python(field):
         """
         method_name = '{}_to_python'.format(field_name)
@@ -306,7 +309,8 @@ class Serializer(py2to3.with_metaclass(SerializerBase)):
 
     def _field_to_native(self, field_name, field):
         """
-        This method checks if a custom method for the field native value was implemented otherwise returns the result of the field method.
+        This method checks if a custom method for the field native value was implemented
+        otherwise returns the result of the field method.
         i.g. for the field with the key 'name' def name_to_native(field):
         """
         method_name = '{}_to_native'.format(field_name)

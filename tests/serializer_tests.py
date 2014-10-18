@@ -93,7 +93,7 @@ class SerializeTestCase(unittest.TestCase):
     def test_filter_only_fields(self):
         s = MySerializer(source=MyObject())
         only_fields = ['name', 'nest.id', 'nest.name']
-        fields = s.filter_only_fields(only_fields)
+        fields = s.filter_fields(only_fields)
         self.assertEqual(len(fields), 4)
         self.assertIn('id', fields)
         self.assertIn('name', fields)
@@ -107,7 +107,7 @@ class SerializeTestCase(unittest.TestCase):
     def test_filter_excluded_fields(self):
         s = MySerializer(source=MyObject())
         exclude_fields = ['name', 'nest']
-        fields = s.filter_excluded_fields(exclude=exclude_fields)
+        fields = s.exclude_fields(exclude=exclude_fields)
         self.assertEqual(len(fields), 5)
         self.assertIn('id', fields)
         self.assertIn('_type', fields)
