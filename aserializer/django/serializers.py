@@ -10,10 +10,10 @@ try:
     model_field_mapping = {
         django_models.AutoField: serializer_fields.IntegerField,
         django_models.FloatField: serializer_fields.FloatField,
-        django_models.IntegerField: serializer_fields.IntegerField,
         django_models.PositiveIntegerField: serializer_fields.PositiveIntegerField,
         django_models.SmallIntegerField: serializer_fields.IntegerField,
         django_models.PositiveSmallIntegerField: serializer_fields.PositiveIntegerField,
+        django_models.IntegerField: serializer_fields.IntegerField,
         django_models.DateTimeField: serializer_fields.DatetimeField,
         django_models.DateField: serializer_fields.DateField,
         django_models.TimeField: serializer_fields.TimeField,
@@ -69,10 +69,20 @@ class DjangoModelSerializerBase(SerializerBase):
     def get_field_class(model_field, mapping=None):
         if mapping is None:
             mapping = model_field_mapping
-        for model in mapping:
-            if isinstance(model_field, model):
+        for model in inspect.getmro(model_field.__class__):
+            if model in mapping:
                 return mapping[model]
         return None
+
+    @staticmethod
+    def get_nested_serializer_field(model_field):
+        class NestedModelSerializer(NestedDjangoModelSerializer):
+            class Meta:
+                model = model_field
+
+        kwargs = dict(serializer=NestedModelSerializer)
+        return serializer_fields.SerializerField(**kwargs)
+
 
     @classmethod
     def get_field_from_modelfield(cls, model_field, **kwargs):
@@ -89,12 +99,14 @@ class DjangoModelSerializerBase(SerializerBase):
             kwargs['choices'] = model_field.flatchoices
             return serializer_fields.ChoiceField(**kwargs)
 
-        if isinstance(model_field, django_models.CharField):
-            kwargs.update({'max_length': getattr(model_field, 'max_length')})
+        if isinstance(model_field, django_models.CharField) and not isinstance(model_field, django_models.URLField):
+            max_length = getattr(model_field, 'max_length', None)
+            if max_length is not None:
+                kwargs.update({'max_length': getattr(model_field, 'max_length')})
         elif isinstance(model_field, django_models.DecimalField):
             kwargs.update({'decimal_places': getattr(model_field, 'decimal_places')})
         if field_class is None:
-            return
+            return cls.get_nested_serializer_field(model_field.rel.to)
         return field_class(**kwargs)
 
     @classmethod
@@ -109,7 +121,6 @@ class DjangoModelSerializerBase(SerializerBase):
 
 class NestedDjangoModelSerializer(py2to3.with_metaclass(DjangoModelSerializerBase, Serializer)):
     with_registry = False
-
 
 class DjangoModelSerializer(py2to3.with_metaclass(DjangoModelSerializerBase, Serializer)):
     pass
