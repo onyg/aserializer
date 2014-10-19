@@ -43,9 +43,18 @@ class CompareValidator(object):
         self.compare_value = compare_value
 
     def __call__(self, value):
-        params = {'compare_value': self.compare_value, 'value': value}
+        if isinstance(value, py2to3.string) and not isinstance(self.compare_value, py2to3.string):
+            try:
+                value = type(self.compare_value)(value)
+            except ValueError:
+                return
         if self.compare(value, self.compare_value):
-            raise SerializerValidatorError(message=self.message, error_code=self.error_code, params=params)
+            self.raise_validation_error(value)
+
+    def raise_validation_error(self, value):
+        params = {'compare_value': self.compare_value, 'value': value}
+        raise SerializerValidatorError(message=self.message, error_code=self.error_code, params=params)
+
 
 
 class MaxValueValidator(CompareValidator):
