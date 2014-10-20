@@ -522,11 +522,21 @@ class ChoiceFieldTests(unittest.TestCase):
 
         field = ChoiceField(required=True, choices=self.TUPLE_CHOICES)
         field.set_value(2)
-        self.assertRaises(SerializerFieldValueError, field.validate)
+        field.validate()
+        self.assertEqual(field.to_python(), 2)
+        self.assertEqual(field.to_native(), 'two')
 
     def test_validate_raises(self):
         field = ChoiceField(required=True, choices=self.TUPLE_CHOICES)
         field.set_value('four')
+        self.assertRaises(SerializerFieldValueError, field.validate)
+
+        field = ChoiceField(required=True, choices=self.TUPLE_CHOICES)
+        field.set_value(0)
+        self.assertRaises(SerializerFieldValueError, field.validate)
+
+        field = ChoiceField(required=True, choices=self.TUPLE_CHOICES)
+        field.set_value(object())
         self.assertRaises(SerializerFieldValueError, field.validate)
 
     def test_default(self):

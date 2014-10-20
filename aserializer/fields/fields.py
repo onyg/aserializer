@@ -276,40 +276,45 @@ class ChoiceField(BaseSerializerField):
     def __init__(self, choices=None, *args, **kwargs):
         super(ChoiceField, self).__init__(*args, **kwargs)
         self.choices = choices or ()
-        self.python_value = self.get_python_value(self.value)
+        self.set_value(self.value)
 
     def set_value(self, value):
         self.value = value
-        self.python_value = self.get_python_value(value)
+        self.python_value = self._get_value(value, to_python=True)
+        self.native_value = self._get_value(value, to_python=False)
 
-    def get_python_value(self, value):
+    def _get_key_value_from_choice_element(self, choice):
+        if isinstance(choice, (list, tuple,)):
+            try:
+                val = choice[0]
+                key = choice[1]
+            except IndexError:
+                return None, None
+            return key, val
+        return choice, choice
+
+    def _get_value(self, value, to_python=True):
         if value in v.VALIDATORS_EMPTY_VALUES:
             return None
-        for val in self.choices:
-            if isinstance(val, (list, tuple)):
-                try:
-                    val2 = val[0]
-                    key2 = val[1]
-                except:
-                    continue
-                else:
-                    if self.value == key2:
-                        return val2
-            else:
-                if self.value == val:
+        for choice in self.choices:
+            key, val = self._get_key_value_from_choice_element(choice)
+            if value == key or value == val:
+                if to_python:
                     return val
+                else:
+                    return key
         return None
 
     def validate(self):
         super(ChoiceField, self).validate()
         if self.value in v.VALIDATORS_EMPTY_VALUES:
             return
-        _val = self.get_python_value(self.value)
+        _val = self._get_value(self.value)
         if _val is None:
             raise SerializerFieldValueError(self._error_messages['invalid'], field_names=self.names)
 
     def _to_native(self):
-        return self.value
+        return self.native_value
 
     def _to_python(self):
         return self.python_value
