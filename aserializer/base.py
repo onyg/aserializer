@@ -93,6 +93,14 @@ class Serializer(py2to3.with_metaclass(SerializerBase)):
                                    '{}.{}'.format(map_field_name, nested_map_field_name)))
         return OrderedDict(result)
 
+    @property
+    def obj(self):
+        return self.parser.obj
+
+    @property
+    def cleaned_data(self):
+        return self.to_dict()
+
     def initial(self, source):
         """
         The initial method is preparing the serializer and is setting the source values to the fields
