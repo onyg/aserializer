@@ -4,6 +4,7 @@ import unittest
 import json
 import uuid
 from datetime import datetime, date, time
+from collections import OrderedDict
 
 from aserializer.utils import py2to3
 from aserializer.fields import (IntegerField,
@@ -53,7 +54,19 @@ class MyObject(object):
     nest = MyNestObject()
 
 
+class RecursionRefSerializerOne(Serializer):
+    name = StringField()
+    sers = ListSerializerField('RecursionRefSerializerTwo', exclude=['ser'], required=False)
+
+
+class RecursionRefSerializerTwo(Serializer):
+    name = StringField()
+    ref_one = SerializerField('RecursionRefSerializerOne', exclude=['sers'], required=True)
+    ref_two = SerializerField('RecursionRefSerializerOne', exclude=['sers'], required=True)
+
+
 class SerializeTestCase(unittest.TestCase):
+    maxDiff = None
 
     def test_get_fieldnames(self):
         names = MySerializer.get_fieldnames()
@@ -138,6 +151,21 @@ class SerializeTestCase(unittest.TestCase):
 
         s = NotRequired(None)
         self.assertTrue(s.is_valid())
+
+    def test_recursion_serializer_fields(self):
+        ##
+        # Test for maximum recursion depth RuntimeError
+        ##
+        names = OrderedDict([(u'name', u'name'),
+                             (u'sers', u'sers'),
+                             (u'sers.ref_two', u'sers.ref_two'),
+                             (u'sers.ref_two.name', u'sers.ref_two.name'),
+                             (u'sers.ref_two.sers', u'sers.ref_two.sers'),
+                             (u'sers.name', u'sers.name'),
+                             (u'sers.ref_one', u'sers.ref_one'),
+                             (u'sers.ref_one.name', u'sers.ref_one.name'),
+                             (u'sers.ref_one.sers', u'sers.ref_one.sers')])
+        self.assertDictEqual(dict(RecursionRefSerializerOne.get_fieldnames()), dict(names))
 
 
 class SerializerParserTests(unittest.TestCase):

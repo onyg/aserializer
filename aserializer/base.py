@@ -63,7 +63,7 @@ class Serializer(py2to3.with_metaclass(SerializerBase)):
         self._extras = extras
         self.__show_field_list = fields or []
         self.__exclude_field_list = exclude or []
-        self.source_is_invalid = False
+        # self.source_is_invalid = False
         self._handle_unknown_error = unknown_error
         self.parser = self._meta.parser()
         self.initial(source=source)
@@ -79,18 +79,26 @@ class Serializer(py2to3.with_metaclass(SerializerBase)):
         setattr(self, key, value)
 
     @classmethod
-    def get_fieldnames(cls):
+    def get_fieldnames(cls, seen=None):
         """
         This method returns the map field names of the serializer object including nested field names.
         """
+        if seen is None:
+            seen = {}
         result = []
         for name, field in cls._base_fields.items():
             map_field_name = field.map_field or name
-            result.append((name, map_field_name))
+            result.append((py2to3._unicode(name),py2to3._unicode(map_field_name)))
             if isinstance(field, SerializerObjectField):
-                for nested_name, nested_map_field_name in field.get_serializer_cls().get_fieldnames().items():
-                    result.append(('{}.{}'.format(name, nested_name),
-                                   '{}.{}'.format(map_field_name, nested_map_field_name)))
+                # It is necessary to check for maximum recursions
+                if name in seen:
+                    if seen[name] == field.get_serializer_cls():
+                        continue
+                else:
+                    seen[name] = field.get_serializer_cls()
+                for nested_name, nested_map_field_name in field.get_serializer_cls().get_fieldnames(seen=seen).items():
+                    result.append((u'{}.{}'.format(name, nested_name),
+                                   u'{}.{}'.format(map_field_name, nested_map_field_name)))
         return OrderedDict(result)
 
     @property
