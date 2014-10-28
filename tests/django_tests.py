@@ -280,6 +280,20 @@ class DjangoCollectionSerializerTests(TestCase):
         self.assertDictEqual(collection.dump(), test_value)
 
 
+    def test_multiple_sort_empty_qs(self):
+        qs = SimpleDjangoModel.objects.none()
+
+        collection = SimpleDjangoModelCollection(qs, limit=2, sort=['number', '-code'])
+        test_value = {
+            "_metadata": {
+                "totalCount": 0,
+                "offset": 0,
+                "limit": 2
+            },
+            "items": []
+        }
+        self.assertDictEqual(collection.dump(), test_value)
+
     def test_invalid_sort(self):
         qs = SimpleDjangoModel.objects.all()
 

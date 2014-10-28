@@ -38,7 +38,7 @@ class CollectionSerializer(py2to3.with_metaclass(CollectionBase)):
         self._serializer_cls = registry.get_serializer(self.ITEM_SERIALIZER_CLS)
         if self._serializer_cls is None or not issubclass(self._serializer_cls, Serializer):
             raise Exception('No item serializer set')
-        self.objects = objects or []
+        self.objects = objects if objects is not None else []
         self._fields = fields or self._meta.fields
         self._exclude = exclude or self._meta.exclude
         self._sort = sort or self._meta.sort
