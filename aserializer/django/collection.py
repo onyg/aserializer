@@ -12,7 +12,6 @@ except ImportError:
 
 
 class DjangoCollectionSerializer(DjangoRequestMixin, CollectionSerializer):
-
     @django_required()
     def pre_initial(self, objects):
         if not isinstance(objects, QuerySet):
@@ -56,7 +55,7 @@ class DjangoCollectionSerializer(DjangoRequestMixin, CollectionSerializer):
         if sort is not None and not isinstance(sort, list):
             sort = [str(sort)]
         _sort = []
-        if sort and len(sort) > 0:
+        if objects and sort and len(sort) > 0:
             model_fields = self.get_model_field_list(objects.model)
             serializer_fieldnames = self._serializer_cls.get_fieldnames()
             for sort_item in sort:
@@ -70,7 +69,7 @@ class DjangoCollectionSerializer(DjangoRequestMixin, CollectionSerializer):
                     if sort_field_name in model_fields:
                         _sort.append('{}{}'.format(sort_prefix, sort_field_name))
         try:
-            if len(_sort) > 0:
+            if objects and len(_sort) > 0:
                 _sort = [py2to3._unicode(item).replace('.', '__') for item in _sort]
                 objects = objects.order_by(*_sort)
             if limit:
