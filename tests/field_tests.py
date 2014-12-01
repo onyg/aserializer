@@ -550,6 +550,18 @@ class ChoiceFieldTests(unittest.TestCase):
         self.assertEqual(field.to_python(), 3)
         self.assertEqual(field.to_native(), 'three')
 
+    def test_upper_to_native(self):
+        field = ChoiceField(required=True, upper=True, choices=self.TUPLE_CHOICES, default='three')
+        self.assertEqual(field.to_python(), 3)
+        self.assertEqual(field.to_native(), 'THREE')
+
+    def test_upper_to_python(self):
+        field = ChoiceField(required=True, upper=True, choices=self.TUPLE_CHOICES)
+        field.set_value('TWO')
+        field.validate()
+        self.assertEqual(field.to_python(), 2)
+        self.assertEqual(field.to_native(), 'TWO')
+
 
 class BooleanFieldTests(unittest.TestCase):
 

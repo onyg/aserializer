@@ -273,12 +273,15 @@ class ChoiceField(BaseSerializerField):
         'invalid': 'Invalid choice value.',
     }
 
-    def __init__(self, choices=None, *args, **kwargs):
+    def __init__(self, choices=None, upper=False, *args, **kwargs):
         super(ChoiceField, self).__init__(*args, **kwargs)
         self.choices = choices or ()
+        self.upper = upper
         self.set_value(self.value)
 
     def set_value(self, value):
+        if self.upper and isinstance(value, basestring):
+            value = value.lower()
         self.value = value
         self.python_value = self._get_value(value, to_python=True)
         self.native_value = self._get_value(value, to_python=False)
@@ -314,11 +317,16 @@ class ChoiceField(BaseSerializerField):
             raise SerializerFieldValueError(self._error_messages['invalid'], field_names=self.names)
 
     def _to_native(self):
-        return self.native_value
+        value = self.native_value
+        if self.upper and isinstance(value, basestring):
+            value = value.upper()
+        return value
 
     def _to_python(self):
-        return self.python_value
-
+        value = self.python_value
+        if self.upper and isinstance(value, basestring):
+            value = value.lower()
+        return value
 
 class ListField(BaseSerializerField):
 
