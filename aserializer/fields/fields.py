@@ -280,7 +280,7 @@ class ChoiceField(BaseSerializerField):
         self.set_value(self.value)
 
     def set_value(self, value):
-        if self.upper and isinstance(value, basestring):
+        if self.upper and isinstance(value, py2to3.string):
             value = value.lower()
         self.value = value
         self.python_value = self._get_value(value, to_python=True)
@@ -318,13 +318,13 @@ class ChoiceField(BaseSerializerField):
 
     def _to_native(self):
         value = self.native_value
-        if self.upper and isinstance(value, basestring):
+        if self.upper and isinstance(value, py2to3.string):
             value = value.upper()
         return value
 
     def _to_python(self):
         value = self.python_value
-        if self.upper and isinstance(value, basestring):
+        if self.upper and isinstance(value, py2to3.string):
             value = value.lower()
         return value
 
