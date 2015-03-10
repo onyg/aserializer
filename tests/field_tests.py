@@ -91,6 +91,10 @@ class IntegerFieldTests(unittest.TestCase):
         int_field.set_value(100)
         self.assertRaises(SerializerFieldValueError, int_field.validate)
 
+        int_field = IntegerField(required=True, max_value=24, min_value=22)
+        int_field.set_value(10)
+        self.assertRaises(SerializerFieldValueError, int_field.validate)
+
     def test_default(self):
         int_field = IntegerField(required=True, max_value=24, min_value=22, default=23)
         self.assertEqual(int_field.to_python(), 23)
