@@ -91,6 +91,10 @@ class IntegerFieldTests(unittest.TestCase):
         int_field.set_value(100)
         self.assertRaises(SerializerFieldValueError, int_field.validate)
 
+        int_field = IntegerField(required=True, max_value=24, min_value=22)
+        int_field.set_value(10)
+        self.assertRaises(SerializerFieldValueError, int_field.validate)
+
     def test_default(self):
         int_field = IntegerField(required=True, max_value=24, min_value=22, default=23)
         self.assertEqual(int_field.to_python(), 23)
@@ -245,6 +249,21 @@ class StringFieldTests(unittest.TestCase):
         field = StringField(required=False, on_null=HIDE_FIELD)
         self.assertRaises(IgnoreField, field.to_native)
         self.assertIsNone(field.to_python())
+
+    def test_max_min_length(self):
+        field = StringField(required=True, max_length=7, min_length=4)
+        field.set_value('foobar')
+        field.validate()
+        self.assertEqual(field.to_python(), 'foobar')
+        self.assertEqual(field.to_native(), 'foobar')
+
+        field = StringField(required=True, max_length=7, min_length=4)
+        field.set_value('foo')
+        self.assertRaises(SerializerFieldValueError, field.validate)
+
+        field = StringField(required=True, max_length=7, min_length=4)
+        field.set_value('foobarfoobar')
+        self.assertRaises(SerializerFieldValueError, field.validate)
 
 
 class UUIDFieldTests(unittest.TestCase):
