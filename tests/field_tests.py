@@ -250,6 +250,21 @@ class StringFieldTests(unittest.TestCase):
         self.assertRaises(IgnoreField, field.to_native)
         self.assertIsNone(field.to_python())
 
+    def test_max_min_length(self):
+        field = StringField(required=True, max_length=7, min_length=4)
+        field.set_value('foobar')
+        field.validate()
+        self.assertEqual(field.to_python(), 'foobar')
+        self.assertEqual(field.to_native(), 'foobar')
+
+        field = StringField(required=True, max_length=7, min_length=4)
+        field.set_value('foo')
+        self.assertRaises(SerializerFieldValueError, field.validate)
+
+        field = StringField(required=True, max_length=7, min_length=4)
+        field.set_value('foobarfoobar')
+        self.assertRaises(SerializerFieldValueError, field.validate)
+
 
 class UUIDFieldTests(unittest.TestCase):
 
