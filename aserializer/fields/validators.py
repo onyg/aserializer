@@ -59,13 +59,13 @@ class CompareValidator(object):
 
 class MaxValueValidator(CompareValidator):
     compare = lambda self, a, b: a > b
-    message = 'Value is less than or equal to %(compare_value)s.'
+    message = 'Value is greater than %(compare_value)s.'
     error_code = 'max_value'
 
 
 class MinValueValidator(CompareValidator):
     compare = lambda self, a, b: a < b
-    message = 'Value is greater than or equal to %(compare_value)s.'
+    message = 'Value is less than %(compare_value)s.'
     error_code = 'min_value'
 
 
