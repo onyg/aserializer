@@ -43,11 +43,6 @@ class CompareValidator(object):
         self.compare_value = compare_value
 
     def __call__(self, value):
-        if isinstance(value, py2to3.string) and not isinstance(self.compare_value, py2to3.string):
-            try:
-                value = type(self.compare_value)(value)
-            except ValueError:
-                return
         if self.compare(value, self.compare_value):
             self.raise_validation_error(value)
 
@@ -56,16 +51,30 @@ class CompareValidator(object):
         raise SerializerValidatorError(message=self.message, error_code=self.error_code, params=params)
 
 
+class ConvertAndCompareValidator(CompareValidator):
+    """
+    Some fields might require casting of string values to the type of the compare_value.
 
-class MaxValueValidator(CompareValidator):
+    """
+    def __call__(self, value):
+        if isinstance(value, py2to3.string) and not isinstance(self.compare_value, py2to3.string):
+            try:
+                value = type(self.compare_value)(value)
+            except ValueError:
+                return
+
+        super(ConvertAndCompareValidator, self).__call__(value)
+
+
+class MaxValueValidator(ConvertAndCompareValidator):
     compare = lambda self, a, b: a > b
-    message = 'Value is less than or equal to %(compare_value)s.'
+    message = 'Value is greater than %(compare_value)s.'
     error_code = 'max_value'
 
 
-class MinValueValidator(CompareValidator):
+class MinValueValidator(ConvertAndCompareValidator):
     compare = lambda self, a, b: a < b
-    message = 'Value is greater than or equal to %(compare_value)s.'
+    message = 'Value is less than %(compare_value)s.'
     error_code = 'min_value'
 
 
