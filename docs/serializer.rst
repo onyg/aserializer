@@ -32,7 +32,6 @@ Object to use for this example:
             self.oid = oid or uuid4()
 
 
-
     person = Person(name="Joe", age=20, email="me@example.com")
 
 
@@ -126,5 +125,6 @@ On validation errors the ``.errors`` property representing the resulting error m
     # False
     serializer.errors
     # {'age': u'This field is required.', 'email': u'Enter a valid email.', 'oid': u'Enter a valid uuid.'}
+
 
 
