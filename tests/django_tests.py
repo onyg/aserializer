@@ -3,11 +3,6 @@
 import os
 import unittest
 
-from aserializer import Serializer
-from aserializer import fields
-from aserializer.django.fields import RelatedManagerListSerializerField
-from aserializer.django.collection import DjangoCollectionSerializer
-
 try:
     import django
 except ImportError:
@@ -21,27 +16,28 @@ DJANGO_RUNNER_STATE = None
 
 if django is not None:
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'tests.django_app.settings')
-
     from django.test import TestCase
-    from django.test import simple as django_test_simple
-    from django.test import utils as django_test_utils
+    from django.test.runner import DiscoverRunner
+    from django.test.utils import setup_test_environment, teardown_test_environment
     from tests.django_app.models import SimpleDjangoModel, RelatedDjangoModel
-
+    if django.VERSION >= (1, 7, 0):
+        django.setup()
 else:
     from unittest import TestCase
 
-
-if django is not None and django.VERSION >= (1, 7, 0):
-    django.setup()
+from aserializer import Serializer
+from aserializer import fields
+from aserializer.django.fields import RelatedManagerListSerializerField
+from aserializer.django.collection import DjangoCollectionSerializer
 
 
 def setUpModule():
     if django is None:
         raise unittest.SkipTest(SKIPTEST_TEXT)
-    django_test_utils.setup_test_environment()
+    setup_test_environment()
     global DJANGO_RUNNER
     global DJANGO_RUNNER_STATE
-    DJANGO_RUNNER = django_test_simple.DjangoTestSuiteRunner()
+    DJANGO_RUNNER = DiscoverRunner()
     DJANGO_RUNNER_STATE = DJANGO_RUNNER.setup_databases()
 
 
@@ -52,7 +48,6 @@ def tearDownModule():
     global DJANGO_RUNNER_STATE
     if DJANGO_RUNNER and DJANGO_RUNNER_STATE:
         DJANGO_RUNNER.teardown_databases(DJANGO_RUNNER_STATE)
-    django_test_utils.teardown_test_environment()
 
 
 class SimpleDjangoModelSerializer(Serializer):
