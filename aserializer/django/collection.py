@@ -3,7 +3,7 @@
 from aserializer.utils import py2to3
 from aserializer.collection.base import CollectionSerializer
 from aserializer.django.mixins import DjangoRequestMixin
-from aserializer.django.utils import django_required
+from aserializer.django.utils import django_required, get_django_model_field_list
 
 try:
     from django.db.models.query import QuerySet
@@ -28,22 +28,6 @@ class DjangoCollectionSerializer(DjangoRequestMixin, CollectionSerializer):
         _metadata[self._meta.total_count_key] = total_count
         return _metadata
 
-    def get_model_field_list(self, model, parent_name=None, result=None):
-        if result is None:
-            result = []
-        for item, i in model._meta.get_fields_with_model():
-            if parent_name:
-                result.append('{}.{}'.format(parent_name, item.name))
-            else:
-                result.append(py2to3._unicode(item.name))
-                if item.rel is not None:
-                    if parent_name:
-                        item_name = '{}.{}'.format(parent_name, item.name)
-                    else:
-                        item_name = item.name
-                    self.get_model_field_list(item.rel.to, item_name, result)
-        return result
-
     def _pre(self, objects, limit=None, offset=None, sort=None):
         if offset is None:
             offset = 0
@@ -56,7 +40,7 @@ class DjangoCollectionSerializer(DjangoRequestMixin, CollectionSerializer):
             sort = [str(sort)]
         _sort = []
         if objects and sort and len(sort) > 0:
-            model_fields = self.get_model_field_list(objects.model)
+            model_fields = get_django_model_field_list(objects.model)
             serializer_fieldnames = self._serializer_cls.get_fieldnames()
             for sort_item in sort:
                 sort_field_name = str(sort_item)
