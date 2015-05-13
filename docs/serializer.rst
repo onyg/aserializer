@@ -119,7 +119,7 @@ On validation errors the ``.errors`` property representing the resulting error m
 
 .. code-block:: python
 
-    data = {"name": "Joe", "email": "me", "oid": "id"}
+    data = {"name": "Joe", "email": "me", "oid": "23"}
     serializer = PersonSerializer(data)
     serializer.is_valid()
     # False
@@ -127,4 +127,59 @@ On validation errors the ``.errors`` property representing the resulting error m
     # {'age': u'This field is required.', 'email': u'Enter a valid email.', 'oid': u'Enter a valid uuid.'}
 
 
+Custom Serializer Field Validation
+----------------------------------
+
+In this Example we want demonstrate the custom validation method for the phone field.
+This validation is specific for one serializer to make sure that the phone number not starting with 555.
+
+
+.. code-block:: python
+
+    import aserializer
+
+
+    class ContactSerializer(aserializer.Serializer):
+        email = aserializer.EmailField()
+        phone = aserializer.StringField()
+
+        def phone_validate(self, value):
+            if value.startswith('555'):
+                raise aserializer.SerializerFieldValueError(message='No phone number.')
+
+
+    data = {"email": "me@email.com", "phone": "555 123 123"}
+    serializer = ContactSerializer(data)
+    serializer.is_valid()
+    # False
+    serializer.errors
+    # {'phone': u'No phone number.'}
+
+
+Custom Clean Values Method
+--------------------------
+
+In rare cases the serailizers should representing the incoming data differently.
+For that cases the clean_value methods are your friend.
+
+
+.. code-block:: python
+
+    import aserializer
+
+
+    class SimpleAddress(aserializer.Serializer):
+        street = aserializer.StringField(required=True)
+
+        def street_clean_value(self, value):
+            if value.startswith('Sesame'):
+                return 'Street for kids'
+            else:
+                return value
+
+    serializer = SimpleAddress({"street": "Sesame Street"})
+    serializer.street
+    # Street for kids
+    serializer.to_dict()
+    # {'street': u'Street for kids'}
 
