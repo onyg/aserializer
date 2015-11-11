@@ -330,68 +330,68 @@ class TheDjangoModelSerializer(DjangoModelSerializer):
 class ModelSerializerFieldMappingTests(TestCase):
 
     def test_char_field(self):
-        model_field = SimpleModelForSerializer._meta.get_field_by_name('char_field')[0]
+        model_field = SimpleModelForSerializer._meta.get_field('char_field')
         serializer_field = DjangoModelSerializerBase.get_field_from_modelfield(model_field)
         self.assertIsInstance(serializer_field, fields.StringField)
 
     def test_integer_field(self):
-        model_field = SimpleModelForSerializer._meta.get_field_by_name('integer_field')[0]
+        model_field = SimpleModelForSerializer._meta.get_field('integer_field')
         serializer_field = DjangoModelSerializerBase.get_field_from_modelfield(model_field)
         self.assertIsInstance(serializer_field, fields.IntegerField)
 
     def test_positiveinteger_field(self):
-        model_field = SimpleModelForSerializer._meta.get_field_by_name('positiveinteger_field')[0]
+        model_field = SimpleModelForSerializer._meta.get_field('positiveinteger_field')
         serializer_field = DjangoModelSerializerBase.get_field_from_modelfield(model_field)
         self.assertIsInstance(serializer_field, fields.PositiveIntegerField)
 
     def test_float_field(self):
-        model_field = SimpleModelForSerializer._meta.get_field_by_name('float_field')[0]
+        model_field = SimpleModelForSerializer._meta.get_field('float_field')
         serializer_field = DjangoModelSerializerBase.get_field_from_modelfield(model_field)
         self.assertIsInstance(serializer_field, fields.FloatField)
 
     def test_date_field(self):
-        model_field = SimpleModelForSerializer._meta.get_field_by_name('date_field')[0]
+        model_field = SimpleModelForSerializer._meta.get_field('date_field')
         serializer_field = DjangoModelSerializerBase.get_field_from_modelfield(model_field)
         self.assertIsInstance(serializer_field, fields.DateField)
 
     def test_datetime_field(self):
-        model_field = SimpleModelForSerializer._meta.get_field_by_name('datetime_field')[0]
+        model_field = SimpleModelForSerializer._meta.get_field('datetime_field')
         serializer_field = DjangoModelSerializerBase.get_field_from_modelfield(model_field)
         self.assertIsInstance(serializer_field, fields.DatetimeField)
 
     def test_time_field(self):
-        model_field = SimpleModelForSerializer._meta.get_field_by_name('time_field')[0]
+        model_field = SimpleModelForSerializer._meta.get_field('time_field')
         serializer_field = DjangoModelSerializerBase.get_field_from_modelfield(model_field)
         self.assertIsInstance(serializer_field, fields.TimeField)
 
     def test_boolean_field(self):
-        model_field = SimpleModelForSerializer._meta.get_field_by_name('boolean_field')[0]
+        model_field = SimpleModelForSerializer._meta.get_field('boolean_field')
         serializer_field = DjangoModelSerializerBase.get_field_from_modelfield(model_field)
         self.assertIsInstance(serializer_field, fields.BooleanField)
 
     def test_decimal_field(self):
-        model_field = SimpleModelForSerializer._meta.get_field_by_name('decimal_field')[0]
+        model_field = SimpleModelForSerializer._meta.get_field('decimal_field')
         serializer_field = DjangoModelSerializerBase.get_field_from_modelfield(model_field)
         self.assertIsInstance(serializer_field, fields.DecimalField)
 
     def test_text_field(self):
-        model_field = SimpleModelForSerializer._meta.get_field_by_name('text_field')[0]
+        model_field = SimpleModelForSerializer._meta.get_field('text_field')
         serializer_field = DjangoModelSerializerBase.get_field_from_modelfield(model_field)
         self.assertIsInstance(serializer_field, fields.StringField)
 
     def test_commaseparatedinteger_field(self):
-        model_field = SimpleModelForSerializer._meta.get_field_by_name('commaseparatedinteger_field')[0]
+        model_field = SimpleModelForSerializer._meta.get_field('commaseparatedinteger_field')
         serializer_field = DjangoModelSerializerBase.get_field_from_modelfield(model_field)
         self.assertIsInstance(serializer_field, fields.StringField)
 
     def test_choice_field(self):
-        model_field = SimpleModelForSerializer._meta.get_field_by_name('choice_field')[0]
+        model_field = SimpleModelForSerializer._meta.get_field('choice_field')
         serializer_field = DjangoModelSerializerBase.get_field_from_modelfield(model_field)
         self.assertIsInstance(serializer_field, fields.ChoiceField)
         self.assertEqual(list(serializer_field.choices), list(model_field.choices))
 
     def test_url_field(self):
-        model_field = SimpleModelForSerializer._meta.get_field_by_name('url_field')[0]
+        model_field = SimpleModelForSerializer._meta.get_field('url_field')
         serializer_field = DjangoModelSerializerBase.get_field_from_modelfield(model_field)
         self.assertIsInstance(serializer_field, fields.UrlField)
 
@@ -438,14 +438,15 @@ class FlatSerializerTests(TestCase):
             "positiveinteger_field": 23
         }
 
+
         simple_model = SimpleModelForSerializer.objects.create(**values)
         # print simple_model.choice_field
         serializer = TheDjangoModelSerializer(simple_model)
         # values['id'] = simple_model.id
         # native_values['id'] = simple_model.id
-        # # self.assertTrue(serializer.is_valid())
+        self.assertTrue(serializer.is_valid())
         # serializer.is_valid()
         # print serializer.errors_to_json(indent=4)
-        # print serializer.to_json(indent=4)
+        print serializer.to_json(indent=4)
         # self.assertDictEqual(serializer.to_dict(), values)
         # self.assertDictEqual(serializer.dump(), native_values)
