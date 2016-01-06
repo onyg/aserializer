@@ -327,6 +327,7 @@ class TheDjangoModelSerializer(DjangoModelSerializer):
         model = SimpleModelForSerializer
 
 
+@unittest.skipIf(django is None, SKIPTEST_TEXT)
 class ModelSerializerFieldMappingTests(TestCase):
 
     def test_char_field(self):
@@ -396,6 +397,7 @@ class ModelSerializerFieldMappingTests(TestCase):
         self.assertIsInstance(serializer_field, fields.UrlField)
 
 
+@unittest.skipIf(django is None, SKIPTEST_TEXT)
 class FlatSerializerTests(TestCase):
     maxDiff = None
 
@@ -425,9 +427,9 @@ class FlatSerializerTests(TestCase):
             "url_field": "http://www.test.test",
             "text_field": "test text",
             "time_field": "20:15:23",
-            "choice_field": "Zero",
+            "choice_field": "Linux",
             "char_field": "test",
-            "boolean_field": True,
+            "boolean_field": False,
             "integer_field2": 23,
             "commaseparatedinteger_field": "1,2,3,4",
             "id": 1,
@@ -438,15 +440,10 @@ class FlatSerializerTests(TestCase):
             "positiveinteger_field": 23
         }
 
-
         simple_model = SimpleModelForSerializer.objects.create(**values)
-        # print simple_model.choice_field
         serializer = TheDjangoModelSerializer(simple_model)
-        # values['id'] = simple_model.id
-        # native_values['id'] = simple_model.id
+        values['id'] = simple_model.id
+        native_values['id'] = simple_model.id
         self.assertTrue(serializer.is_valid())
-        # serializer.is_valid()
-        # print serializer.errors_to_json(indent=4)
-        # print(serializer.to_json(indent=4))
-        # self.assertDictEqual(serializer.to_dict(), values)
-        # self.assertDictEqual(serializer.dump(), native_values)
+        self.assertDictEqual(serializer.to_dict(), values)
+        self.assertDictEqual(serializer.dump(), native_values)

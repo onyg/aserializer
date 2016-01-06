@@ -4,6 +4,7 @@ import inspect
 from aserializer.utils import py2to3
 from aserializer.base import Serializer, SerializerBase
 from aserializer import fields as serializer_fields
+from aserializer.django.utils import get_related_model_from_field
 
 try:
     from django.db import models as django_models
@@ -106,7 +107,7 @@ class DjangoModelSerializerBase(SerializerBase):
         elif isinstance(model_field, django_models.DecimalField):
             kwargs.update({'decimal_places': getattr(model_field, 'decimal_places')})
         if field_class is None:
-            return cls.get_nested_serializer_field(model_field.rel.to)
+            return cls.get_nested_serializer_field(get_related_model_from_field(model_field))
         return field_class(**kwargs)
 
     @classmethod
