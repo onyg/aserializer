@@ -18,10 +18,10 @@ if django is not None:
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'tests.django_app.settings')
     from django.test import TestCase
     from django.test.runner import DiscoverRunner
-    from django.test.utils import setup_test_environment, teardown_test_environment
-    from tests.django_app.models import SimpleDjangoModel, RelatedDjangoModel
+    from django.test.utils import setup_test_environment
     if django.VERSION >= (1, 7, 0):
         django.setup()
+    from tests.django_app.models import SimpleDjangoModel, RelatedDjangoModel
 else:
     from unittest import TestCase
 
