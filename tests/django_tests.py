@@ -447,6 +447,6 @@ class FlatSerializerTests(TestCase):
         self.assertTrue(serializer.is_valid())
         # serializer.is_valid()
         # print serializer.errors_to_json(indent=4)
-        print serializer.to_json(indent=4)
+        # print(serializer.to_json(indent=4))
         # self.assertDictEqual(serializer.to_dict(), values)
         # self.assertDictEqual(serializer.dump(), native_values)
