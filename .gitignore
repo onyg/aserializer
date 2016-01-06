@@ -10,3 +10,5 @@ coverage/
 *.pyc
 .DS_Store
 .idea
+.tox/
+*.xml

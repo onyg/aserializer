@@ -1,5 +1,5 @@
 #!/usr/bin/env python
- # -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 import sys
 import os
@@ -28,7 +28,11 @@ CLASSIFIERS = [
     'Programming Language :: Python :: 2',
     'Programming Language :: Python :: 2.7',
     'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.3',
     'Programming Language :: Python :: 3.4',
+    'Programming Language :: Python :: 3.5',
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
     'Topic :: Software Development :: Libraries :: Python Modules',
 ]
 
@@ -45,7 +49,7 @@ basic_setup = dict(
     description='An object serializer inspired by the django forms.',
     long_description=long_description,
     url='https://github.com/onyg/aserializer',
-    packages= find_packages(exclude=('tests', 'tests.*')),
+    packages=find_packages(exclude=('tests', 'tests.*')),
     platforms=['any'],
     classifiers=CLASSIFIERS,
     test_suite='nose.collector',
