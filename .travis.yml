@@ -18,7 +18,7 @@ matrix:
   - python: 3.5
     env: EXTRA=dj17
 install:
-- travis_retry pip install tox
+- travis_retry pip install tox coveralls
 script:
 - tox -e $(echo py$TRAVIS_PYTHON_VERSION-$EXTRA | tr -d . | sed -e 's/pypypy/pypy/') -- --with-coverage
 branches:

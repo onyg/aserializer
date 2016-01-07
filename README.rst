@@ -2,11 +2,6 @@
 aserializer
 ===========
 
-About
-=====
-
-aserializer is an object serializer inspired by the django forms.
-
 .. image:: https://travis-ci.org/onyg/aserializer.png?branch=master
   :target: https://travis-ci.org/onyg/aserializer
 
@@ -16,6 +11,15 @@ aserializer is an object serializer inspired by the django forms.
 .. image:: https://landscape.io/github/onyg/aserializer/master/landscape.png
    :target: https://landscape.io/github/onyg/aserializer/master
    :alt: Code Health
+
+.. image:: https://img.shields.io/pypi/v/aserializer.svg
+   :target: https://pypi.python.org/pypi/aserializer/
+   :alt: pypi
+
+About
+=====
+
+aserializer is an object serializer inspired by the django forms.
 
 Examples
 ========
