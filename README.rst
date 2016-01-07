@@ -5,12 +5,8 @@ aserializer
 .. image:: https://travis-ci.org/onyg/aserializer.png?branch=master
   :target: https://travis-ci.org/onyg/aserializer
 
-.. image:: https://coveralls.io/repos/onyg/aserializer/badge.svg?branch=master&service=github
+.. image:: https://img.shields.io/coveralls/onyg/aserializer/master.svg
   :target: https://coveralls.io/github/onyg/aserializer?branch=master
-
-.. image:: https://landscape.io/github/onyg/aserializer/master/landscape.png
-   :target: https://landscape.io/github/onyg/aserializer/master
-   :alt: Code Health
 
 .. image:: https://img.shields.io/pypi/v/aserializer.svg
    :target: https://pypi.python.org/pypi/aserializer/
