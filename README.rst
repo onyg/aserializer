@@ -7,6 +7,15 @@ About
 
 aserializer is an object serializer inspired by the django forms.
 
+.. image:: https://travis-ci.org/onyg/aserializer.png?branch=master
+  :target: https://travis-ci.org/onyg/aserializer
+
+.. image:: https://coveralls.io/repos/onyg/aserializer/badge.svg?branch=master&service=github
+  :target: https://coveralls.io/github/onyg/aserializer?branch=master
+
+.. image:: https://landscape.io/github/onyg/aserializer/master/landscape.png
+   :target: https://landscape.io/github/onyg/aserializer/master
+   :alt: Code Health
 
 Examples
 ========
