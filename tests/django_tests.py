@@ -38,7 +38,6 @@ else:
     from unittest import TestCase
 
 
-
 def setUpModule():
     if django is None:
         raise unittest.SkipTest(SKIPTEST_TEXT)
@@ -74,6 +73,17 @@ class SecondSimpleDjangoModelSerializer(Serializer):
     code = fields.StringField(max_length=4)
     number = fields.IntegerField(required=True)
     relations = RelatedManagerListSerializerField(RelatedDjangoModelSerializer, exclude=['relation'])
+
+
+class TheDjangoModelSerializer(DjangoModelSerializer):
+
+    class Meta:
+        model = SimpleModelForSerializer if django else None
+
+
+class SimpleDjangoModelCollection(DjangoCollectionSerializer):
+    class Meta:
+        serializer = SimpleDjangoModelSerializer
 
 
 @unittest.skipIf(django is None, SKIPTEST_TEXT)
@@ -131,11 +141,6 @@ class DjangoSerializerTests(TestCase):
             ]
         }
         self.assertDictEqual(serializer.dump(), test_value)
-
-
-class SimpleDjangoModelCollection(DjangoCollectionSerializer):
-    class Meta:
-        serializer = SimpleDjangoModelSerializer
 
 
 @unittest.skipIf(django is None, SKIPTEST_TEXT)
@@ -319,12 +324,6 @@ class DjangoCollectionSerializerTests(TestCase):
             "items": []
         }
         self.assertDictEqual(collection.dump(), test_value)
-
-
-class TheDjangoModelSerializer(DjangoModelSerializer):
-
-    class Meta:
-        model = SimpleModelForSerializer
 
 
 @unittest.skipIf(django is None, SKIPTEST_TEXT)
