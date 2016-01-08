@@ -2,8 +2,8 @@
 
 import unittest
 from aserializer import fields
+from aserializer.django.serializers import DjangoModelSerializerBase
 from tests.django_tests import django, SKIPTEST_TEXT, TestCase
-from tests.django_tests.django_base import DjangoModelSerializerBase
 
 if django is not None:
     from tests.django_tests.django_app.models import SimpleModelForSerializer

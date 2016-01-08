@@ -41,6 +41,6 @@ class TheDjangoModelSerializer(DjangoModelSerializer):
         model = SimpleModelForSerializer if django else None
 
 
-class SimpleDjangoModelCollection(DjangoCollectionSerializer):
+class SimpleDjangoModelCollectionSerializer(DjangoCollectionSerializer):
     class Meta:
         serializer = SimpleDjangoModelSerializer

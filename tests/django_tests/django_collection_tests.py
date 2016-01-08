@@ -2,7 +2,7 @@
 import unittest
 
 from tests.django_tests import django, SKIPTEST_TEXT, TestCase
-from tests.django_tests.django_base import (SimpleDjangoModel, RelatedDjangoModel, SimpleDjangoModelCollection,)
+from tests.django_tests.django_base import (SimpleDjangoModel, RelatedDjangoModel, SimpleDjangoModelCollectionSerializer, )
 
 
 @unittest.skipIf(django is None, SKIPTEST_TEXT)
@@ -22,7 +22,7 @@ class DjangoCollectionSerializerTests(TestCase):
     def test_simple(self):
         qs = SimpleDjangoModel.objects.all()
 
-        collection = SimpleDjangoModelCollection(qs)
+        collection = SimpleDjangoModelCollectionSerializer(qs)
         test_value = {
             "_metadata": {
                 "totalCount": 5,
@@ -62,7 +62,7 @@ class DjangoCollectionSerializerTests(TestCase):
     def test_limit_offset(self):
         qs = SimpleDjangoModel.objects.all()
 
-        collection = SimpleDjangoModelCollection(qs, limit=2, offset=2)
+        collection = SimpleDjangoModelCollectionSerializer(qs, limit=2, offset=2)
         test_value = {
             "_metadata": {
                 "totalCount": 5,
@@ -87,7 +87,7 @@ class DjangoCollectionSerializerTests(TestCase):
     def test_sort(self):
         qs = SimpleDjangoModel.objects.all()
 
-        collection = SimpleDjangoModelCollection(qs, sort=['-number'])
+        collection = SimpleDjangoModelCollectionSerializer(qs, sort=['-number'])
         test_value = {
             "_metadata": {
                 "totalCount": 5,
@@ -127,7 +127,7 @@ class DjangoCollectionSerializerTests(TestCase):
     def test_multiple_sort(self):
         qs = SimpleDjangoModel.objects.all()
 
-        collection = SimpleDjangoModelCollection(qs, limit=2, sort=['number', '-code'])
+        collection = SimpleDjangoModelCollectionSerializer(qs, limit=2, sort=['number', '-code'])
         test_value = {
             "_metadata": {
                 "totalCount": 5,
@@ -153,7 +153,7 @@ class DjangoCollectionSerializerTests(TestCase):
     def test_multiple_sort_empty_qs(self):
         qs = SimpleDjangoModel.objects.none()
 
-        collection = SimpleDjangoModelCollection(qs, limit=2, sort=['number', '-code'])
+        collection = SimpleDjangoModelCollectionSerializer(qs, limit=2, sort=['number', '-code'])
         test_value = {
             "_metadata": {
                 "totalCount": 0,
@@ -167,7 +167,7 @@ class DjangoCollectionSerializerTests(TestCase):
     def test_invalid_sort(self):
         qs = SimpleDjangoModel.objects.all()
 
-        collection = SimpleDjangoModelCollection(qs, sort=['foobar'])
+        collection = SimpleDjangoModelCollectionSerializer(qs, sort=['foobar'])
         dump = collection.dump()
         self.assertEqual(dump['items'][0]['code'], 'DDDD')
         self.assertEqual(dump['items'][1]['code'], 'FFFF')
@@ -176,7 +176,7 @@ class DjangoCollectionSerializerTests(TestCase):
         self.assertEqual(dump['items'][4]['code'], 'AAAA')
 
     def test_empty_queryset(self):
-        collection = SimpleDjangoModelCollection(SimpleDjangoModel.objects.none())
+        collection = SimpleDjangoModelCollectionSerializer(SimpleDjangoModel.objects.none())
         test_value = {
             "_metadata": {
                 "totalCount": 0,
