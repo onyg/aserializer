@@ -25,4 +25,5 @@ branches:
   only:
   - master
   - develop
+  - django_support
 after_script: coveralls --verbose
