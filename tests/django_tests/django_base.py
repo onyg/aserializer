@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
-
-
 from aserializer import Serializer
 from aserializer import fields
 from aserializer.django.fields import RelatedManagerListSerializerField
 from aserializer.django.collection import DjangoCollectionSerializer
-from aserializer.django.serializers import DjangoModelSerializer, DjangoModelSerializerBase
+from aserializer.django.serializers import DjangoModelSerializer
 
 from tests.django_tests import django
 
@@ -14,6 +12,9 @@ if django is not None:
         SimpleDjangoModel,
         RelatedDjangoModel,
         SimpleModelForSerializer,
+        RelOneDjangoModel,
+        RelTwoDjangoModel,
+        RelThreeDjangoModel
     )
 
 
@@ -44,3 +45,15 @@ class TheDjangoModelSerializer(DjangoModelSerializer):
 class SimpleDjangoModelCollectionSerializer(DjangoCollectionSerializer):
     class Meta:
         serializer = SimpleDjangoModelSerializer
+
+
+class RelDjangoModelSerializer(DjangoModelSerializer):
+
+    class Meta:
+        model = RelThreeDjangoModel
+
+
+class RelReverseDjangoModelSerializer(DjangoModelSerializer):
+
+    class Meta:
+        model = RelOneDjangoModel

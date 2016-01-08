@@ -36,3 +36,16 @@ class SimpleModelForSerializer(models.Model):
     choice_field = models.CharField(max_length=4, choices=_CHOICES)
     url_field = models.URLField()
 
+
+class RelOneDjangoModel(models.Model):
+    name = models.CharField(max_length=24, blank=False)
+
+
+class RelTwoDjangoModel(models.Model):
+    name = models.CharField(max_length=24, blank=False)
+    rel_one = models.ForeignKey(RelOneDjangoModel, related_name='rel_twos')
+
+
+class RelThreeDjangoModel(models.Model):
+    name = models.CharField(max_length=24, blank=False)
+    rel_two = models.ForeignKey(RelTwoDjangoModel, related_name='rel_threes')

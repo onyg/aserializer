@@ -7,7 +7,9 @@ from decimal import Decimal
 from tests.django_tests import django, SKIPTEST_TEXT, TestCase
 from tests.django_tests.django_base import (
     SimpleDjangoModel, RelatedDjangoModel, SimpleDjangoModelSerializer, RelatedDjangoModelSerializer,
-    SecondSimpleDjangoModelSerializer, TheDjangoModelSerializer, SimpleModelForSerializer,)
+    SecondSimpleDjangoModelSerializer, TheDjangoModelSerializer, SimpleModelForSerializer,
+    RelOneDjangoModel, RelTwoDjangoModel, RelThreeDjangoModel, RelDjangoModelSerializer,
+    RelReverseDjangoModelSerializer)
 
 
 @unittest.skipIf(django is None, SKIPTEST_TEXT)
@@ -45,9 +47,13 @@ class DjangoSerializerTests(TestCase):
         RelatedDjangoModel.objects.create(name='Relation 1', relation=sdm)
         RelatedDjangoModel.objects.create(name='Relation 2', relation=sdm)
         RelatedDjangoModel.objects.create(name='Relation 3', relation=sdm)
-
-        serializer = SecondSimpleDjangoModelSerializer(sdm)
-        self.assertTrue(serializer.is_valid())
+        # TODO: this could eventually be more lazy
+        with self.assertNumQueries(1):
+            serializer = SecondSimpleDjangoModelSerializer(sdm)
+        with self.assertNumQueries(0):
+            self.assertTrue(serializer.is_valid())
+        with self.assertNumQueries(0):
+            model_dump = serializer.dump()
         test_value = {
             'name': 'The Name',
             'number': 1,
@@ -64,7 +70,76 @@ class DjangoSerializerTests(TestCase):
                 }
             ]
         }
-        self.assertDictEqual(serializer.dump(), test_value)
+        self.assertDictEqual(model_dump, test_value)
+
+
+@unittest.skipIf(django is None, SKIPTEST_TEXT)
+class RelDjangoSerializerTests(TestCase):
+
+    def tearDown(self):
+        RelOneDjangoModel.objects.all().delete()
+        RelTwoDjangoModel.objects.all().delete()
+        RelThreeDjangoModel.objects.all().delete()
+
+    @unittest.skip('Reverse relations are not working for now')
+    def test_three_level_reverse_relations(self):
+        one = RelOneDjangoModel.objects.create(name='Level1')
+        two = RelTwoDjangoModel.objects.create(name='Level2', rel_one=one)
+        three = RelThreeDjangoModel.objects.create(name='Level3', rel_two=two)
+        # from django.db import DEFAULT_DB_ALIAS, connections
+        # connection = connections[DEFAULT_DB_ALIAS]
+        # import pdb;pdb.set_trace()
+        # print len(connection.queries_log)
+        # with self.assertNumQueries(0)
+        # TODO: serializer has here only id and name, not the reverse relation rel_twos
+        serializer = RelReverseDjangoModelSerializer(one)
+        self.assertTrue(serializer.is_valid())
+        model_dump = serializer.dump()
+
+    def test_three_level_relations(self):
+        one = RelOneDjangoModel.objects.create(name='Level1')
+        two = RelTwoDjangoModel.objects.create(name='Level2', rel_one=one)
+        three = RelThreeDjangoModel.objects.create(name='Level3', rel_two=two)
+
+        with self.assertNumQueries(0):
+            serializer = RelDjangoModelSerializer(three)
+        with self.assertNumQueries(0):
+            self.assertTrue(serializer.is_valid())
+        with self.assertNumQueries(0):
+            obj_dump = serializer.dump()
+
+        with self.assertNumQueries(3):
+            serializer = RelDjangoModelSerializer(RelThreeDjangoModel.objects.first())
+        with self.assertNumQueries(0):
+            self.assertTrue(serializer.is_valid())
+        with self.assertNumQueries(0):
+            qs_obj_dump = serializer.dump()
+
+        test_value = {
+            'rel_two': {
+                'rel_one': {
+                    'id': 1,
+                    'name': 'Level1'},
+                'id': 1,
+                'name': 'Level2'},
+            'id': 1,
+            'name': 'Level3'
+        }
+        self.assertDictEqual(obj_dump, test_value)
+        self.assertDictEqual(qs_obj_dump, test_value)
+
+    @unittest.skip('Relation exclusion not working for now')
+    def test_three_level_relations_with_exclude(self):
+        one = RelOneDjangoModel.objects.create(name='Level1')
+        two = RelTwoDjangoModel.objects.create(name='Level2', rel_one=one)
+        RelThreeDjangoModel.objects.create(name='Level3', rel_two=two)
+        # TODO: This should work with only two queries
+        with self.assertNumQueries(2):
+            serializer = RelDjangoModelSerializer(RelThreeDjangoModel.objects.first(), exclude=['rel_two.rel_one'])
+        with self.assertNumQueries(0):
+            self.assertTrue(serializer.is_valid())
+        with self.assertNumQueries(0):
+            model_dump = serializer.dump()
 
 
 @unittest.skipIf(django is None, SKIPTEST_TEXT)
