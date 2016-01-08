@@ -2,7 +2,8 @@
 import unittest
 
 from tests.django_tests import django, SKIPTEST_TEXT, TestCase
-from tests.django_tests.django_base import (SimpleDjangoModel, RelatedDjangoModel, SimpleDjangoModelCollectionSerializer, )
+from tests.django_tests.django_base import (SimpleDjangoModel, RelatedDjangoModel,
+                                            SimpleDjangoModelCollectionSerializer, )
 
 
 @unittest.skipIf(django is None, SKIPTEST_TEXT)
@@ -21,8 +22,10 @@ class DjangoCollectionSerializerTests(TestCase):
 
     def test_simple(self):
         qs = SimpleDjangoModel.objects.all()
-
-        collection = SimpleDjangoModelCollectionSerializer(qs)
+        with self.assertNumQueries(0):
+            collection = SimpleDjangoModelCollectionSerializer(qs)
+        with self.assertNumQueries(1):
+            collection_dump = collection.dump()
         test_value = {
             "_metadata": {
                 "totalCount": 5,
@@ -57,7 +60,7 @@ class DjangoCollectionSerializerTests(TestCase):
                 }
             ]
         }
-        self.assertDictEqual(collection.dump(), test_value)
+        self.assertDictEqual(collection_dump, test_value)
 
     def test_limit_offset(self):
         qs = SimpleDjangoModel.objects.all()
@@ -148,7 +151,6 @@ class DjangoCollectionSerializerTests(TestCase):
             ]
         }
         self.assertDictEqual(collection.dump(), test_value)
-
 
     def test_multiple_sort_empty_qs(self):
         qs = SimpleDjangoModel.objects.none()
