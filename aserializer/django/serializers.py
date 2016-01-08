@@ -84,7 +84,6 @@ class DjangoModelSerializerBase(SerializerBase):
         kwargs = dict(serializer=NestedModelSerializer)
         return serializer_fields.SerializerField(**kwargs)
 
-
     @classmethod
     def get_field_from_modelfield(cls, model_field, **kwargs):
         field_class = cls.get_field_class(model_field)
@@ -122,6 +121,7 @@ class DjangoModelSerializerBase(SerializerBase):
 
 class NestedDjangoModelSerializer(py2to3.with_metaclass(DjangoModelSerializerBase, Serializer)):
     with_registry = False
+
 
 class DjangoModelSerializer(py2to3.with_metaclass(DjangoModelSerializerBase, Serializer)):
     pass
