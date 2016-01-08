@@ -7,7 +7,7 @@ from decimal import Decimal
 from tests.django_tests import django, SKIPTEST_TEXT, TestCase
 from tests.django_tests.django_base import (
     SimpleDjangoModel, RelatedDjangoModel, SimpleDjangoModelSerializer, RelatedDjangoModelSerializer,
-    SecondSimpleDjangoModelSerializer, SimpleDjangoModelCollection, TheDjangoModelSerializer, SimpleModelForSerializer,)
+    SecondSimpleDjangoModelSerializer, TheDjangoModelSerializer, SimpleModelForSerializer,)
 
 
 @unittest.skipIf(django is None, SKIPTEST_TEXT)
