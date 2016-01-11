@@ -17,7 +17,7 @@ if django is not None:
         RelThreeDjangoModel,
         M2MOneDjangoModel,
         M2MTwoDjangoModel,
-    )
+        One2One1DjangoModel, One2One2DjangoModel)
 
 # First some manually defined serializers for django models
 
@@ -38,6 +38,12 @@ class SecondSimpleDjangoSerializer(Serializer):
     code = fields.StringField(max_length=4)
     number = fields.IntegerField(required=True)
     relations = RelatedManagerListSerializerField(RelatedDjangoSerializer, exclude=['relation'])
+
+
+class RelThreeDjangoSerializer(Serializer):
+    name = fields.StringField(required=True, max_length=24)
+    rel_two = RelatedManagerListSerializerField('RelTwoDjangoSerializer', exclude=['rel_twos'])
+    rel_one = RelatedManagerListSerializerField('RelOneDjangoSerializer', required=False, exclude=['rel_one'])
 
 
 class RelTwoDjangoSerializer(Serializer):
@@ -86,3 +92,15 @@ class M2MTwoDjangoModelSerializer(DjangoModelSerializer):
 
     class Meta:
         model = M2MTwoDjangoModel
+
+
+class One2One1DjangoModelSerializer(DjangoModelSerializer):
+
+    class Meta:
+        model = One2One1DjangoModel
+
+
+class One2One2DjangoModelSerializer(DjangoModelSerializer):
+
+    class Meta:
+        model = One2One2DjangoModel

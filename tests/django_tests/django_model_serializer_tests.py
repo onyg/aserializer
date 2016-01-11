@@ -5,10 +5,12 @@ from datetime import datetime
 from decimal import Decimal
 
 from tests.django_tests import django, SKIPTEST_TEXT, TestCase
+from tests.django_tests.django_app.models import One2One1DjangoModel, One2One2DjangoModel
 from tests.django_tests.django_base import (
     TheDjangoModelSerializer, SimpleModelForSerializer, RelOneDjangoModel, RelTwoDjangoModel,
     RelThreeDjangoModel, RelDjangoModelSerializer, RelReverseDjangoModelSerializer,
-    M2MTwoDjangoModel, M2MOneDjangoModel, M2MOneDjangoModelSerializer, M2MTwoDjangoModelSerializer,)
+    M2MTwoDjangoModel, M2MOneDjangoModel, M2MOneDjangoModelSerializer, M2MTwoDjangoModelSerializer,
+    One2One2DjangoModelSerializer)
 
 
 @unittest.skipIf(django is None, SKIPTEST_TEXT)
@@ -157,5 +159,26 @@ class M2MSerializerTests(TestCase):
             ],
             'id': 1,
             'name': 'Two'
+        }
+        self.assertDictEqual(serializer.dump(), test_value)
+
+
+@unittest.skipIf(django is None, SKIPTEST_TEXT)
+class One2OneSerializerTests(TestCase):
+    maxDiff = None
+
+    def test_explicit_one2one(self):
+        one1 = One2One1DjangoModel.objects.create(name='One2One-1')
+        one2 = One2One2DjangoModel.objects.create(name='One2One-2', one1=one1)
+
+        serializer = One2One2DjangoModelSerializer(one2)
+        self.assertTrue(serializer.is_valid())
+        test_value = {
+            'one1': {
+                'id': 1,
+                'name': 'One2One-1'
+            },
+            'id': 1,
+            'name': 'One2One-2'
         }
         self.assertDictEqual(serializer.dump(), test_value)

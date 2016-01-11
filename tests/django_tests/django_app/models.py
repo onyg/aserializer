@@ -59,3 +59,12 @@ class M2MOneDjangoModel(models.Model):
 class M2MTwoDjangoModel(models.Model):
     name = models.CharField(max_length=24)
     ones = models.ManyToManyField(M2MOneDjangoModel, related_name='twos')
+
+
+class One2One1DjangoModel(models.Model):
+    name = models.CharField(max_length=24)
+
+
+class One2One2DjangoModel(models.Model):
+    name = models.CharField(max_length=24)
+    one1 = models.OneToOneField(One2One1DjangoModel, related_name='one2')
