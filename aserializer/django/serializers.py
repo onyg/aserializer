@@ -4,7 +4,7 @@ import inspect
 from aserializer.utils import py2to3
 from aserializer.base import Serializer, SerializerBase
 from aserializer import fields as serializer_fields
-from aserializer.django.utils import get_related_model_from_field
+from aserializer.django.utils import get_related_model_from_field, is_relation_field_relation
 
 try:
     from django.db import models as django_models
@@ -76,12 +76,12 @@ class DjangoModelSerializerBase(SerializerBase):
         return None
 
     @staticmethod
-    def get_nested_serializer_field(model_field):
+    def get_nested_serializer_field(model_field, **kwargs):
         class NestedModelSerializer(NestedDjangoModelSerializer):
             class Meta:
                 model = model_field
 
-        kwargs = dict(serializer=NestedModelSerializer)
+        kwargs.update(dict(serializer=NestedModelSerializer))
         return serializer_fields.SerializerField(**kwargs)
 
     @classmethod
@@ -91,7 +91,7 @@ class DjangoModelSerializerBase(SerializerBase):
             kwargs['identity'] = True
             kwargs['required'] = False
             kwargs['on_null'] = serializer_fields.HIDE_FIELD
-        if model_field.null or model_field.blank:
+        if model_field.null:
             kwargs['required'] = False
         if model_field.has_default():
             kwargs['default'] = model_field.get_default()
@@ -106,7 +106,9 @@ class DjangoModelSerializerBase(SerializerBase):
         elif isinstance(model_field, django_models.DecimalField):
             kwargs.update({'decimal_places': getattr(model_field, 'decimal_places')})
         if field_class is None:
-            return cls.get_nested_serializer_field(get_related_model_from_field(model_field))
+            if is_relation_field_relation(model_field):
+                return cls.get_nested_serializer_field(get_related_model_from_field(model_field), **kwargs)
+            return None
         return field_class(**kwargs)
 
     @classmethod
