@@ -4,7 +4,8 @@ import inspect
 from aserializer.utils import py2to3
 from aserializer.base import Serializer, SerializerBase
 from aserializer import fields as serializer_fields
-from aserializer.django.utils import get_related_model_from_field, is_relation_field_relation
+from aserializer.django.utils import get_related_model_from_field, is_relation_field_relation, get_fields
+from aserializer.django.fields import RelatedManagerListSerializerField
 
 try:
     from django.db import models as django_models
@@ -53,13 +54,26 @@ class DjangoModelSerializerBase(SerializerBase):
 
     @classmethod
     def set_fields_from_model(cls, new_class, fields, model):
+        # setattr(new_class, 'model_fields', [])
+        # if django_models is None or model is None:
+        #     return
+        # opts = model._meta.concrete_model._meta
+        #
+        # all_field_names = cls.get_all_fieldnames(fields)
+        # for model_field in opts.fields:
+        #     if model_field.name not in all_field_names:
+        #         if cls.add_model_field(fields, model_field):
+        #             new_class.model_fields.append(model_field.name)
+        #     else:
+        #         new_class.model_fields.append(model_field.name)
+
+
         setattr(new_class, 'model_fields', [])
         if django_models is None or model is None:
             return
-        opts = model._meta.concrete_model._meta
 
         all_field_names = cls.get_all_fieldnames(fields)
-        for model_field in opts.fields:
+        for model_field in get_fields(model):
             if model_field.name not in all_field_names:
                 if cls.add_model_field(fields, model_field):
                     new_class.model_fields.append(model_field.name)
@@ -76,16 +90,19 @@ class DjangoModelSerializerBase(SerializerBase):
         return None
 
     @staticmethod
-    def get_nested_serializer_field(model_field, **kwargs):
+    def get_nested_serializer_class(model_field, **kwargs):
         class NestedModelSerializer(NestedDjangoModelSerializer):
             class Meta:
                 model = model_field
+        return NestedModelSerializer
 
-        kwargs.update(dict(serializer=NestedModelSerializer))
-        return serializer_fields.SerializerField(**kwargs)
 
     @classmethod
     def get_field_from_modelfield(cls, model_field, **kwargs):
+        if isinstance(model_field, django_models.ManyToOneRel):
+            return None
+        if isinstance(model_field, django_models.ManyToManyRel):
+            return None
         field_class = cls.get_field_class(model_field)
         if model_field.primary_key:
             kwargs['identity'] = True
@@ -99,17 +116,20 @@ class DjangoModelSerializerBase(SerializerBase):
             kwargs['choices'] = model_field.flatchoices
             return serializer_fields.ChoiceField(**kwargs)
 
+        if is_relation_field_relation(model_field):
+            rel_django_model = get_related_model_from_field(model_field)
+            serializer_cls = cls.get_nested_serializer_class(rel_django_model)
+            if isinstance(model_field , django_models.ManyToManyField):
+                return RelatedManagerListSerializerField(serializer_cls, **kwargs)
+            return serializer_fields.SerializerField(serializer_cls, **kwargs)
+
         if isinstance(model_field, django_models.CharField) and not isinstance(model_field, django_models.URLField):
             max_length = getattr(model_field, 'max_length', None)
             if max_length is not None:
                 kwargs.update({'max_length': getattr(model_field, 'max_length')})
         elif isinstance(model_field, django_models.DecimalField):
             kwargs.update({'decimal_places': getattr(model_field, 'decimal_places')})
-        if field_class is None:
-            if is_relation_field_relation(model_field):
-                return cls.get_nested_serializer_field(get_related_model_from_field(model_field), **kwargs)
-            return None
-        return field_class(**kwargs)
+        return field_class(**kwargs) if field_class else None
 
     @classmethod
     def add_model_field(cls, fields, model_field, **kwargs):

@@ -50,3 +50,12 @@ class RelThreeDjangoModel(models.Model):
     name = models.CharField(max_length=24, blank=False)
     rel_two = models.ForeignKey(RelTwoDjangoModel, related_name='rel_threes')
     rel_one = models.ForeignKey(RelOneDjangoModel, null=True, related_name='rel_threes')
+
+
+class M2MOneDjangoModel(models.Model):
+    name = models.CharField(max_length=24)
+
+
+class M2MTwoDjangoModel(models.Model):
+    name = models.CharField(max_length=24)
+    ones = models.ManyToManyField(M2MOneDjangoModel, related_name='twos')

@@ -7,7 +7,8 @@ from decimal import Decimal
 from tests.django_tests import django, SKIPTEST_TEXT, TestCase
 from tests.django_tests.django_base import (
     TheDjangoModelSerializer, SimpleModelForSerializer, RelOneDjangoModel, RelTwoDjangoModel,
-    RelThreeDjangoModel, RelDjangoModelSerializer, RelReverseDjangoModelSerializer)
+    RelThreeDjangoModel, RelDjangoModelSerializer, RelReverseDjangoModelSerializer,
+    M2MTwoDjangoModel, M2MOneDjangoModel, M2MOneDjangoModelSerializer, M2MTwoDjangoModelSerializer,)
 
 
 @unittest.skipIf(django is None, SKIPTEST_TEXT)
@@ -130,3 +131,31 @@ class FlatSerializerTests(TestCase):
         self.assertTrue(serializer.is_valid())
         self.assertDictEqual(serializer.to_dict(), values)
         self.assertDictEqual(serializer.dump(), native_values)
+
+
+@unittest.skipIf(django is None, SKIPTEST_TEXT)
+class M2MSerializerTests(TestCase):
+    maxDiff = None
+
+    def test_explicit_m2m(self):
+        one = M2MOneDjangoModel.objects.create(name='One-One')
+        two = one.twos.create(name='Two')
+        two.ones.add(M2MOneDjangoModel.objects.create(name='One-Two'))
+
+        serializer = M2MTwoDjangoModelSerializer(two)
+        self.assertTrue(serializer.is_valid())
+        test_value = {
+            'ones': [
+                {
+                    'id': 1,
+                    'name': 'One-One'
+                },
+                {
+                    'id': 2,
+                    'name': 'One-Two'
+                }
+            ],
+            'id': 1,
+            'name': 'Two'
+        }
+        self.assertDictEqual(serializer.dump(), test_value)

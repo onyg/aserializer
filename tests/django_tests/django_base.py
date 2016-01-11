@@ -14,7 +14,9 @@ if django is not None:
         SimpleModelForSerializer,
         RelOneDjangoModel,
         RelTwoDjangoModel,
-        RelThreeDjangoModel
+        RelThreeDjangoModel,
+        M2MOneDjangoModel,
+        M2MTwoDjangoModel,
     )
 
 # First some manually defined serializers for django models
@@ -72,3 +74,15 @@ class RelReverseDjangoModelSerializer(DjangoModelSerializer):
 
     class Meta:
         model = RelOneDjangoModel
+
+
+class M2MOneDjangoModelSerializer(DjangoModelSerializer):
+
+    class Meta:
+        model = M2MOneDjangoModel
+
+
+class M2MTwoDjangoModelSerializer(DjangoModelSerializer):
+
+    class Meta:
+        model = M2MTwoDjangoModel
