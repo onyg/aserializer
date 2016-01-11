@@ -4,7 +4,8 @@ import inspect
 from aserializer.utils import py2to3
 from aserializer.base import Serializer, SerializerBase
 from aserializer import fields as serializer_fields
-from aserializer.django.utils import get_related_model_from_field, is_relation_field_relation, get_fields
+from aserializer.django.utils import get_related_model_from_field, is_relation_field_relation, get_fields, \
+    get_related_model_classes
 from aserializer.django.fields import RelatedManagerListSerializerField
 
 try:
@@ -84,9 +85,7 @@ class DjangoModelSerializerBase(SerializerBase):
 
     @classmethod
     def get_field_from_modelfield(cls, model_field, **kwargs):
-        if isinstance(model_field, (django_models.ManyToOneRel,
-                                    django_models.ManyToManyRel,
-                                    django_models.OneToOneRel)):
+        if isinstance(model_field, get_related_model_classes()):
             # print(model_field, model_field.auto_created, model_field.name)
             return None
         field_class = cls.get_field_class(model_field)

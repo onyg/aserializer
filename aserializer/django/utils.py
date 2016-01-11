@@ -23,11 +23,25 @@ class django_required(object):
             return func(self, *args, **kwargs)
         return wrapper
 
+
+def get_related_model_classes():
+    if django is None:
+        return ()
+    if django_version >= (1, 8, 0):
+        from django.db.models import ManyToManyRel, OneToOneRel, ManyToOneRel
+        return ManyToManyRel, OneToOneRel, ManyToOneRel
+    else:
+        from django.db.models.related import RelatedObject
+        return RelatedObject
+
+
 def get_fields(model):
     if django_version >= (1, 8, 0):
         return model._meta.get_fields()
     else:
-        return [item[0] for item in model._meta.get_fields_with_model()]
+        fields = [item[0] for item in model._meta.get_fields_with_model()]
+        rel_m2m_fields = [item[0] for item in model._meta.get_m2m_with_model()]
+        return fields + rel_m2m_fields
 
 def is_relation_field_relation(field):
     if django_version >= (1, 8, 0):
