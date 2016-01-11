@@ -122,6 +122,7 @@ class RelDjangoSerializerTests(TestCase):
                     'name': 'Level1'},
                 'id': 1,
                 'name': 'Level2'},
+            'rel_one': None,
             'id': 1,
             'name': 'Level3'
         }
