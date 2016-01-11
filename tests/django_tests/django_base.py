@@ -17,23 +17,38 @@ if django is not None:
         RelThreeDjangoModel
     )
 
+# First some manually defined serializers for django models
 
-class SimpleDjangoModelSerializer(Serializer):
+
+class SimpleDjangoSerializer(Serializer):
     name = fields.StringField(required=True, max_length=24)
     code = fields.StringField(max_length=4)
     number = fields.IntegerField(required=True)
 
 
-class RelatedDjangoModelSerializer(Serializer):
+class RelatedDjangoSerializer(Serializer):
     name = fields.StringField(required=True, max_length=24)
-    relation = fields.SerializerField(SimpleDjangoModelSerializer)
+    relation = fields.SerializerField(SimpleDjangoSerializer)
 
 
-class SecondSimpleDjangoModelSerializer(Serializer):
+class SecondSimpleDjangoSerializer(Serializer):
     name = fields.StringField(required=True, max_length=24)
     code = fields.StringField(max_length=4)
     number = fields.IntegerField(required=True)
-    relations = RelatedManagerListSerializerField(RelatedDjangoModelSerializer, exclude=['relation'])
+    relations = RelatedManagerListSerializerField(RelatedDjangoSerializer, exclude=['relation'])
+
+
+class RelTwoDjangoSerializer(Serializer):
+    name = fields.StringField(required=True, max_length=24)
+    rel_one = RelatedManagerListSerializerField('RelOneDjangoSerializer', exclude=['rel_twos'])
+
+
+class RelOneDjangoSerializer(Serializer):
+    name = fields.StringField(required=True, max_length=24)
+    rel_twos = RelatedManagerListSerializerField('RelTwoDjangoSerializer', exclude=['rel_one'])
+
+
+# Here some serializers using the Django Model introspection
 
 
 class TheDjangoModelSerializer(DjangoModelSerializer):
@@ -44,7 +59,7 @@ class TheDjangoModelSerializer(DjangoModelSerializer):
 
 class SimpleDjangoModelCollectionSerializer(DjangoCollectionSerializer):
     class Meta:
-        serializer = SimpleDjangoModelSerializer
+        serializer = SimpleDjangoSerializer
 
 
 class RelDjangoModelSerializer(DjangoModelSerializer):
