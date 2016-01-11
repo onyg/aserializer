@@ -54,24 +54,9 @@ class DjangoModelSerializerBase(SerializerBase):
 
     @classmethod
     def set_fields_from_model(cls, new_class, fields, model):
-        # setattr(new_class, 'model_fields', [])
-        # if django_models is None or model is None:
-        #     return
-        # opts = model._meta.concrete_model._meta
-        #
-        # all_field_names = cls.get_all_fieldnames(fields)
-        # for model_field in opts.fields:
-        #     if model_field.name not in all_field_names:
-        #         if cls.add_model_field(fields, model_field):
-        #             new_class.model_fields.append(model_field.name)
-        #     else:
-        #         new_class.model_fields.append(model_field.name)
-
-
         setattr(new_class, 'model_fields', [])
         if django_models is None or model is None:
             return
-
         all_field_names = cls.get_all_fieldnames(fields)
         for model_field in get_fields(model):
             if model_field.name not in all_field_names:
@@ -99,9 +84,10 @@ class DjangoModelSerializerBase(SerializerBase):
 
     @classmethod
     def get_field_from_modelfield(cls, model_field, **kwargs):
-        if isinstance(model_field, django_models.ManyToOneRel):
-            return None
-        if isinstance(model_field, django_models.ManyToManyRel):
+        if isinstance(model_field, (django_models.ManyToOneRel,
+                                    django_models.ManyToManyRel,
+                                    django_models.OneToOneRel)):
+            # print(model_field, model_field.auto_created, model_field.name)
             return None
         field_class = cls.get_field_class(model_field)
         if model_field.primary_key:
