@@ -49,4 +49,4 @@ class RelTwoDjangoModel(models.Model):
 class RelThreeDjangoModel(models.Model):
     name = models.CharField(max_length=24, blank=False)
     rel_two = models.ForeignKey(RelTwoDjangoModel, related_name='rel_threes')
-    rel_one = models.ForeignKey(RelOneDjangoModel, null=True, related_name='rel_twos')
+    rel_one = models.ForeignKey(RelOneDjangoModel, null=True, related_name='rel_threes')
