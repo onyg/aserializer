@@ -82,7 +82,6 @@ class DjangoModelSerializerBase(SerializerBase):
                 model = model_field
         return NestedModelSerializer
 
-
     @classmethod
     def get_field_from_modelfield(cls, model_field, **kwargs):
         if isinstance(model_field, get_related_model_classes()):

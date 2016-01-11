@@ -42,8 +42,8 @@ class SecondSimpleDjangoSerializer(Serializer):
 
 class RelThreeDjangoSerializer(Serializer):
     name = fields.StringField(required=True, max_length=24)
-    rel_two = RelatedManagerListSerializerField('RelTwoDjangoSerializer', exclude=['rel_twos'])
-    rel_one = RelatedManagerListSerializerField('RelOneDjangoSerializer', required=False, exclude=['rel_one'])
+    rel_two = RelatedManagerListSerializerField('RelTwoDjangoSerializer', exclude=['rel_one'])
+    rel_one = RelatedManagerListSerializerField('RelOneDjangoSerializer', required=False, exclude=['rel_twos'])
 
 
 class RelTwoDjangoSerializer(Serializer):

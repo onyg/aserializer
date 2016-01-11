@@ -3,9 +3,10 @@
 import unittest
 
 from tests.django_tests import django, SKIPTEST_TEXT, TestCase
+from tests.django_tests.django_app.models import RelOneDjangoModel, RelTwoDjangoModel, RelThreeDjangoModel
 from tests.django_tests.django_base import (
     SimpleDjangoModel, RelatedDjangoModel, SimpleDjangoSerializer, RelatedDjangoSerializer,
-    SecondSimpleDjangoSerializer)
+    SecondSimpleDjangoSerializer, RelOneDjangoSerializer)
 
 
 @unittest.skipIf(django is None, SKIPTEST_TEXT)
@@ -66,4 +67,26 @@ class DjangoSerializerTests(TestCase):
                 }
             ]
         }
+        self.assertDictEqual(model_dump, test_value)
+
+
+@unittest.skipIf(django is None, SKIPTEST_TEXT)
+class DjangoComplexSerializerTests(TestCase):
+
+    @unittest.skip('Reverse relations are not working for now')
+    def test_complex_related(self):
+        rel_one = RelOneDjangoModel(name='Rel One')
+        rel_two = RelTwoDjangoModel(name='Rel Two', rel_one=rel_one)
+        rel_three1 = RelThreeDjangoModel(name='Rel Three 1', rel_two=rel_two)
+        rel_three2 = RelThreeDjangoModel(name='Rel Three 2', rel_two=rel_two)
+
+        # TODO: after related relation serialization is working, adjust number of queries and test_value
+        with self.assertNumQueries(0):
+            serializer = RelOneDjangoSerializer(rel_one)
+        with self.assertNumQueries(0):
+            import pdb;pdb.set_trace()
+            self.assertTrue(serializer.is_valid())
+        with self.assertNumQueries(0):
+            model_dump = serializer.dump()
+        test_value = {}
         self.assertDictEqual(model_dump, test_value)

@@ -10,7 +10,7 @@ from tests.django_tests.django_base import (
     TheDjangoModelSerializer, SimpleModelForSerializer, RelOneDjangoModel, RelTwoDjangoModel,
     RelThreeDjangoModel, RelDjangoModelSerializer, RelReverseDjangoModelSerializer,
     M2MTwoDjangoModel, M2MOneDjangoModel, M2MOneDjangoModelSerializer, M2MTwoDjangoModelSerializer,
-    One2One2DjangoModelSerializer)
+    One2One2DjangoModelSerializer, One2One1DjangoModelSerializer)
 
 
 @unittest.skipIf(django is None, SKIPTEST_TEXT)
@@ -162,6 +162,26 @@ class M2MSerializerTests(TestCase):
         }
         self.assertDictEqual(serializer.dump(), test_value)
 
+    @unittest.skip('Reverse relations are not working for now')
+    def test_related_m2m(self):
+        one = M2MOneDjangoModel.objects.create(name='One-One')
+        two = one.twos.create(name='Two')
+        two.ones.add(M2MOneDjangoModel.objects.create(name='One-Two'))
+
+        serializer = M2MOneDjangoModelSerializer(one)
+        self.assertTrue(serializer.is_valid())
+        test_value = {
+            'twos': [
+                {
+                    'id': 1,
+                    'name': 'Two'
+                }
+            ],
+            'id': 1,
+            'name': 'One-One'
+        }
+        self.assertDictEqual(serializer.dump(), test_value)
+
 
 @unittest.skipIf(django is None, SKIPTEST_TEXT)
 class One2OneSerializerTests(TestCase):
@@ -180,5 +200,22 @@ class One2OneSerializerTests(TestCase):
             },
             'id': 1,
             'name': 'One2One-2'
+        }
+        self.assertDictEqual(serializer.dump(), test_value)
+
+    @unittest.skip('Reverse relations are not working for now')
+    def test_related_one2one(self):
+        one1 = One2One1DjangoModel.objects.create(name='One2One-1')
+        one2 = One2One2DjangoModel.objects.create(name='One2One-2', one1=one1)
+
+        serializer = One2One1DjangoModelSerializer(one1)
+        self.assertTrue(serializer.is_valid())
+        test_value = {
+            'one2': {
+                'id': 1,
+                'name': 'One2One-2'
+            },
+            'id': 1,
+            'name': 'One2One-1'
         }
         self.assertDictEqual(serializer.dump(), test_value)
