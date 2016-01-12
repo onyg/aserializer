@@ -7,7 +7,7 @@ except ImportError:
     QuerySet = None
     Manager = None
 
-from aserializer.fields import ListSerializerField
+from aserializer.fields import ListSerializerField, SerializerField
 
 
 class RelatedManagerListSerializerField(ListSerializerField):

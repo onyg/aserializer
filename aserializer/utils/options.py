@@ -17,13 +17,7 @@ class SerializerMetaOptions(MetaOptions):
         super(SerializerMetaOptions, self).__init__(meta)
         self.parser = getattr(meta, 'parser', Parser)
         self.model = getattr(meta, 'model', None)
-
-
-# class ModelSerializerMetaOptions(SerializerMetaOptions):
-#
-#     def __init__(self, meta):
-#         super(ModelSerializerMetaOptions, self).__init__(meta)
-#         self.model = getattr(meta, 'model', None)
+        self.parents = getattr(meta, 'parents', RelatedParentManager())
 
 
 class CollectionMetaOptions(MetaOptions):
@@ -39,3 +33,25 @@ class CollectionMetaOptions(MetaOptions):
         self.total_count_key = getattr(meta, 'total_count_key', 'totalCount')
         self.sort = getattr(meta, 'sort', [])
         self.validation = getattr(meta, 'validation', False)
+
+
+class RelatedParentManager(object):
+
+    def __init__(self):
+        self.children = list()
+        self.root = None
+
+    def add(self, parent, child, map=None):
+        if self.root is None:
+            self.root = parent
+        self.children.append(child)
+
+    def ignore_child(self, parent, child):
+        if self.root is None:
+            self.root = parent
+        if parent is self.root:
+            return False
+        elif child in self.children:
+            return True
+        return self.root is child
+

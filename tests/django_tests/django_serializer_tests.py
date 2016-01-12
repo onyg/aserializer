@@ -84,7 +84,8 @@ class DjangoComplexSerializerTests(TestCase):
         with self.assertNumQueries(0):
             serializer = RelOneDjangoSerializer(rel_one)
         with self.assertNumQueries(0):
-            import pdb;pdb.set_trace()
+            serializer.is_valid()
+            print(serializer.errors)
             self.assertTrue(serializer.is_valid())
         with self.assertNumQueries(0):
             model_dump = serializer.dump()

@@ -43,7 +43,7 @@ def get_fields(model):
         rel_m2m_fields = [item[0] for item in model._meta.get_m2m_with_model()]
         return fields + rel_m2m_fields
 
-def is_relation_field_relation(field):
+def is_relation_field(field):
     if django_version >= (1, 8, 0):
         return field.is_relation
     else:
@@ -63,7 +63,7 @@ def get_django_model_field_list(model, parent_name=None, result=None):
             result.append('{}.{}'.format(parent_name, field.name))
         else:
             result.append(py2to3._unicode(field.name))
-            if is_relation_field_relation(field):
+            if is_relation_field(field):
                 if parent_name:
                     item_name = '{}.{}'.format(parent_name, field.name)
                 else:
