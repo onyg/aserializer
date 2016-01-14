@@ -4,8 +4,10 @@ import inspect
 from aserializer.utils import py2to3
 from aserializer.base import Serializer, SerializerBase
 from aserializer import fields as serializer_fields
-from aserializer.django.utils import get_related_model_from_field, is_relation_field, get_fields, \
-    get_related_model_classes
+# from aserializer.django.utils import get_related_model_from_field, is_relation_field, get_fields, \
+#     get_related_model_classes
+
+from aserializer.django import utils as django_utils
 from aserializer.django.fields import RelatedManagerListSerializerField
 
 try:
@@ -59,23 +61,16 @@ class DjangoModelSerializerBase(SerializerBase):
         if django_models is None or meta_options.model is None:
             return
         all_field_names = cls.get_all_fieldnames(fields)
-        relation_model_fields = []
-        related_model_fields = []
-        for model_field in get_fields(meta_options.model):
+        for model_field in django_utils.get_none_realtion_fields(meta_options.model):
             if model_field.name not in all_field_names:
-                if isinstance(model_field, get_related_model_classes()):
-                    related_model_fields.append(model_field)
-                elif is_relation_field(model_field):
-                    relation_model_fields.append(model_field)
-                elif cls.add_model_field(fields, model_field, meta_options=meta_options):
+                if cls.add_model_field(fields, model_field, meta_options=meta_options):
                     new_class.model_fields.append(model_field.name)
             # else:
             #     new_class.model_fields.append(model_field.name)
-
-        for model_field in relation_model_fields:
+        for model_field in django_utils.get_relations_fields(meta_options.model):
             if cls.add_relation_model_field(fields, model_field, meta_options=meta_options):
                 new_class.model_fields.append(model_field.name)
-        for model_field in related_model_fields:
+        for model_field in django_utils.get_related_model_from_field(meta_options.model):
             if cls.add_related_model_field(fields, model_field, meta_options=meta_options):
                 new_class.model_fields.append(model_field.name)
             # else:
@@ -131,8 +126,8 @@ class DjangoModelSerializerBase(SerializerBase):
 
     @classmethod
     def add_relation_model_field(cls, fields, model_field, meta_options, **kwargs):
-        if is_relation_field(model_field):
-            rel_django_model = get_related_model_from_field(model_field)
+        if django_utils.is_relation_field(model_field):
+            rel_django_model = django_utils.get_related_model_from_field(model_field)
             if meta_options.parents.ignore_child(meta_options.model, rel_django_model):
                 return False
             meta_options.parents.add(meta_options.model, rel_django_model)
@@ -154,8 +149,8 @@ class DjangoModelSerializerBase(SerializerBase):
 
     @classmethod
     def add_related_model_field(cls, fields, model_field, meta_options, **kwargs):
-        if isinstance(model_field, get_related_model_classes()):
-            rel_django_model = get_related_model_from_field(model_field)
+        if isinstance(model_field, django_utils.get_related_model_classes()):
+            rel_django_model = django_utils.get_related_model_from_field(model_field)
             if meta_options.parents.ignore_child(meta_options.model, rel_django_model):
                 return
             serializer_cls = cls.get_nested_serializer_class(rel_django_model, meta_options.parents)

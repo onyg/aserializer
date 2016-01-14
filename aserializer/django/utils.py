@@ -40,8 +40,28 @@ def get_fields(model):
         return model._meta.get_fields()
     else:
         fields = [item[0] for item in model._meta.get_fields_with_model()]
-        rel_m2m_fields = [item[0] for item in model._meta.get_m2m_with_model()]
-        return fields + rel_m2m_fields
+        m2m_fields = [item[0] for item in model._meta.get_m2m_with_model()]
+        related_m2m_fields = [item[0].field for item in model._meta.get_all_related_m2m_objects_with_model()]
+        return fields + m2m_fields + related_m2m_fields
+
+
+def get_none_realtion_fields(model):
+    if django_version < (1, 8, 0):
+        return []
+    return []
+
+
+def get_related_fields(model):
+    if django_version < (1, 8, 0):
+        return []
+    return []
+
+
+def get_relations_fields(model):
+    if django_version < (1, 8, 0):
+        return []
+    return []
+
 
 def is_relation_field(field):
     if django_version >= (1, 8, 0):
