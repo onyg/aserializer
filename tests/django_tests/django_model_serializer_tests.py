@@ -21,7 +21,6 @@ class RelDjangoSerializerTests(TestCase):
         RelTwoDjangoModel.objects.all().delete()
         RelThreeDjangoModel.objects.all().delete()
 
-    # @unittest.skip('Reverse relations are not working for now')
     def test_three_level_reverse_relations(self):
         one = RelOneDjangoModel.objects.create(name='Level1')
         two = RelTwoDjangoModel.objects.create(name='Level2', rel_one=one)
@@ -69,7 +68,6 @@ class RelDjangoSerializerTests(TestCase):
         self.assertDictEqual(obj_dump, test_value)
         # self.assertDictEqual(qs_obj_dump, test_value)
 
-    # @unittest.skip('Relation exclusion not working for now')
     def test_three_level_relations_with_exclude(self):
         one = RelOneDjangoModel.objects.create(name='Level1')
         two = RelTwoDjangoModel.objects.create(name='Level2', rel_one=one)
@@ -162,7 +160,6 @@ class M2MSerializerTests(TestCase):
         }
         self.assertDictEqual(serializer.dump(), test_value)
 
-    # @unittest.skip('Reverse relations are not working for now')
     def test_related_m2m(self):
         one = M2MOneDjangoModel.objects.create(name='One-One')
         two = one.twos.create(name='Two')
@@ -203,7 +200,6 @@ class One2OneSerializerTests(TestCase):
         }
         self.assertDictEqual(serializer.dump(), test_value)
 
-    # @unittest.skip('Reverse relations are not working for now')
     def test_related_one2one(self):
         one1 = One2One1DjangoModel.objects.create(name='One2One-1')
         one2 = One2One2DjangoModel.objects.create(name='One2One-2', one1=one1)

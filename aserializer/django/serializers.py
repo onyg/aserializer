@@ -61,20 +61,16 @@ class DjangoModelSerializerBase(SerializerBase):
         if django_models is None or meta_options.model is None:
             return
         all_field_names = cls.get_all_fieldnames(fields)
-        for model_field in django_utils.get_none_realtion_fields(meta_options.model):
+        for model_field in django_utils.get_local_fields(meta_options.model):
             if model_field.name not in all_field_names:
-                if cls.add_model_field(fields, model_field, meta_options=meta_options):
+                if cls.add_local_model_field(fields, model_field):
                     new_class.model_fields.append(model_field.name)
-            # else:
-            #     new_class.model_fields.append(model_field.name)
-        for model_field in django_utils.get_relations_fields(meta_options.model):
+        for model_field in django_utils.get_related_fields(meta_options.model):
             if cls.add_relation_model_field(fields, model_field, meta_options=meta_options):
                 new_class.model_fields.append(model_field.name)
-        for model_field in django_utils.get_related_model_from_field(meta_options.model):
-            if cls.add_related_model_field(fields, model_field, meta_options=meta_options):
+        for model_field in django_utils.get_reverse_related_fields(meta_options.model):
+            if cls.add_reverse_relation_model_field(fields, model_field, meta_options=meta_options):
                 new_class.model_fields.append(model_field.name)
-            # else:
-            #     new_class.model_fields.append(model_field.name)
 
     @staticmethod
     def get_field_class(model_field, mapping=None):
@@ -116,7 +112,7 @@ class DjangoModelSerializerBase(SerializerBase):
         return field_class(**kwargs) if field_class else None
 
     @classmethod
-    def add_model_field(cls, fields, model_field, meta_options, **kwargs):
+    def add_local_model_field(cls, fields, model_field, **kwargs):
         _field = cls.get_field_from_modelfield(model_field, **kwargs)
         if _field is None:
             return False
@@ -148,7 +144,7 @@ class DjangoModelSerializerBase(SerializerBase):
         return False
 
     @classmethod
-    def add_related_model_field(cls, fields, model_field, meta_options, **kwargs):
+    def add_reverse_relation_model_field(cls, fields, model_field, meta_options, **kwargs):
         if isinstance(model_field, django_utils.get_related_model_classes()):
             rel_django_model = django_utils.get_related_model_from_field(model_field)
             if meta_options.parents.ignore_child(meta_options.model, rel_django_model):

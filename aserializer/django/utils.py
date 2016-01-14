@@ -45,22 +45,26 @@ def get_fields(model):
         return fields + m2m_fields + related_m2m_fields
 
 
-def get_none_realtion_fields(model):
-    if django_version < (1, 8, 0):
-        return []
-    return []
+def get_local_fields(model):
+    if django_version >= (1, 8, 0):
+        return [f for f in model._meta.get_fields() if not f.is_relation]
+    else:
+        return [f[0] for f in model._meta.get_fields_with_model() if f[0].rel is None]
 
 
 def get_related_fields(model):
-    if django_version < (1, 8, 0):
-        return []
-    return []
+    if django_version >= (1, 8, 0):
+        return [f for f in model._meta.get_fields() if f.is_relation and not f.auto_created]
+    else:
+        fields = [f[0] for f in model._meta.get_fields_with_model() if f[0].rel is not None]
+        return fields + [f[0] for f in model._meta.get_m2m_with_model()]
 
 
-def get_relations_fields(model):
-    if django_version < (1, 8, 0):
-        return []
-    return []
+def get_reverse_related_fields(model):
+    if django_version >= (1, 8, 0):
+        return [f for f in model._meta.get_fields() if f.is_relation and f.auto_created]
+    else:
+        return [f[0] for f in model._meta.get_all_related_m2m_objects_with_model()]
 
 
 def is_relation_field(field):
