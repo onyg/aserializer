@@ -47,12 +47,12 @@ class RelDjangoSerializerTests(TestCase):
         with self.assertNumQueries(0):
             obj_dump = serializer.dump()
 
-        # with self.assertNumQueries(2):
-        #     serializer = RelDjangoModelSerializer(RelThreeDjangoModel.objects.first())
-        # with self.assertNumQueries(0):
-        #     self.assertTrue(serializer.is_valid())
-        # with self.assertNumQueries(0):
-        #     qs_obj_dump = serializer.dump()
+        with self.assertNumQueries(3):
+            serializer = RelDjangoModelSerializer(RelThreeDjangoModel.objects.first())
+        with self.assertNumQueries(0):
+            self.assertTrue(serializer.is_valid())
+        with self.assertNumQueries(0):
+            qs_obj_dump = serializer.dump()
 
         test_value = {
             'rel_two': {
@@ -66,14 +66,14 @@ class RelDjangoSerializerTests(TestCase):
             'name': 'Level3'
         }
         self.assertDictEqual(obj_dump, test_value)
-        # self.assertDictEqual(qs_obj_dump, test_value)
+        self.assertDictEqual(qs_obj_dump, test_value)
 
     def test_three_level_relations_with_exclude(self):
         one = RelOneDjangoModel.objects.create(name='Level1')
         two = RelTwoDjangoModel.objects.create(name='Level2', rel_one=one)
         RelThreeDjangoModel.objects.create(name='Level3', rel_two=two)
         # TODO: This should work with only two queries
-        with self.assertNumQueries(3):
+        with self.assertNumQueries(2):
             serializer = RelDjangoModelSerializer(RelThreeDjangoModel.objects.first(), exclude=['rel_two.rel_one'])
         with self.assertNumQueries(0):
             self.assertTrue(serializer.is_valid())

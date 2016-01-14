@@ -73,21 +73,17 @@ class DjangoSerializerTests(TestCase):
 @unittest.skipIf(django is None, SKIPTEST_TEXT)
 class DjangoComplexSerializerTests(TestCase):
 
-    @unittest.skip('Reverse relations are not working for now')
     def test_complex_related(self):
-        rel_one = RelOneDjangoModel(name='Rel One')
-        rel_two = RelTwoDjangoModel(name='Rel Two', rel_one=rel_one)
-        rel_three1 = RelThreeDjangoModel(name='Rel Three 1', rel_two=rel_two)
-        rel_three2 = RelThreeDjangoModel(name='Rel Three 2', rel_two=rel_two)
+        rel_one = RelOneDjangoModel.objects.create(name='Rel One')
+        rel_two = RelTwoDjangoModel.objects.create(name='Rel Two', rel_one=rel_one)
+        rel_three1 = RelThreeDjangoModel.objects.create(name='Rel Three 1', rel_two=rel_two)
+        rel_three2 = RelThreeDjangoModel.objects.create(name='Rel Three 2', rel_two=rel_two)
 
-        # TODO: after related relation serialization is working, adjust number of queries and test_value
-        with self.assertNumQueries(0):
+        with self.assertNumQueries(1):
             serializer = RelOneDjangoSerializer(rel_one)
         with self.assertNumQueries(0):
-            serializer.is_valid()
-            print(serializer.errors)
             self.assertTrue(serializer.is_valid())
         with self.assertNumQueries(0):
             model_dump = serializer.dump()
-        test_value = {}
+        test_value = {'name': 'Rel One', 'rel_twos': [{'name': 'Rel Two'}]}
         self.assertDictEqual(model_dump, test_value)

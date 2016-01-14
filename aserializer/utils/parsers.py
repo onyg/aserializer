@@ -8,9 +8,10 @@ from aserializer.utils import py2to3
 
 class Parser(object):
 
-    def __init__(self):
+    def __init__(self, fields=None):
         self.obj = None
         self._attribute_names = None
+        self.fields = fields or []
 
     def initial(self, source):
         if isinstance(source, py2to3.string):
@@ -34,12 +35,12 @@ class Parser(object):
         if self.obj is None:
             self._attribute_names = []
         elif isinstance(self.obj, dict):
-            self._attribute_names = list(self.obj.keys())
+            self._attribute_names = [k for k in self.obj.keys() if k in self.fields]
         else:
             def get_members(obj):
                 result = []
                 for key in dir(obj):
-                    if key.startswith('__'):
+                    if key.startswith('__') or key not in self.fields:
                         continue
                     try:
                         value = getattr(obj, key)
