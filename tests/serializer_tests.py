@@ -201,17 +201,17 @@ class SerializerParserTests(unittest.TestCase):
 
         serializer = MySerializer(dict_source)
         names = serializer.parser.attribute_names
-        self.assertNotIn('lastname', names)
-        self.assertNotIn('nickname', names)
+        self.assertIn('lastname', names)
+        self.assertIn('nickname', names)
         self.assertNotIn('invalid', names)
 
         serializer = MySerializer(ObjSource())
         names = serializer.parser.attribute_names
-        self.assertNotIn('lastname', names)
-        self.assertNotIn('nickname', names)
-        self.assertNotIn('aproperty', names)
+        self.assertIn('lastname', names)
+        self.assertIn('nickname', names)
+        self.assertIn('aproperty', names)
         self.assertNotIn('invalid', names)
-        self.assertNotIn('amethod', names)
+        self.assertIn('amethod', names)
         self.assertNotIn('__init__', names)
 
 
@@ -246,7 +246,6 @@ class SerializerFlatTestCase(unittest.TestCase):
                 self.house = 'MAP_TO_HAUS'
 
         serializer = TestFlatSerializer(source=TestObject())
-        # serializer.is_valid()
         self.assertTrue(serializer.is_valid())
         self.assertDictEqual(serializer.errors, {})
 

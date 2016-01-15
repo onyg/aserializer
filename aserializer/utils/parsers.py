@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
-import inspect
 import json
 
 from aserializer.utils import py2to3
+
 
 
 class Parser(object):
@@ -11,7 +11,7 @@ class Parser(object):
     def __init__(self, fields=None):
         self.obj = None
         self._attribute_names = None
-        self.fields = fields or []
+        self.field_list = fields or []
 
     def initial(self, source):
         if isinstance(source, py2to3.string):
@@ -25,6 +25,13 @@ class Parser(object):
             self.obj = source
         self._attribute_names = None
 
+    def get_object_members(self, obj):
+        result = []
+        for member in dir(obj):
+            if not member.startswith('__'):
+                result.append(member)
+        return result
+
     @property
     def attribute_names(self):
         """
@@ -35,21 +42,9 @@ class Parser(object):
         if self.obj is None:
             self._attribute_names = []
         elif isinstance(self.obj, dict):
-            self._attribute_names = [k for k in self.obj.keys() if k in self.fields]
+            self._attribute_names = list(self.obj.keys())
         else:
-            def get_members(obj):
-                result = []
-                for key in dir(obj):
-                    if key.startswith('__') or key not in self.fields:
-                        continue
-                    try:
-                        value = getattr(obj, key)
-                    except AttributeError:
-                        continue
-                    if not inspect.ismethod(value):
-                        result.append(key)
-                return result
-            self._attribute_names = get_members(self.obj)
+            self._attribute_names = self.get_object_members(self.obj)
         return self._attribute_names
 
     def has_attribute(self, name):
