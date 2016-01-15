@@ -200,18 +200,18 @@ class SerializerParserTests(unittest.TestCase):
                 return 'A property'
 
         serializer = MySerializer(dict_source)
-        names = serializer.parser.attribute_names
-        self.assertIn('lastname', names)
-        self.assertIn('nickname', names)
+        names = serializer.parser.attributes_for_serializer
+        self.assertNotIn('lastname', names)
+        self.assertNotIn('nickname', names)
         self.assertNotIn('invalid', names)
 
         serializer = MySerializer(ObjSource())
-        names = serializer.parser.attribute_names
-        self.assertIn('lastname', names)
-        self.assertIn('nickname', names)
-        self.assertIn('aproperty', names)
+        names = serializer.parser.attributes_for_serializer
+        self.assertNotIn('lastname', names)
+        self.assertNotIn('nickname', names)
+        self.assertNotIn('aproperty', names)
         self.assertNotIn('invalid', names)
-        self.assertIn('amethod', names)
+        self.assertNotIn('amethod', names)
         self.assertNotIn('__init__', names)
 
 
@@ -845,6 +845,9 @@ class UnknownFieldError(unittest.TestCase):
                 self.number = 1
                 self.address = {'street': 'mainstreet', 'city':'City'}
 
+            def amethod(self):
+                return None
+
         class UnknownTestSerialzer(Serializer):
             street = StringField(required=True)
 
@@ -858,6 +861,7 @@ class UnknownFieldError(unittest.TestCase):
         self.assertIn('address', serializer.errors)
         self.assertIn('city', serializer.errors['address'])
         self.assertEqual(serializer.errors['address']['city'], 'Totally unknown.')
+        self.assertNotIn('amethod', serializer.errors)
 
     def test_fields_parameter(self):
         class FieldObject(object):
