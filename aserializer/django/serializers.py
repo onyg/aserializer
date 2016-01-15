@@ -4,9 +4,6 @@ import inspect
 from aserializer.utils import py2to3
 from aserializer.base import Serializer, SerializerBase
 from aserializer import fields as serializer_fields
-# from aserializer.django.utils import get_related_model_from_field, is_relation_field, get_fields, \
-#     get_related_model_classes
-
 from aserializer.django import utils as django_utils
 from aserializer.django.fields import RelatedManagerListSerializerField
 
@@ -70,7 +67,7 @@ class DjangoModelSerializerBase(SerializerBase):
                 new_class.model_fields.append(model_field.name)
         for model_field in django_utils.get_reverse_related_fields(meta_options.model):
             if cls.add_reverse_relation_model_field(fields, model_field, meta_options=meta_options):
-                new_class.model_fields.append(model_field.name)
+                new_class.model_fields.append(django_utils.get_reverse_related_name_from_field(model_field))
 
     @staticmethod
     def get_field_class(model_field, mapping=None):
@@ -82,7 +79,7 @@ class DjangoModelSerializerBase(SerializerBase):
         return None
 
     @staticmethod
-    def get_nested_serializer_class(model_field, parent_manager=None, **kwargs):
+    def get_nested_serializer_class(model_field, parent_manager=None):
         class NestedModelSerializer(NestedDjangoModelSerializer):
             class Meta:
                 model = model_field
@@ -134,7 +131,7 @@ class DjangoModelSerializerBase(SerializerBase):
             if model_field.null or model_field.blank:
                 kwargs['required'] = False
             serializer_cls = cls.get_nested_serializer_class(rel_django_model, meta_options.parents)
-            if isinstance(model_field , django_models.ManyToManyField):
+            if isinstance(model_field, django_models.ManyToManyField):
                 _field = RelatedManagerListSerializerField(serializer_cls, **kwargs)
             else:
                 _field = serializer_fields.SerializerField(serializer_cls, **kwargs)
@@ -148,14 +145,14 @@ class DjangoModelSerializerBase(SerializerBase):
         if isinstance(model_field, django_utils.get_related_model_classes()):
             rel_django_model = django_utils.get_related_model_from_field(model_field)
             if meta_options.parents.ignore_child(meta_options.model, rel_django_model):
-                return
+                return False
             serializer_cls = cls.get_nested_serializer_class(rel_django_model, meta_options.parents)
-            if isinstance(model_field, django_models.OneToOneRel):
+            if django_utils.is_reverse_one2one_relation_field(model_field):
                 _field = serializer_fields.SerializerField(serializer_cls, required=False, **kwargs)
             else:
                 _field = RelatedManagerListSerializerField(serializer_cls, required=False, **kwargs)
-            _field.add_name(model_field.name)
-            fields[model_field.name] = _field
+            _field.add_name(django_utils.get_reverse_related_name_from_field(model_field))
+            fields[django_utils.get_reverse_related_name_from_field(model_field)] = _field
             return True
         return False
 
