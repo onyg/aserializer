@@ -56,6 +56,24 @@ class RelOneDjangoSerializer(Serializer):
     rel_twos = RelatedManagerListSerializerField('RelTwoDjangoSerializer', exclude=['rel_one'])
 
 
+class NonModelFieldsDjangoSerializer(Serializer):
+    name = fields.StringField(required=True, max_length=24)
+    _type = fields.TypeField(name='non-model', validate=True, required=True)
+    _type2 = fields.TypeField(name='non-model2', validate=True, required=True)
+
+
+class RelatedNonModelFieldsDjangoSerializer(Serializer):
+    name = fields.StringField(required=True, max_length=24)
+    _type = fields.TypeField(name='non-model-related', validate=True, required=True)
+    relations = RelatedManagerListSerializerField(NonModelFieldsDjangoSerializer, fields=('name', '_type',))
+
+
+class Related2NonModelFieldsDjangoSerializer(Serializer):
+    name = fields.StringField(required=True, max_length=24)
+    _type = fields.TypeField(name='non-model-related', validate=True, required=True)
+    relations = RelatedManagerListSerializerField(NonModelFieldsDjangoSerializer, fields=('_type',))
+
+
 # Here some serializers using the Django Model introspection
 
 

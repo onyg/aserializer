@@ -7,7 +7,8 @@ except ImportError:
     QuerySet = None
     Manager = None
 
-from aserializer.fields import ListSerializerField, SerializerField
+from aserializer.fields import ListSerializerField
+from aserializer.django.utils import get_django_model_field_list
 
 
 class RelatedManagerListSerializerField(ListSerializerField):
@@ -16,7 +17,10 @@ class RelatedManagerListSerializerField(ListSerializerField):
         if isinstance(value, Iterable):
             values = value
         elif isinstance(value, (QuerySet, Manager)):
-            values = value.defer(*self.exclude).only(*self.only_fields)
+            model_fields = get_django_model_field_list(value.model)
+            exclude = [f for f in self.exclude if f in model_fields]
+            only_fields = [f for f in self.only_fields if f in model_fields]
+            values = value.defer(*exclude).only(*only_fields)
         else:
             return
         self.items[:] = []
