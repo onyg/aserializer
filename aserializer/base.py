@@ -65,13 +65,10 @@ class Serializer(py2to3.with_metaclass(SerializerBase)):
         self._extras = extras
         self.__show_field_list = fields or []
         self.__exclude_field_list = exclude or []
-        # self.source_is_invalid = False
         self._handle_unknown_error = unknown_error
         # TODO: Check if the exclude field_name also including the map_field_name
-        # print([name for name in self.fields.keys()])
         field_names = []
         for k, v in self.fields.items():
-            # print(k,v)
             field_names.append(k)
             if v.map_field:
                 field_names.append(v.map_field)
