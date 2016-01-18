@@ -59,7 +59,7 @@ class RelOneDjangoSerializer(Serializer):
 class NonModelFieldsDjangoSerializer(Serializer):
     name = fields.StringField(required=True, max_length=24)
     _type = fields.TypeField(name='non-model', validate=True, required=True)
-    _type2 = fields.TypeField(name='non-model2', validate=True, required=True)
+    _type2 = fields.TypeField(name='non-model2', validate=True, required=True, identity=False)
 
 
 class RelatedNonModelFieldsDjangoSerializer(Serializer):

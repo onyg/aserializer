@@ -14,7 +14,9 @@ from aserializer.django.utils import get_django_model_field_list
 class RelatedManagerListSerializerField(ListSerializerField):
 
     def set_value(self, value):
-        if isinstance(value, Iterable):
+        if value is None:
+            return
+        elif isinstance(value, Iterable):
             values = value
         elif isinstance(value, (QuerySet, Manager)):
             model_fields = get_django_model_field_list(value.model)
