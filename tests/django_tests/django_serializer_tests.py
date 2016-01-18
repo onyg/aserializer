@@ -116,10 +116,8 @@ class DjangoNonModelFieldsSerializerTests(TestCase):
             'name': 'The Name',
             'relations': [
                 {'_type': 'non-model',
-                 # '_type2': 'non-model2',
                  'name': 'Relation 1'},
                 {'_type': 'non-model',
-                 # '_type2': 'non-model2',
                  'name': 'Relation 2'}
             ]
         }
@@ -141,10 +139,8 @@ class DjangoNonModelFieldsSerializerTests(TestCase):
             'name': 'The Name',
             'relations': [
                 {'_type': 'non-model',
-                 # '_type2': 'non-model2'
                  },
                 {'_type': 'non-model',
-                 # '_type2': 'non-model2'
                  }
             ]
         }

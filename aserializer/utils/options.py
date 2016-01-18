@@ -3,7 +3,6 @@
 from aserializer.utils.parsers import Parser
 
 
-
 class MetaOptions(object):
 
     def __init__(self, meta):
