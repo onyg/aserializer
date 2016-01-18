@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from copy import deepcopy
 
 from aserializer.utils.parsers import Parser
 
@@ -37,20 +38,13 @@ class CollectionMetaOptions(MetaOptions):
 class RelatedParentManager(object):
 
     def __init__(self):
-        self.children = list()
-        self.root = None
+        self.parents = []
 
-    def add(self, parent, child, map=None):
-        if self.root is None:
-            self.root = parent
-        self.children.append(child)
+    def get_working_copy(self):
+        return deepcopy(self)
 
-    def ignore_child(self, parent, child):
-        if self.root is None:
-            self.root = parent
-        if parent is self.root:
+    def handle(self, child):
+        if child in self.parents:
             return False
-        elif child in self.children:
-            return True
-        return self.root is child
-
+        self.parents.append(child)
+        return True
