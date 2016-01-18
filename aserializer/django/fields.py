@@ -22,7 +22,13 @@ class RelatedManagerListSerializerField(ListSerializerField):
             model_fields = get_django_model_field_list(value.model)
             exclude = [f for f in self.exclude if f in model_fields]
             only_fields = [f for f in self.only_fields if f in model_fields]
-            values = value.defer(*exclude).only(*only_fields)
+            # from django.db import DEFAULT_DB_ALIAS, connections; connection = connections[DEFAULT_DB_ALIAS]
+            # print len(connection.queries_log)
+            # TODO: WTF! There are issues with using defer or only with the desired amount of queries...
+            # values = value.defer(*exclude).only(*only_fields)
+            # values._known_related_objects = {}
+            values = value.defer(*only_fields).only(*only_fields)
+            # print len(connection.queries_log)
         else:
             return
         self.items[:] = []

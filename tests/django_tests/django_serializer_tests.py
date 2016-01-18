@@ -105,8 +105,8 @@ class DjangoNonModelFieldsSerializerTests(TestCase):
         RelatedDjangoModel.objects.create(name='Relation 2', relation=sdm)
 
         # TODO: this could be eventually 1, maximum 2 queries
-        with self.assertNumQueries(3):
-            serializer = RelatedNonModelFieldsDjangoSerializer(sdm)
+        with self.assertNumQueries(2):
+            serializer = RelatedNonModelFieldsDjangoSerializer(SimpleDjangoModel.objects.first())
         with self.assertNumQueries(0):
             self.assertTrue(serializer.is_valid())
         with self.assertNumQueries(0):
