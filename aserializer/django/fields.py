@@ -8,7 +8,7 @@ except ImportError:
     Manager = None
 
 from aserializer.fields import ListSerializerField
-from aserializer.django.utils import get_django_model_field_list
+from aserializer.django.utils import get_local_fields, get_related_fields
 
 
 class RelatedManagerListSerializerField(ListSerializerField):
@@ -19,16 +19,20 @@ class RelatedManagerListSerializerField(ListSerializerField):
         elif isinstance(value, Iterable):
             values = value
         elif isinstance(value, (QuerySet, Manager)):
-            model_fields = get_django_model_field_list(value.model)
-            exclude = [f for f in self.exclude if f in model_fields]
-            only_fields = [f for f in self.only_fields if f in model_fields]
-            # from django.db import DEFAULT_DB_ALIAS, connections; connection = connections[DEFAULT_DB_ALIAS]
-            # print len(connection.queries_log)
-            # TODO: WTF! There are issues with using defer or only with the desired amount of queries...
-            # values = value.defer(*exclude).only(*only_fields)
-            # values._known_related_objects = {}
-            values = value.defer(*only_fields).only(*only_fields)
-            # print len(connection.queries_log)
+            if self.only_fields or self.exclude:
+                local_fields = get_local_fields(value.model)
+                related_fields = get_related_fields(value.model)
+                only_fields = [f.name for f in local_fields]
+                if self.only_fields:
+                    only_fields = [f for f in only_fields if f in self.only_fields]
+                exclude_fields = [f.name for f in local_fields if f.name in self.exclude]
+                if exclude_fields:
+                    only_fields = [f for f in only_fields if f not in exclude_fields]
+                only_fields += [f.name for f in related_fields]
+                # .only() returns a QuerySet of RelatedDjangoModel_Deferred objects?
+                values = value.only(*only_fields)
+            else:
+                values = value.all()
         else:
             return
         self.items[:] = []

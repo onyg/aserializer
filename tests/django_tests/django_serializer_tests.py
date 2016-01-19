@@ -104,7 +104,7 @@ class DjangoNonModelFieldsSerializerTests(TestCase):
         RelatedDjangoModel.objects.create(name='Relation 1', relation=sdm)
         RelatedDjangoModel.objects.create(name='Relation 2', relation=sdm)
 
-        # TODO: this could be eventually 1, maximum 2 queries
+        # TODO: this could be one sql query with prefetch_related.
         with self.assertNumQueries(2):
             serializer = RelatedNonModelFieldsDjangoSerializer(SimpleDjangoModel.objects.first())
         with self.assertNumQueries(0):
