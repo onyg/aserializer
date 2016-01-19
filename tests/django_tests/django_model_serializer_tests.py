@@ -10,7 +10,9 @@ from tests.django_tests.django_base import (
     TheDjangoModelSerializer, SimpleModelForSerializer, RelOneDjangoModel, RelTwoDjangoModel,
     RelThreeDjangoModel, RelDjangoModelSerializer, RelReverseDjangoModelSerializer,
     M2MTwoDjangoModel, M2MOneDjangoModel, M2MOneDjangoModelSerializer, M2MTwoDjangoModelSerializer,
-    One2One2DjangoModelSerializer, One2One1DjangoModelSerializer)
+    One2One2DjangoModelSerializer, One2One1DjangoModelSerializer, OnlyNameFieldDjangoModelSerializer,
+    OnlyNameAndRelatedNameFieldsDjangoModelSerializer, ExcludeFieldsDjangoModelSerializer,
+    ExcludeReverseRelatedFieldDjangoModelSerializer,)
 
 
 @unittest.skipIf(django is None, SKIPTEST_TEXT)
@@ -237,3 +239,142 @@ class One2OneSerializerTests(TestCase):
             'name': 'One2One-1'
         }
         self.assertDictEqual(serializer.dump(), test_value)
+
+
+@unittest.skipIf(django is None, SKIPTEST_TEXT)
+class OnlyAndExcludeSerializerTests(TestCase):
+    maxDiff = None
+
+    def test_only_name_field(self):
+        one = RelOneDjangoModel.objects.create(name='Level1')
+        two = RelTwoDjangoModel.objects.create(name='Level2', rel_one=one)
+        RelThreeDjangoModel.objects.create(name='Level3', rel_two=two)
+
+        with self.assertNumQueries(1):
+            serializer = OnlyNameFieldDjangoModelSerializer(RelThreeDjangoModel.objects.first())
+        with self.assertNumQueries(0):
+            self.assertTrue(serializer.is_valid())
+        with self.assertNumQueries(0):
+            model_dump = serializer.dump()
+        test_value = {
+            'id': 1,
+            'name': 'Level3'
+        }
+        self.assertDictEqual(model_dump, test_value)
+
+    def test_only_name_field_with_no_extra_queries(self):
+        one = RelOneDjangoModel.objects.create(name='Level1')
+        two = RelTwoDjangoModel.objects.create(name='Level2', rel_one=one)
+        three = RelThreeDjangoModel.objects.create(name='Level3', rel_two=two)
+
+        with self.assertNumQueries(0):
+            serializer = OnlyNameFieldDjangoModelSerializer(three)
+        with self.assertNumQueries(0):
+            self.assertTrue(serializer.is_valid())
+        with self.assertNumQueries(0):
+            model_dump = serializer.dump()
+        test_value = {
+            'id': 1,
+            'name': 'Level3'
+        }
+        self.assertDictEqual(model_dump, test_value)
+
+
+    def test_only_name_and_relation_name_field(self):
+        one = RelOneDjangoModel.objects.create(name='Level1')
+        two = RelTwoDjangoModel.objects.create(name='Level2', rel_one=one)
+        three = RelThreeDjangoModel.objects.create(name='Level3', rel_one=one, rel_two=two)
+
+        with self.assertNumQueries(0):
+            serializer = OnlyNameAndRelatedNameFieldsDjangoModelSerializer(three)
+        with self.assertNumQueries(0):
+            self.assertTrue(serializer.is_valid())
+        with self.assertNumQueries(0):
+            model_dump = serializer.dump()
+        test_value = {
+            'id': 1,
+            'name': 'Level3',
+            'rel_one':{
+                'id': 1,
+                'name': 'Level1'
+            }
+        }
+        self.assertDictEqual(model_dump, test_value)
+
+    def test_only_name_and_relation_name_field_with_no_extra_queries(self):
+        one = RelOneDjangoModel.objects.create(name='Level1')
+        two = RelTwoDjangoModel.objects.create(name='Level2', rel_one=one)
+        RelThreeDjangoModel.objects.create(name='Level3', rel_one=one, rel_two=two)
+
+        with self.assertNumQueries(2):
+            serializer = OnlyNameAndRelatedNameFieldsDjangoModelSerializer(RelThreeDjangoModel.objects.first())
+        with self.assertNumQueries(0):
+            self.assertTrue(serializer.is_valid())
+        with self.assertNumQueries(0):
+            model_dump = serializer.dump()
+        test_value = {
+            'id': 1,
+            'name': 'Level3',
+            'rel_one':{
+                'id': 1,
+                'name': 'Level1'
+            }
+        }
+        self.assertDictEqual(model_dump, test_value)
+
+    def test_exclude_fields(self):
+        one = RelOneDjangoModel.objects.create(name='Level1')
+        two = RelTwoDjangoModel.objects.create(name='Level2', rel_one=one)
+        RelThreeDjangoModel.objects.create(name='Level3', rel_one=one, rel_two=two)
+
+        with self.assertNumQueries(1):
+            serializer = ExcludeFieldsDjangoModelSerializer(RelThreeDjangoModel.objects.first())
+        with self.assertNumQueries(0):
+            self.assertTrue(serializer.is_valid())
+        with self.assertNumQueries(0):
+            model_dump = serializer.dump()
+        test_value = {
+            'id': 1,
+            'name': 'Level3',
+        }
+        self.assertDictEqual(model_dump, test_value)
+
+    def test_exclude_fields_with_no_extra_queries(self):
+        one = RelOneDjangoModel.objects.create(name='Level1')
+        two = RelTwoDjangoModel.objects.create(name='Level2', rel_one=one)
+        three = RelThreeDjangoModel.objects.create(name='Level3', rel_one=one, rel_two=two)
+
+        with self.assertNumQueries(0):
+            serializer = ExcludeFieldsDjangoModelSerializer(three)
+        with self.assertNumQueries(0):
+            self.assertTrue(serializer.is_valid())
+        with self.assertNumQueries(0):
+            model_dump = serializer.dump()
+        test_value = {
+            'id': 1,
+            'name': 'Level3',
+        }
+        self.assertDictEqual(model_dump, test_value)
+
+    def test_reverse_related_exclude(self):
+        one = M2MOneDjangoModel.objects.create(name='One-One')
+        two0 = one.twos.create(name='Two0')
+        two0.ones.add(M2MOneDjangoModel.objects.create(name='Zero-Two'))
+        two1 = one.twos.create(name='Two1')
+        two1.ones.add(M2MOneDjangoModel.objects.create(name='One-Two'))
+
+        with self.assertNumQueries(1):
+            serializer = ExcludeReverseRelatedFieldDjangoModelSerializer(one)
+        with self.assertNumQueries(0):
+            self.assertTrue(serializer.is_valid())
+        with self.assertNumQueries(0):
+            model_dump = serializer.dump()
+        test_value = {
+            'twos': [
+                {'id': 1},
+                {'id': 2}
+            ],
+            'id': 1
+        }
+        self.assertDictEqual(model_dump, test_value)
+

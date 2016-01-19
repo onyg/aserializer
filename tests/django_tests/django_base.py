@@ -91,34 +91,63 @@ class SimpleDjangoModelCollectionSerializer(DjangoCollectionSerializer):
 class RelDjangoModelSerializer(DjangoModelSerializer):
 
     class Meta:
-        model = RelThreeDjangoModel
+        model = RelThreeDjangoModel if django else None
 
 
 class RelReverseDjangoModelSerializer(DjangoModelSerializer):
 
     class Meta:
-        model = RelOneDjangoModel
+        model = RelOneDjangoModel if django else None
 
 
 class M2MOneDjangoModelSerializer(DjangoModelSerializer):
 
     class Meta:
-        model = M2MOneDjangoModel
+        model = M2MOneDjangoModel if django else None
 
 
 class M2MTwoDjangoModelSerializer(DjangoModelSerializer):
 
     class Meta:
-        model = M2MTwoDjangoModel
+        model = M2MTwoDjangoModel if django else None
 
 
 class One2One1DjangoModelSerializer(DjangoModelSerializer):
 
     class Meta:
-        model = One2One1DjangoModel
+        model = One2One1DjangoModel if django else None
 
 
 class One2One2DjangoModelSerializer(DjangoModelSerializer):
 
     class Meta:
-        model = One2One2DjangoModel
+        model = One2One2DjangoModel if django else None
+
+
+class OnlyNameFieldDjangoModelSerializer(DjangoModelSerializer):
+
+    class Meta:
+        model = RelThreeDjangoModel if django else None
+        fields = ['name']
+
+
+class OnlyNameAndRelatedNameFieldsDjangoModelSerializer(DjangoModelSerializer):
+
+    class Meta:
+        model = RelThreeDjangoModel if django else None
+        fields = ['name', 'rel_one.name']
+
+
+class ExcludeFieldsDjangoModelSerializer(DjangoModelSerializer):
+
+    class Meta:
+        model = RelThreeDjangoModel if django else None
+        exclude = ['rel_one', 'rel_two']
+
+
+class ExcludeReverseRelatedFieldDjangoModelSerializer(DjangoModelSerializer):
+
+    class Meta:
+        model = M2MOneDjangoModel if django else None
+        fields = ['twos']
+        exclude = ['twos.name']
