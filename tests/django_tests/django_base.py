@@ -17,7 +17,9 @@ if django is not None:
         RelThreeDjangoModel,
         M2MOneDjangoModel,
         M2MTwoDjangoModel,
-        One2One1DjangoModel, One2One2DjangoModel)
+        One2One1DjangoModel,
+        One2One2DjangoModel,
+        UUIDFieldModel,)
 
 # First some manually defined serializers for django models
 
@@ -151,3 +153,10 @@ class ExcludeReverseRelatedFieldDjangoModelSerializer(DjangoModelSerializer):
         model = M2MOneDjangoModel if django else None
         fields = ['twos']
         exclude = ['twos.name']
+
+
+class UUIDFieldDjangoModelSerializer(DjangoModelSerializer):
+
+    class Meta:
+        model = UUIDFieldModel
+        # args = {'uuid_field': {'upper':False}}

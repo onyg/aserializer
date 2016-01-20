@@ -1,18 +1,19 @@
 # -*- coding: utf-8 -*-
 
 import unittest
+import uuid
 from datetime import datetime
 from decimal import Decimal
 
-from tests.django_tests import django, SKIPTEST_TEXT, TestCase
-from tests.django_tests.django_app.models import One2One1DjangoModel, One2One2DjangoModel
+from tests.django_tests import django, SKIPTEST_TEXT, TestCase, SKIPTEST_TEXT_VERSION_18
+from tests.django_tests.django_app.models import One2One1DjangoModel, One2One2DjangoModel, UUIDFieldModel
 from tests.django_tests.django_base import (
     TheDjangoModelSerializer, SimpleModelForSerializer, RelOneDjangoModel, RelTwoDjangoModel,
     RelThreeDjangoModel, RelDjangoModelSerializer, RelReverseDjangoModelSerializer,
     M2MTwoDjangoModel, M2MOneDjangoModel, M2MOneDjangoModelSerializer, M2MTwoDjangoModelSerializer,
     One2One2DjangoModelSerializer, One2One1DjangoModelSerializer, OnlyNameFieldDjangoModelSerializer,
     OnlyNameAndRelatedNameFieldsDjangoModelSerializer, ExcludeFieldsDjangoModelSerializer,
-    ExcludeReverseRelatedFieldDjangoModelSerializer,)
+    ExcludeReverseRelatedFieldDjangoModelSerializer, UUIDFieldDjangoModelSerializer)
 
 
 @unittest.skipIf(django is None, SKIPTEST_TEXT)
@@ -377,4 +378,20 @@ class OnlyAndExcludeSerializerTests(TestCase):
             'id': 1
         }
         self.assertDictEqual(model_dump, test_value)
+
+
+@unittest.skipIf(django is None or django.VERSION < (1, 8, 0), SKIPTEST_TEXT_VERSION_18)
+class Django18FieldsMappingTests(TestCase):
+
+    def test_uuid_field_mapping(self):
+        obj = UUIDFieldModel.objects.create(name='Name', uuid_field=uuid.UUID('6f8f9172-baa6-453d-82d3-f4dbc4c43a3f'))
+        serializer = UUIDFieldDjangoModelSerializer(obj)
+        self.assertIsInstance(serializer.uuid_field, uuid.UUID)
+        self.assertEqual(serializer.uuid_field, uuid.UUID('6f8f9172-baa6-453d-82d3-f4dbc4c43a3f'))
+        test_value = {
+            'id': 1,
+            'name': 'Name',
+            'uuid_field': '6f8f9172-baa6-453d-82d3-f4dbc4c43a3f'.upper()
+        }
+        self.assertDictEqual(serializer.dump(), test_value)
 

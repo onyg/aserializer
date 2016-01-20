@@ -18,6 +18,7 @@ else:
     from unittest import TestCase
 
 SKIPTEST_TEXT = "Django is not installed."
+SKIPTEST_TEXT_VERSION_18 = "Django >= 1.8 is not installed."
 DJANGO_RUNNER = None
 DJANGO_RUNNER_STATE = None
 

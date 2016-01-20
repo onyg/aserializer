@@ -29,6 +29,8 @@ try:
         django_models.BooleanField: serializer_fields.BooleanField,
         django_models.NullBooleanField: serializer_fields.BooleanField,
     }
+    if django_utils.django_version >= (1, 8, 0):
+        model_field_mapping[django_models.UUIDField] = serializer_fields.UUIDField
 except ImportError:
     django_models = None
     model_field_mapping = {}
@@ -54,21 +56,23 @@ class DjangoModelSerializerBase(SerializerBase):
 
     @classmethod
     def set_fields_from_model(cls, new_class, fields, meta_options):
-        setattr(new_class, 'model_fields', [])
         if django_models is None or meta_options.model is None:
             return
         meta_options.parents.handle(meta_options.model)
         all_field_names = cls.get_all_fieldnames(fields)
         for model_field in django_utils.get_local_fields(meta_options.model):
             if model_field.name not in all_field_names:
-                if cls.add_local_model_field(fields, model_field):
-                    new_class.model_fields.append(model_field.name)
+                serializer_field = cls.add_local_model_field(fields, model_field)
+                if serializer_field:
+                    setattr(new_class, model_field.name, serializer_field)
         for model_field in django_utils.get_related_fields(meta_options.model):
-            if cls.add_relation_model_field(fields, model_field, meta_options=meta_options):
-                new_class.model_fields.append(model_field.name)
+            serializer_field = cls.add_relation_model_field(fields, model_field, meta_options=meta_options)
+            if serializer_field:
+                setattr(new_class, model_field.name, serializer_field)
         for model_field in django_utils.get_reverse_related_fields(meta_options.model):
-            if cls.add_reverse_relation_model_field(fields, model_field, meta_options=meta_options):
-                new_class.model_fields.append(django_utils.get_reverse_related_name_from_field(model_field))
+            serializer_field = cls.add_reverse_relation_model_field(fields, model_field, meta_options=meta_options)
+            if serializer_field:
+                setattr(new_class, model_field.name, serializer_field)
 
     @staticmethod
     def get_field_class(model_field, mapping=None):
@@ -112,11 +116,10 @@ class DjangoModelSerializerBase(SerializerBase):
     @classmethod
     def add_local_model_field(cls, fields, model_field, **kwargs):
         _field = cls.get_field_from_modelfield(model_field, **kwargs)
-        if _field is None:
-            return False
-        _field.add_name(model_field.name)
-        fields[model_field.name] = _field
-        return True
+        if _field is not None:
+            _field.add_name(model_field.name)
+            fields[model_field.name] = _field
+        return _field
 
     @classmethod
     def add_relation_model_field(cls, fields, model_field, meta_options, **kwargs):
@@ -124,7 +127,7 @@ class DjangoModelSerializerBase(SerializerBase):
             relation_parents_manager = meta_options.parents.get_working_copy()
             rel_django_model = django_utils.get_related_model_from_field(model_field)
             if not relation_parents_manager.handle(rel_django_model):
-                return False
+                return None
             if model_field.primary_key:
                 kwargs['identity'] = True
                 kwargs['required'] = False
@@ -138,8 +141,8 @@ class DjangoModelSerializerBase(SerializerBase):
                 _field = serializer_fields.SerializerField(serializer_cls, **kwargs)
             _field.add_name(model_field.name)
             fields[model_field.name] = _field
-            return True
-        return False
+            return _field
+        return None
 
     @classmethod
     def add_reverse_relation_model_field(cls, fields, model_field, meta_options, **kwargs):
@@ -147,7 +150,7 @@ class DjangoModelSerializerBase(SerializerBase):
             relation_parents_manager = meta_options.parents.get_working_copy()
             rel_django_model = django_utils.get_related_model_from_field(model_field)
             if not relation_parents_manager.handle(rel_django_model):
-                return False
+                return None
             serializer_cls = cls.get_nested_serializer_class(rel_django_model, relation_parents_manager)
             if django_utils.is_reverse_one2one_relation_field(model_field):
                 _field = serializer_fields.SerializerField(serializer_cls, required=False, **kwargs)
@@ -155,8 +158,8 @@ class DjangoModelSerializerBase(SerializerBase):
                 _field = RelatedManagerListSerializerField(serializer_cls, required=False, **kwargs)
             _field.add_name(django_utils.get_reverse_related_name_from_field(model_field))
             fields[django_utils.get_reverse_related_name_from_field(model_field)] = _field
-            return True
-        return False
+            return _field
+        return None
 
 
 class NestedDjangoModelSerializer(py2to3.with_metaclass(DjangoModelSerializerBase, Serializer)):

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from django.db import models
+from django import VERSION as DJANGO_VERSION
 
 
 class SimpleDjangoModel(models.Model):
@@ -21,6 +22,7 @@ class SimpleModelForSerializer(models.Model):
         ('Two', 'OSX'),
         ('Three', 'DOS'),
     )
+
     char_field = models.CharField(max_length=40)
     integer_field = models.IntegerField(blank=True, null=True)
     integer_field2 = models.IntegerField(max_length=3)
@@ -68,3 +70,13 @@ class One2One1DjangoModel(models.Model):
 class One2One2DjangoModel(models.Model):
     name = models.CharField(max_length=24)
     one1 = models.OneToOneField(One2One1DjangoModel, related_name='one2')
+
+
+if DJANGO_VERSION >= (1, 8, 0):
+
+    class UUIDFieldModel(models.Model):
+        name = models.CharField(max_length=24)
+        uuid_field = models.UUIDField()
+else:
+    class UUIDFieldModel(models.Model):
+        name = models.CharField(max_length=24)

@@ -3,10 +3,10 @@
 import unittest
 from aserializer import fields
 from aserializer.django.serializers import DjangoModelSerializerBase
-from tests.django_tests import django, SKIPTEST_TEXT, TestCase
+from tests.django_tests import django, SKIPTEST_TEXT, TestCase, SKIPTEST_TEXT_VERSION_18
 
 if django is not None:
-    from tests.django_tests.django_app.models import SimpleModelForSerializer
+    from tests.django_tests.django_app.models import SimpleModelForSerializer, UUIDFieldModel
 
 
 @unittest.skipIf(django is None, SKIPTEST_TEXT)
@@ -77,3 +77,9 @@ class ModelSerializerFieldMappingTests(TestCase):
         model_field = SimpleModelForSerializer._meta.get_field('url_field')
         serializer_field = DjangoModelSerializerBase.get_field_from_modelfield(model_field)
         self.assertIsInstance(serializer_field, fields.UrlField)
+
+    @unittest.skipIf(django is None or django.VERSION < (1, 8, 0), SKIPTEST_TEXT_VERSION_18)
+    def test_uuid_field(self):
+        model_field = UUIDFieldModel._meta.get_field('uuid_field')
+        serializer_field = DjangoModelSerializerBase.get_field_from_modelfield(model_field)
+        self.assertIsInstance(serializer_field, fields.UUIDField)
