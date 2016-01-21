@@ -54,7 +54,7 @@ class BaseSerializerField(object):
 
     def __init__(self, required=True, identity=False,
                  label=None, map_field=None, on_null=None,
-                 action_field=False, error_messages=None, default=None, validators=None):
+                 action_field=False, error_messages=None, default=None, validators=None, *args, **kwargs):
         self.required = required
         self.identity = identity
         self.label = label

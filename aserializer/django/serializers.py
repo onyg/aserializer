@@ -150,11 +150,12 @@ class DjangoModelSerializerBase(SerializerBase):
             serializer_cls = cls.get_nested_serializer_class(rel_django_model,
                                                              relation_parents_manager,
                                                              **field_kwargs)
-            kwargs = meta.field_arguments.parse(model_field.name, **kwargs)
             if isinstance(model_field, django_models.ManyToManyField):
-                _field = RelatedManagerListSerializerField(serializer_cls, **kwargs)
+                field_class = RelatedManagerListSerializerField
             else:
-                _field = serializer_fields.SerializerField(serializer_cls, **kwargs)
+                field_class = serializer_fields.SerializerField
+            kwargs = meta.field_arguments.parse(model_field.name, **kwargs)
+            _field = field_class(serializer_cls, **kwargs)
             _field.add_name(model_field.name)
             fields[model_field.name] = _field
             return _field
@@ -172,11 +173,12 @@ class DjangoModelSerializerBase(SerializerBase):
             serializer_cls = cls.get_nested_serializer_class(rel_django_model,
                                                              relation_parents_manager,
                                                              **field_kwargs)
-            kwargs = meta.field_arguments.parse(model_field.name, **kwargs)
             if django_utils.is_reverse_one2one_relation_field(model_field):
-                _field = serializer_fields.SerializerField(serializer_cls, required=False, **kwargs)
+                field_class = serializer_fields.SerializerField
             else:
-                _field = RelatedManagerListSerializerField(serializer_cls, required=False, **kwargs)
+                field_class = RelatedManagerListSerializerField
+            kwargs = meta.field_arguments.parse(model_field.name, **kwargs)
+            _field = field_class(serializer_cls, required=False, **kwargs)
             _field.add_name(django_utils.get_reverse_related_name_from_field(model_field))
             fields[field_name] = _field
             return _field

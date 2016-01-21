@@ -16,9 +16,6 @@ class SerializerMetaOptions(MetaOptions):
     def __init__(self, meta):
         super(SerializerMetaOptions, self).__init__(meta)
         self.parser = getattr(meta, 'parser', Parser)
-        # self.model = getattr(meta, 'model', None)
-        # self.parents = getattr(meta, 'parents', RelatedParentManager())
-        # self.field_args = getattr(meta, 'field_args', {})
 
 
 class ModelSerializerMetaOptions(SerializerMetaOptions):
