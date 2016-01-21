@@ -175,8 +175,8 @@ class FieldArgsDjangoModelSerializer(DjangoModelSerializer):
     class Meta:
         model = FieldArgsDjangoModel if django else None
         field_kwargs = {
-            'name':{'on_null':0},
-            'relations.name':{'on_null':0}
+            'name': {'on_null': 0},
+            'relations.name': {'on_null': 0}
         }
 
 
@@ -184,4 +184,4 @@ class FieldArgsRelatedDjangoModelSerializer(DjangoModelSerializer):
 
     class Meta:
         model = FieldArgsRelatedDjangoModel if django else None
-        field_kwargs = {'relation.name':{'on_null':0}}
+        field_kwargs = {'relation.name': {'on_null': 0}}

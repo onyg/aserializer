@@ -432,13 +432,13 @@ class FieldArgsTests(TestCase):
         obj = FieldArgsDjangoModel.objects.create(name=None)
         serializer = FieldArgsDjangoModelSerializer(obj)
         self.assertTrue(serializer.is_valid())
-        test_value = {'id': 1,'relations': []}
+        test_value = {'id': 1, 'relations': []}
         self.assertDictEqual(serializer.dump(), test_value)
 
         obj = FieldArgsDjangoModel.objects.create(name='Foo')
         serializer = FieldArgsDjangoModelSerializer(obj)
         self.assertTrue(serializer.is_valid())
-        test_value = {'id': 2, 'name':'Foo', 'relations': []}
+        test_value = {'id': 2, 'name': 'Foo', 'relations': []}
         self.assertDictEqual(serializer.dump(), test_value)
 
     def test_related_with_on_null_arg(self):
@@ -446,14 +446,14 @@ class FieldArgsTests(TestCase):
         level1 = FieldArgsRelatedDjangoModel.objects.create(name='Foo', relation=level2)
         serializer = FieldArgsRelatedDjangoModelSerializer(level1)
         self.assertTrue(serializer.is_valid())
-        test_value = {'id': 1, 'name':'Foo', 'relation': {'id':1}}
+        test_value = {'id': 1, 'name': 'Foo', 'relation': {'id': 1}}
         self.assertDictEqual(serializer.dump(), test_value)
 
         level2 = FieldArgsDjangoModel.objects.create(name='Foo')
         level1 = FieldArgsRelatedDjangoModel.objects.create(name='Foo', relation=level2)
         serializer = FieldArgsRelatedDjangoModelSerializer(level1)
         self.assertTrue(serializer.is_valid())
-        test_value = {'id': 2, 'name':'Foo', 'relation': {'id':2, 'name':'Foo'}}
+        test_value = {'id': 2, 'name': 'Foo', 'relation': {'id': 2, 'name': 'Foo'}}
         self.assertDictEqual(serializer.dump(), test_value)
 
     def test_reverse_related_with_on_null_arg(self):
@@ -461,7 +461,7 @@ class FieldArgsTests(TestCase):
         FieldArgsRelatedDjangoModel.objects.create(name=None, relation=obj)
         serializer = FieldArgsDjangoModelSerializer(obj)
         self.assertTrue(serializer.is_valid())
-        test_value = {'id': 1, 'name':'Foo', 'relations': [{'id':1}]}
+        test_value = {'id': 1, 'name': 'Foo', 'relations': [{'id': 1}]}
         self.assertDictEqual(serializer.dump(), test_value)
 
         obj = FieldArgsDjangoModel.objects.create(name='Foo')
@@ -469,5 +469,5 @@ class FieldArgsTests(TestCase):
         FieldArgsRelatedDjangoModel.objects.create(name=None, relation=obj)
         serializer = FieldArgsDjangoModelSerializer(obj)
         self.assertTrue(serializer.is_valid())
-        test_value = {'id': 2, 'name':'Foo', 'relations': [{'id':2, 'name':'Foo'}, {'id':3}]}
+        test_value = {'id': 2, 'name': 'Foo', 'relations': [{'id': 2, 'name': 'Foo'}, {'id': 3}]}
         self.assertDictEqual(serializer.dump(), test_value)
