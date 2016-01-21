@@ -6,14 +6,31 @@ from datetime import datetime
 from decimal import Decimal
 
 from tests.django_tests import django, SKIPTEST_TEXT, TestCase, SKIPTEST_TEXT_VERSION_18
-from tests.django_tests.django_app.models import One2One1DjangoModel, One2One2DjangoModel, UUIDFieldModel
-from tests.django_tests.django_base import (
-    TheDjangoModelSerializer, SimpleModelForSerializer, RelOneDjangoModel, RelTwoDjangoModel,
-    RelThreeDjangoModel, RelDjangoModelSerializer, RelReverseDjangoModelSerializer,
-    M2MTwoDjangoModel, M2MOneDjangoModel, M2MOneDjangoModelSerializer, M2MTwoDjangoModelSerializer,
-    One2One2DjangoModelSerializer, One2One1DjangoModelSerializer, OnlyNameFieldDjangoModelSerializer,
-    OnlyNameAndRelatedNameFieldsDjangoModelSerializer, ExcludeFieldsDjangoModelSerializer,
-    ExcludeReverseRelatedFieldDjangoModelSerializer, UUIDFieldDjangoModelSerializer)
+from tests.django_tests.django_app.models import (One2One1DjangoModel,
+                                                  One2One2DjangoModel,
+                                                  UUIDFieldModel,
+                                                  FieldArgsRelatedDjangoModel,
+                                                  FieldArgsDjangoModel,)
+from tests.django_tests.django_base import (TheDjangoModelSerializer,
+                                            SimpleModelForSerializer,
+                                            RelOneDjangoModel,
+                                            RelTwoDjangoModel,
+                                            RelThreeDjangoModel,
+                                            RelDjangoModelSerializer,
+                                            RelReverseDjangoModelSerializer,
+                                            M2MOneDjangoModel,
+                                            M2MOneDjangoModelSerializer,
+                                            M2MTwoDjangoModelSerializer,
+                                            One2One2DjangoModelSerializer,
+                                            One2One1DjangoModelSerializer,
+                                            OnlyNameFieldDjangoModelSerializer,
+                                            OnlyNameAndRelatedNameFieldsDjangoModelSerializer,
+                                            ExcludeFieldsDjangoModelSerializer,
+                                            ExcludeReverseRelatedFieldDjangoModelSerializer,
+                                            UUIDFieldDjangoModelSerializer,
+                                            LowerUUIDFieldDjangoModelSerializer,
+                                            FieldArgsDjangoModelSerializer,
+                                            FieldArgsRelatedDjangoModelSerializer,)
 
 
 @unittest.skipIf(django is None, SKIPTEST_TEXT)
@@ -395,3 +412,62 @@ class Django18FieldsMappingTests(TestCase):
         }
         self.assertDictEqual(serializer.dump(), test_value)
 
+    def test_lower_uuid_field_mapping(self):
+        obj = UUIDFieldModel.objects.create(name='Name', uuid_field=uuid.UUID('6f8f9172-baa6-453d-82d3-f4dbc4c43a3f'))
+        serializer = LowerUUIDFieldDjangoModelSerializer(obj)
+        self.assertIsInstance(serializer.uuid_field, uuid.UUID)
+        self.assertEqual(serializer.uuid_field, uuid.UUID('6f8f9172-baa6-453d-82d3-f4dbc4c43a3f'))
+        test_value = {
+            'id': 1,
+            'name': 'Name',
+            'uuid_field': '6f8f9172-baa6-453d-82d3-f4dbc4c43a3f'
+        }
+        self.assertDictEqual(serializer.dump(), test_value)
+
+
+@unittest.skipIf(django is None, SKIPTEST_TEXT)
+class FieldArgsTests(TestCase):
+
+    def test_simple_with_on_null_arg(self):
+        obj = FieldArgsDjangoModel.objects.create(name=None)
+        serializer = FieldArgsDjangoModelSerializer(obj)
+        self.assertTrue(serializer.is_valid())
+        test_value = {'id': 1,'relations': []}
+        self.assertDictEqual(serializer.dump(), test_value)
+
+        obj = FieldArgsDjangoModel.objects.create(name='Foo')
+        serializer = FieldArgsDjangoModelSerializer(obj)
+        self.assertTrue(serializer.is_valid())
+        test_value = {'id': 2, 'name':'Foo', 'relations': []}
+        self.assertDictEqual(serializer.dump(), test_value)
+
+    def test_related_with_on_null_arg(self):
+        level2 = FieldArgsDjangoModel.objects.create(name=None)
+        level1 = FieldArgsRelatedDjangoModel.objects.create(name='Foo', relation=level2)
+        serializer = FieldArgsRelatedDjangoModelSerializer(level1)
+        self.assertTrue(serializer.is_valid())
+        test_value = {'id': 1, 'name':'Foo', 'relation': {'id':1}}
+        self.assertDictEqual(serializer.dump(), test_value)
+
+        level2 = FieldArgsDjangoModel.objects.create(name='Foo')
+        level1 = FieldArgsRelatedDjangoModel.objects.create(name='Foo', relation=level2)
+        serializer = FieldArgsRelatedDjangoModelSerializer(level1)
+        self.assertTrue(serializer.is_valid())
+        test_value = {'id': 2, 'name':'Foo', 'relation': {'id':2, 'name':'Foo'}}
+        self.assertDictEqual(serializer.dump(), test_value)
+
+    def test_reverse_related_with_on_null_arg(self):
+        obj = FieldArgsDjangoModel.objects.create(name='Foo')
+        FieldArgsRelatedDjangoModel.objects.create(name=None, relation=obj)
+        serializer = FieldArgsDjangoModelSerializer(obj)
+        self.assertTrue(serializer.is_valid())
+        test_value = {'id': 1, 'name':'Foo', 'relations': [{'id':1}]}
+        self.assertDictEqual(serializer.dump(), test_value)
+
+        obj = FieldArgsDjangoModel.objects.create(name='Foo')
+        FieldArgsRelatedDjangoModel.objects.create(name='Foo', relation=obj)
+        FieldArgsRelatedDjangoModel.objects.create(name=None, relation=obj)
+        serializer = FieldArgsDjangoModelSerializer(obj)
+        self.assertTrue(serializer.is_valid())
+        test_value = {'id': 2, 'name':'Foo', 'relations': [{'id':2, 'name':'Foo'}, {'id':3}]}
+        self.assertDictEqual(serializer.dump(), test_value)

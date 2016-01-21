@@ -75,6 +75,10 @@ def is_relation_field(field):
         return field.rel is not None
 
 
+def is_reverse_relation_field(field):
+    return isinstance(field, get_related_model_classes())
+
+
 def get_related_model_from_field(field):
     if django_version >= (1, 8, 0):
         return field.related_model

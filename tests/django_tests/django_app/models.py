@@ -80,3 +80,12 @@ if DJANGO_VERSION >= (1, 8, 0):
 else:
     class UUIDFieldModel(models.Model):
         name = models.CharField(max_length=24)
+
+
+class FieldArgsDjangoModel(models.Model):
+    name = models.CharField(max_length=24, null=True, blank=True)
+
+
+class FieldArgsRelatedDjangoModel(models.Model):
+    name = models.CharField(max_length=24, null=True, blank=True)
+    relation = models.ForeignKey(FieldArgsDjangoModel, related_name='relations')

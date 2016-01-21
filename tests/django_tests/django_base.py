@@ -19,7 +19,9 @@ if django is not None:
         M2MTwoDjangoModel,
         One2One1DjangoModel,
         One2One2DjangoModel,
-        UUIDFieldModel,)
+        UUIDFieldModel,
+        FieldArgsRelatedDjangoModel,
+        FieldArgsDjangoModel,)
 
 # First some manually defined serializers for django models
 
@@ -158,5 +160,28 @@ class ExcludeReverseRelatedFieldDjangoModelSerializer(DjangoModelSerializer):
 class UUIDFieldDjangoModelSerializer(DjangoModelSerializer):
 
     class Meta:
-        model = UUIDFieldModel
-        # args = {'uuid_field': {'upper':False}}
+        model = UUIDFieldModel if django else None
+
+
+class LowerUUIDFieldDjangoModelSerializer(DjangoModelSerializer):
+
+    class Meta:
+        model = UUIDFieldModel if django else None
+        field_kwargs = {'uuid_field': {'upper':False}}
+
+
+class FieldArgsDjangoModelSerializer(DjangoModelSerializer):
+
+    class Meta:
+        model = FieldArgsDjangoModel if django else None
+        field_kwargs = {
+            'name':{'on_null':0},
+            'relations.name':{'on_null':0}
+        }
+
+
+class FieldArgsRelatedDjangoModelSerializer(DjangoModelSerializer):
+
+    class Meta:
+        model = FieldArgsRelatedDjangoModel if django else None
+        field_kwargs = {'relation.name':{'on_null':0}}

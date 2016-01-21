@@ -33,10 +33,14 @@ class SerializerBase(type):
         for field_name, field in base_fields.items():
             cls.add_field(new_class=new_class, name=field_name, field=field)
         setattr(new_class, '_base_fields', base_fields)
-        setattr(new_class, '_meta', options.SerializerMetaOptions(meta))
+        setattr(new_class, '_meta', cls.get_meta_options_cls()(meta))
         if getattr(new_class, 'with_registry', False):
             registry.register_serializer(new_class.__name__, new_class)
         return new_class
+
+    @classmethod
+    def get_meta_options_cls(cls):
+        return options.SerializerMetaOptions
 
     @classmethod
     def add_field(cls, new_class, name, field):

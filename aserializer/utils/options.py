@@ -16,8 +16,18 @@ class SerializerMetaOptions(MetaOptions):
     def __init__(self, meta):
         super(SerializerMetaOptions, self).__init__(meta)
         self.parser = getattr(meta, 'parser', Parser)
+        # self.model = getattr(meta, 'model', None)
+        # self.parents = getattr(meta, 'parents', RelatedParentManager())
+        # self.field_args = getattr(meta, 'field_args', {})
+
+
+class ModelSerializerMetaOptions(SerializerMetaOptions):
+
+    def __init__(self, meta):
+        super(ModelSerializerMetaOptions, self).__init__(meta)
         self.model = getattr(meta, 'model', None)
         self.parents = getattr(meta, 'parents', RelatedParentManager())
+        self.field_arguments = ModelFieldKwargsHelper(getattr(meta, 'field_kwargs', {}))
 
 
 class CollectionMetaOptions(MetaOptions):
@@ -48,3 +58,28 @@ class RelatedParentManager(object):
             return False
         self.parents.append(child)
         return True
+
+
+class ModelFieldKwargsHelper(object):
+
+    def __init__(self, kw):
+        self._kwargs = kw
+
+    def get_kwargs(self, field_name):
+        if field_name in self._kwargs:
+            return self._kwargs[field_name]
+        return {}
+
+    def parse(self, field_name, **kwargs):
+        kw = kwargs.copy()
+        if field_name in self._kwargs:
+            kw.update(**self._kwargs[field_name])
+        return kw
+
+    def get_nested_field_kwargs(self, field_name):
+        field_prefix = '{}.'.format(field_name)
+        kw = {}
+        for k, v in self._kwargs.items():
+            if str(k).startswith(field_prefix):
+                kw['.'.join(k.split('.')[1:])] = v
+        return kw
