@@ -1,5 +1,6 @@
 *~
 *.egg
+.eggs/
 aserializer.egg-info/
 .coverage
 docs/.build

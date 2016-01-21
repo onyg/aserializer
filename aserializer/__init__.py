@@ -4,6 +4,7 @@ from .base import Serializer
 from .fields import (
     SerializerFieldValueError,
     IntegerField,
+    PositiveIntegerField,
     FloatField,
     UUIDField,
     StringField,
@@ -23,4 +24,4 @@ from .fields import (
     ListSerializerField,
 )
 
-__version__ = '0.7.0'
+__version__ = '0.8.0'

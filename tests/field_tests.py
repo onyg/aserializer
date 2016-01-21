@@ -6,6 +6,7 @@ import decimal
 from datetime import datetime, date, time
 from aserializer.utils import py2to3
 from aserializer.fields import (IntegerField,
+                                PositiveIntegerField,
                                 FloatField,
                                 UUIDField,
                                 StringField,
@@ -102,6 +103,65 @@ class IntegerFieldTests(unittest.TestCase):
 
     def test_hide_on_null(self):
         int_field = IntegerField(required=False, on_null=HIDE_FIELD)
+        self.assertRaises(IgnoreField, int_field.to_native)
+        self.assertIsNone(int_field.to_python())
+
+
+class PositiveIntegerFieldTests(unittest.TestCase):
+
+    def test_set_value_int(self):
+        int_field = PositiveIntegerField(required=True)
+        int_field.set_value(23)
+        int_field.validate()
+        self.assertEqual(int_field.to_python(), 23)
+        self.assertEqual(int_field.to_native(), 23)
+
+    def test_set_value_string(self):
+        int_field = PositiveIntegerField(required=True)
+        int_field.set_value('24')
+        int_field.validate()
+        self.assertEqual(int_field.to_python(), 24)
+        self.assertEqual(int_field.to_native(), 24)
+
+    def test_validate_raises(self):
+        int_field = PositiveIntegerField(required=True)
+        int_field.set_value('int')
+        self.assertRaises(SerializerFieldValueError, int_field.validate)
+
+        int_field = PositiveIntegerField(required=True)
+        int_field.set_value(-1)
+        self.assertRaises(SerializerFieldValueError, int_field.validate)
+
+        int_field = PositiveIntegerField(required=True)
+        int_field.set_value('-12')
+        self.assertRaises(SerializerFieldValueError, int_field.validate)
+
+    def test_max_min(self):
+        int_field = PositiveIntegerField(required=True, max_value=24)
+        int_field.set_value(23)
+        int_field.validate()
+        self.assertEqual(int_field.to_python(), 23)
+        self.assertEqual(int_field.to_native(), 23)
+
+        int_field = PositiveIntegerField(required=True, max_value=24)
+        int_field.set_value(100)
+        self.assertRaises(SerializerFieldValueError, int_field.validate)
+
+        int_field = PositiveIntegerField(required=True, max_value=24)
+        int_field.set_value('101')
+        self.assertRaises(SerializerFieldValueError, int_field.validate)
+
+        int_field = PositiveIntegerField(required=True, max_value=24)
+        int_field.set_value('-101')
+        self.assertRaises(SerializerFieldValueError, int_field.validate)
+
+    def test_default(self):
+        int_field = PositiveIntegerField(required=True, default=23)
+        self.assertEqual(int_field.to_python(), 23)
+        self.assertEqual(int_field.to_native(), 23)
+
+    def test_hide_on_null(self):
+        int_field = PositiveIntegerField(required=False, on_null=HIDE_FIELD)
         self.assertRaises(IgnoreField, int_field.to_native)
         self.assertIsNone(int_field.to_python())
 

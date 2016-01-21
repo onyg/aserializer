@@ -17,7 +17,7 @@ def get_serializer_fields(bases, attrs):
               if isinstance(obj, BaseSerializerField)]
     for base in bases[::-1]:
         if hasattr(base, '_base_fields'):
-            fields = list(py2to3.iteritems(base._base_fields)) + fields
+            fields = fields + list(py2to3.iteritems(base._base_fields))
     return OrderedDict(fields)
 
 
@@ -33,9 +33,14 @@ class SerializerBase(type):
         for field_name, field in base_fields.items():
             cls.add_field(new_class=new_class, name=field_name, field=field)
         setattr(new_class, '_base_fields', base_fields)
-        registry.register_serializer(new_class.__name__, new_class)
-        setattr(new_class, '_meta', options.SerializerMetaOptions(meta))
+        setattr(new_class, '_meta', cls.get_meta_options_cls()(meta))
+        if getattr(new_class, 'with_registry', False):
+            registry.register_serializer(new_class.__name__, new_class)
         return new_class
+
+    @classmethod
+    def get_meta_options_cls(cls):
+        return options.SerializerMetaOptions
 
     @classmethod
     def add_field(cls, new_class, name, field):
@@ -47,6 +52,7 @@ class SerializerBase(type):
 
 
 class Serializer(py2to3.with_metaclass(SerializerBase)):
+    with_registry = True
     error_messages = {
         'unknown': 'Totally unknown.'
     }
@@ -63,9 +69,14 @@ class Serializer(py2to3.with_metaclass(SerializerBase)):
         self._extras = extras
         self.__show_field_list = fields or []
         self.__exclude_field_list = exclude or []
-        # self.source_is_invalid = False
         self._handle_unknown_error = unknown_error
-        self.parser = self._meta.parser()
+        # TODO: Check if the exclude field_name also including the map_field_name
+        field_names = []
+        for k, v in self.fields.items():
+            field_names.append(k)
+            if v.map_field:
+                field_names.append(v.map_field)
+        self.parser = self._meta.parser(fields=field_names)
         self.initial(source=source)
 
     def __iter__(self):
@@ -119,7 +130,7 @@ class Serializer(py2to3.with_metaclass(SerializerBase)):
         self.parser.initial(source)
         if self.parser.obj is None:
             return
-        source_attr = self.parser.attribute_names
+        source_attr = self.parser.attributes_for_serializer
         for field_name, field in self.fields.items():
             if field_name in source_attr:
                 _name = field_name
@@ -189,30 +200,30 @@ class Serializer(py2to3.with_metaclass(SerializerBase)):
         If a field is an identity field it only will be validate if the source object got the attribute.
         """
         self._errors = {}
-        source_attrs = self.parser.attribute_names
+        attributes = self.parser.attributes_for_serializer
+        attributes_for_unknown_error_handling = self.parser.all_attributes if self._handle_unknown_error else []
         for field_name, field in self.fields.items():
-            if field.identity and not field_name in source_attrs:
+            if field.identity and not field_name in attributes:
                 continue
             label = field_name
-            if field_name in source_attrs or field.map_field in source_attrs:
+            if field_name in attributes or field.map_field in attributes:
                 try:
                     field.validate()
                     self._custom_field_validation(field)
                 except SerializerFieldValueError as e:
                     self._errors[label] = e.errors
                 if self._handle_unknown_error:
-                    if field_name in source_attrs:
-                        source_attrs.remove(field_name)
-                    elif field.map_field in source_attrs:
-                        source_attrs.remove(field.map_field)
+                    if field_name in attributes_for_unknown_error_handling:
+                        attributes_for_unknown_error_handling.remove(field_name)
+                    elif field.map_field in attributes_for_unknown_error_handling:
+                        attributes_for_unknown_error_handling.remove(field.map_field)
             elif field.required:
                 if field.has_default:
                     continue
                 self._errors[label] = field.error_messages['required']
-        if self._handle_unknown_error:
-            for attr in source_attrs:
-                if attr not in self.get_fieldnames():
-                    self._errors[attr] = self.error_messages['unknown']
+        for attr in attributes_for_unknown_error_handling:
+            if attr not in self.get_fieldnames():
+                self._errors[attr] = self.error_messages['unknown']
 
     def _custom_field_validation(self, field):
         for name in field.names:

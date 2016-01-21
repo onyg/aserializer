@@ -12,14 +12,15 @@ from aserializer.fields import validators as v
 
 class TypeField(BaseSerializerField):
 
-    def __init__(self, name, fixed=False, validate=False,  *args, **kwargs):
+    def __init__(self, name, fixed=False, validate=False, identity=True, *args, **kwargs):
         super(TypeField, self).__init__(*args, **kwargs)
         self.name = name
         self._initial_name = name
-        self.identity = True
+        self.identity = identity
         self.error_messages = {}
         self.should_validate = validate
         self.fixed = fixed
+        self.has_default = self.has_default or self._initial_name is not None
 
     def validate(self):
         if self.should_validate:
@@ -62,6 +63,12 @@ class IntegerField(BaseSerializerField):
 
     def _to_python(self):
         return self.to_int(self.value)
+
+
+class PositiveIntegerField(IntegerField):
+
+    def __init__(self, max_value=None, *args, **kwargs):
+        super(PositiveIntegerField, self).__init__(max_value=max_value, min_value=0, *args, **kwargs)
 
 
 class FloatField(IntegerField):
