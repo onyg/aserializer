@@ -19,7 +19,6 @@ class RelatedManagerListSerializerField(ListSerializerField):
         elif isinstance(value, Iterable):
             values = value
         elif isinstance(value, (QuerySet, Manager)):
-            # TODO: write specific test to prove the speed improvement
             # if using prefetch_related, we can't use only as it will re-fetch the data
             if not self.extras.get('use_prefetch') and (self.only_fields or self.exclude):
                 local_fields = get_local_fields(value.model)

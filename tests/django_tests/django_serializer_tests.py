@@ -3,11 +3,12 @@
 import unittest
 
 from tests.django_tests import django, SKIPTEST_TEXT, TestCase
-from tests.django_tests.django_app.models import RelOneDjangoModel, RelTwoDjangoModel, RelThreeDjangoModel
+from tests.django_tests.django_app.models import RelOneDjangoModel, RelTwoDjangoModel, RelThreeDjangoModel, \
+    M2MOneDjangoModel, M2MTwoDjangoModel
 from tests.django_tests.django_base import (
     SimpleDjangoModel, RelatedDjangoModel, SimpleDjangoSerializer, RelatedDjangoSerializer,
     SecondSimpleDjangoSerializer, RelOneDjangoSerializer, NonModelFieldsDjangoSerializer,
-    RelatedNonModelFieldsDjangoSerializer, Related2NonModelFieldsDjangoSerializer)
+    RelatedNonModelFieldsDjangoSerializer, Related2NonModelFieldsDjangoSerializer, SimpleWithM2MDjangoSerializer)
 
 
 @unittest.skipIf(django is None, SKIPTEST_TEXT)
@@ -145,3 +146,48 @@ class DjangoNonModelFieldsSerializerTests(TestCase):
             ]
         }
         self.assertDictEqual(model_dump, test_value)
+
+
+@unittest.skipIf(django is None, SKIPTEST_TEXT)
+class DjangoM2MSerializerTests(TestCase):
+
+    def test_django_m2m_fields_with_prefetch(self):
+        """How to get the best performance for relations out of aserializer"""
+        sdm = SimpleDjangoModel.objects.create(name='The Name', code='AAAA', number=1)
+        m2m_one1 = M2MOneDjangoModel.objects.create(name='One1', simple_model=sdm)
+        m2m_one2 = M2MOneDjangoModel.objects.create(name='One2', simple_model=sdm)
+        m2m_two1 = M2MTwoDjangoModel.objects.create(name='Two1')
+        m2m_two2 = M2MTwoDjangoModel.objects.create(name='Two2')
+        m2m_two1.ones.add(m2m_one1)
+        m2m_two1.ones.add(m2m_one2)
+        m2m_two2.ones.add(m2m_one2)
+
+        # Normal test with getting related attributes from reference
+        with self.assertNumQueries(4):
+            model = SimpleDjangoModel.objects.first()
+            serializer = SimpleWithM2MDjangoSerializer(model)
+        with self.assertNumQueries(0):
+            self.assertTrue(serializer.is_valid())
+        with self.assertNumQueries(0):
+            dump1 = serializer.dump()
+
+        # Second test using prefetch alone: the only_fields will cause extra queries
+        with self.assertNumQueries(5):
+            model = SimpleDjangoModel.objects.prefetch_related('ones__twos').first()
+            serializer = SimpleWithM2MDjangoSerializer(model)
+        with self.assertNumQueries(0):
+            self.assertTrue(serializer.is_valid())
+        with self.assertNumQueries(0):
+            dump2 = serializer.dump()
+
+        # Third test using prefetch with kwargs on the serializer
+        with self.assertNumQueries(3):
+            model = SimpleDjangoModel.objects.prefetch_related('ones__twos').first()
+            serializer = SimpleWithM2MDjangoSerializer(model, use_prefetch=True)
+        with self.assertNumQueries(0):
+            self.assertTrue(serializer.is_valid())
+        with self.assertNumQueries(0):
+            dump3 = serializer.dump()
+
+        self.assertDictEqual(dump1, dump2)
+        self.assertDictEqual(dump1, dump3)
