@@ -85,18 +85,18 @@ class CollectionSerializer(py2to3.with_metaclass(CollectionBase)):
         except Exception:
             limit = None
         if sort:
-            if not isinstance(sort, list):
-                sort = [py2to3._unicode(sort)]
             def get_key(item, k):
                 if isinstance(item, dict):
                     return item.get(k, None)
                 return getattr(item, k, None)
+            if not isinstance(sort, list):
+                sort = [py2to3._unicode(sort)]
             for s in reversed(sort):
                 reverse = False
                 if s.startswith('-'):
                     reverse = True
                     s = s[1:]
-                objects = list(sorted(objects, key=lambda item:get_key(item, s), reverse=reverse))
+                objects = list(sorted(objects, key=lambda item: get_key(item, s), reverse=reverse))
         try:
             if limit:
                 objects = objects[offset:(offset + limit)]

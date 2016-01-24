@@ -25,9 +25,8 @@ class SerializerValidatorError(Exception):
         return u'{}'.format(self.message)
 
 
-
 class SerializerInvalidError(SerializerValidatorError):
-    error_code = 'invaid'
+    error_code = 'invalid'
 
 
 class SerializerRequiredError(SerializerValidatorError):
@@ -91,6 +90,7 @@ def validate_float(value):
     except (ValueError, TypeError):
         raise SerializerValidatorError('Enter a valid float.', error_code='invalid')
 
+
 def validate_decimal(value):
     if isinstance(value, decimal.Decimal):
         return
@@ -119,9 +119,10 @@ class MaxStringLengthValidator(CompareValidator):
 
 RE_UUID = re.compile(r'[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}', re.I)
 
+
 def validate_uuid(value):
     if not isinstance(value, uuid.UUID):
-       if not RE_UUID.search(py2to3._unicode(value)):
+        if not RE_UUID.search(py2to3._unicode(value)):
             raise SerializerValidatorError('Enter a valid uuid.', error_code='invalid')
 
 
@@ -134,16 +135,18 @@ RE_URL = re.compile(
         r'(?::\d+)?'
         r'(?:/?|[/?]\S+)$', re.IGNORECASE)
 
+
 def validate_url(value):
-   if not RE_URL.search(py2to3._unicode(value)):
+    if not RE_URL.search(py2to3._unicode(value)):
         raise SerializerValidatorError('Enter a valid url.', error_code='invalid')
 
 
-RE_EMAIL= re.compile(
+RE_EMAIL = re.compile(
     r"(^[-!#$%&'*+/=?^_`{}|~0-9A-Z]+(\.[-!#$%&'*+/=?^_`{}|~0-9A-Z]+)*"  # dot-atom
-    r'|^"([\001-\010\013\014\016-\037!#-\[\]-\177]|\\[\001-011\013\014\016-\177])*"' # quoted-string
+    r'|^"([\001-\010\013\014\016-\037!#-\[\]-\177]|\\[\001-011\013\014\016-\177])*"'  # quoted-string
     r')@(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?$', re.IGNORECASE)
 
+
 def validate_email(value):
-   if not RE_EMAIL.search(py2to3._unicode(value)):
+    if not RE_EMAIL.search(py2to3._unicode(value)):
         raise SerializerValidatorError('Enter a valid email.', error_code='invalid')
