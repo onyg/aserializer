@@ -13,6 +13,14 @@ from aserializer.django.utils import get_local_fields, get_related_fields
 
 class RelatedManagerListSerializerField(ListSerializerField):
 
+    def __init__(self, serializer, sort_by=None, use_prefetch=False, *args, **kwargs):
+        super(RelatedManagerListSerializerField, self).__init__(serializer=serializer, sort_by=sort_by, *args, **kwargs)
+        self.use_prefetch = use_prefetch
+
+    def pre_value(self, fields=None, exclude=None, **extras):
+        super(RelatedManagerListSerializerField, self).pre_value(fields=fields, exclude=exclude, **extras)
+        self.use_prefetch = extras.get('use_prefetch', self.use_prefetch)
+
     def set_value(self, value):
         if value is None:
             return
@@ -20,7 +28,7 @@ class RelatedManagerListSerializerField(ListSerializerField):
             values = value
         elif isinstance(value, (QuerySet, Manager)):
             # if using prefetch_related, we can't use only as it will re-fetch the data
-            if not self.extras.get('use_prefetch') and (self.only_fields or self.exclude):
+            if not self.use_prefetch and (self.only_fields or self.exclude):
                 local_fields = get_local_fields(value.model)
                 related_fields = get_related_fields(value.model)
                 only_fields = [f.name for f in local_fields]
