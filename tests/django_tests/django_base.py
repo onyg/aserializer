@@ -78,6 +78,23 @@ class Related2NonModelFieldsDjangoSerializer(Serializer):
     relations = RelatedManagerListSerializerField(NonModelFieldsDjangoSerializer, fields=('_type',))
 
 
+class M2MOneDjangoSerializer(Serializer):
+    name = fields.StringField(required=True, max_length=24)
+    twos = RelatedManagerListSerializerField('M2MTwoDjangoSerializer', fields=('name',))
+
+
+class M2MTwoDjangoSerializer(Serializer):
+    name = fields.StringField(required=True, max_length=24)
+    ones = RelatedManagerListSerializerField('M2MOneDjangoSerializer', fields=('name',))
+
+
+class SimpleWithM2MDjangoSerializer(Serializer):
+    name = fields.StringField(required=True, max_length=24)
+    code = fields.StringField(max_length=4)
+    number = fields.IntegerField(required=True)
+    ones = RelatedManagerListSerializerField(M2MOneDjangoSerializer)
+
+
 # Here some serializers using the Django Model introspection
 
 
@@ -108,12 +125,14 @@ class M2MOneDjangoModelSerializer(DjangoModelSerializer):
 
     class Meta:
         model = M2MOneDjangoModel if django else None
+        exclude = ['simple_model']
 
 
 class M2MTwoDjangoModelSerializer(DjangoModelSerializer):
 
     class Meta:
         model = M2MTwoDjangoModel if django else None
+        exclude = ['ones.simple_model']
 
 
 class One2One1DjangoModelSerializer(DjangoModelSerializer):

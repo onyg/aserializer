@@ -99,7 +99,7 @@ class Serializer(py2to3.with_metaclass(SerializerBase)):
         result = []
         for name, field in cls._base_fields.items():
             map_field_name = field.map_field or name
-            result.append((py2to3._unicode(name),py2to3._unicode(map_field_name)))
+            result.append((py2to3._unicode(name), py2to3._unicode(map_field_name)))
             if isinstance(field, SerializerObjectField):
                 # It is necessary to check for maximum recursions
                 if name in seen:
@@ -139,7 +139,7 @@ class Serializer(py2to3.with_metaclass(SerializerBase)):
             else:
                 continue
             if isinstance(field, SerializerObjectField):
-                only_fields, exclude =  self.get_fields_and_exclude_for_nested(field_name)
+                only_fields, exclude = self.get_fields_and_exclude_for_nested(field_name)
                 field.pre_value(fields=only_fields,
                                 exclude=exclude,
                                 unknown_error=self._handle_unknown_error, **self._extras)
@@ -203,7 +203,7 @@ class Serializer(py2to3.with_metaclass(SerializerBase)):
         attributes = self.parser.attributes_for_serializer
         attributes_for_unknown_error_handling = self.parser.all_attributes if self._handle_unknown_error else []
         for field_name, field in self.fields.items():
-            if field.identity and not field_name in attributes:
+            if field.identity and field_name not in attributes:
                 continue
             label = field_name
             if field_name in attributes or field.map_field in attributes:
@@ -280,7 +280,7 @@ class Serializer(py2to3.with_metaclass(SerializerBase)):
 
     def is_valid(self):
         """
-        This method checkes if an error was inserted.
+        This method checks if an error was inserted.
         """
         if self.errors:
             return False
@@ -290,7 +290,7 @@ class Serializer(py2to3.with_metaclass(SerializerBase)):
     def to_dict(self):
         """
         Returns a dictionary with the field values for the python env.
-        It ingores fields by the IgnoreField exception.
+        It ignores fields by the IgnoreField exception.
         """
         if self._dict_data is None:
             self._dict_data = dict()

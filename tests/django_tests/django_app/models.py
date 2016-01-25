@@ -56,6 +56,7 @@ class RelThreeDjangoModel(models.Model):
 
 class M2MOneDjangoModel(models.Model):
     name = models.CharField(max_length=24)
+    simple_model = models.ForeignKey(SimpleDjangoModel, null=True, related_name='ones')
 
 
 class M2MTwoDjangoModel(models.Model):

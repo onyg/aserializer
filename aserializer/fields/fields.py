@@ -113,7 +113,8 @@ class DecimalField(IntegerField):
             self.value = decimal.Decimal(value).quantize(decimal.Decimal(".1") ** self.decimal_places, context=context)
         elif isinstance(value, py2to3.string):
             try:
-                self.value = decimal.Decimal(value).quantize(decimal.Decimal(".1") ** self.decimal_places, context=context)
+                self.value = decimal.Decimal(value).quantize(decimal.Decimal(".1") ** self.decimal_places,
+                                                             context=context)
             except:
                 self.value = value
         else:
@@ -189,7 +190,7 @@ class StringField(BaseSerializerField):
     validators = [v.validate_string, ]
 
     def __init__(self, max_length=None, min_length=None, **kwargs):
-        super(StringField, self).__init__( **kwargs)
+        super(StringField, self).__init__(**kwargs)
         if max_length is not None:
             self._validators.append(v.MaxStringLengthValidator(max_length))
         if min_length is not None:
@@ -335,6 +336,7 @@ class ChoiceField(BaseSerializerField):
             value = value.lower()
         return value
 
+
 class ListField(BaseSerializerField):
 
     def __init__(self, field, *args, **kwargs):
@@ -381,7 +383,6 @@ class ListField(BaseSerializerField):
             for field in self.items:
                 self._python_items.append(field.to_python())
         return self._python_items
-
 
     def append(self, value):
         self.add_item(value=value)
